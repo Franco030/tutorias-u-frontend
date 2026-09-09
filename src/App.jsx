@@ -28,17 +28,17 @@ function DashboardView() {
   };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <section className="rounded-2xl bg-white dark:bg-granite-900 border border-granite-200 dark:border-granite-800 p-6 sm:p-8">
+    <main className="w-full px-4 sm:px-8 lg:px-12 py-8 space-y-8">
+      <section className="rounded-2xl bg-white dark:bg-deep-space-blue-900/40 border border-granite-200 dark:border-deep-space-blue-800 p-6 sm:p-8">
         <div className="max-w-2xl">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-granite-500 dark:text-granite-400 mb-2 uppercase tracking-wide">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-granite-500 dark:text-deep-space-blue-400 mb-2 uppercase tracking-wide">
             <Shield className="w-3.5 h-3.5" />
             <span>Sesión autenticada</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-granite-900 dark:text-white">
-            ¡Hola, {user?.nombre || 'Estudiante'}! 👋
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-granite-900 dark:text-white" style={{ fontFamily: "'Comfortaa', sans-serif" }}>
+            ¡Hola, {user?.nombre || 'Estudiante'}!
           </h1>
-          <p className="mt-3 text-granite-500 dark:text-granite-300 text-sm sm:text-base leading-relaxed">
+          <p className="mt-3 text-granite-500 dark:text-deep-space-blue-200 text-sm sm:text-base leading-relaxed">
             Te damos la bienvenida al portal académico. Tu sesión está sincronizada
             y protegida mediante tokens JWT validados por el backend en ASP.NET Core.
           </p>
@@ -46,9 +46,9 @@ function DashboardView() {
       </section>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-xl bg-white dark:bg-granite-900 border border-granite-200 dark:border-granite-800">
+        <div className="p-5 rounded-xl bg-white dark:bg-deep-space-blue-900/40 border border-granite-200 dark:border-deep-space-blue-800">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-granite-500 dark:text-granite-400">Rol Activo</span>
+            <span className="text-xs font-medium text-granite-500 dark:text-deep-space-blue-300">Rol Activo</span>
             <div className="p-2 rounded-lg bg-sage-green-50 dark:bg-sage-green-900/40 text-sage-green-600 dark:text-sage-green-400">
               <Award className="w-4 h-4" />
             </div>
@@ -61,35 +61,35 @@ function DashboardView() {
           </span>
         </div>
 
-        <div className="p-5 rounded-xl bg-white dark:bg-granite-900 border border-granite-200 dark:border-granite-800">
+        <div className="p-5 rounded-xl bg-white dark:bg-deep-space-blue-900/40 border border-granite-200 dark:border-deep-space-blue-800">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-granite-500 dark:text-granite-400">Tutorías Asignadas</span>
+            <span className="text-xs font-medium text-granite-500 dark:text-deep-space-blue-300">Tutorías Asignadas</span>
             <div className="p-2 rounded-lg bg-tea-green-50 dark:bg-tea-green-900/40 text-tea-green-600 dark:text-tea-green-400">
               <BookOpen className="w-4 h-4" />
             </div>
           </div>
           <p className="mt-2 text-xl font-bold text-granite-900 dark:text-white">0 Activas</p>
-          <span className="text-xs text-granite-500 dark:text-granite-400 mt-1 block">
+          <span className="text-xs text-granite-500 dark:text-deep-space-blue-400 mt-1 block">
             Próximo ciclo académico
           </span>
         </div>
 
-        <div className="p-5 rounded-xl bg-white dark:bg-granite-900 border border-granite-200 dark:border-granite-800">
+        <div className="p-5 rounded-xl bg-white dark:bg-deep-space-blue-900/40 border border-granite-200 dark:border-deep-space-blue-800">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-granite-500 dark:text-granite-400">Horas Acumuladas</span>
+            <span className="text-xs font-medium text-granite-500 dark:text-deep-space-blue-300">Horas Acumuladas</span>
             <div className="p-2 rounded-lg bg-burgundy-50 dark:bg-burgundy-950/60 text-burgundy-600 dark:text-burgundy-400">
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <p className="mt-2 text-xl font-bold text-granite-900 dark:text-white">0 hrs</p>
-          <span className="text-xs text-granite-500 dark:text-granite-400 mt-1 block">
+          <span className="text-xs text-granite-500 dark:text-deep-space-blue-400 mt-1 block">
             Acompañamiento registrado
           </span>
         </div>
 
-        <div className="p-5 rounded-xl bg-white dark:bg-granite-900 border border-granite-200 dark:border-granite-800">
+        <div className="p-5 rounded-xl bg-white dark:bg-deep-space-blue-900/40 border border-granite-200 dark:border-deep-space-blue-800">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-granite-500 dark:text-granite-400">Backend Conectado</span>
+            <span className="text-xs font-medium text-granite-500 dark:text-deep-space-blue-300">Backend Conectado</span>
             <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
               <ExternalLink className="w-4 h-4" />
             </div>
@@ -103,7 +103,7 @@ function DashboardView() {
         </div>
       </section>
 
-      <section className="p-6 rounded-2xl bg-white dark:bg-granite-900 border border-granite-200 dark:border-granite-800 space-y-4">
+      <section className="p-6 rounded-2xl bg-white dark:bg-deep-space-blue-900/40 border border-granite-200 dark:border-deep-space-blue-800 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Key className="w-5 h-5 text-deep-space-blue-500 dark:text-deep-space-blue-400" />
@@ -121,28 +121,19 @@ function DashboardView() {
           </button>
         </div>
 
-        <p className="text-xs text-granite-500 dark:text-granite-400">
+        <p className="text-xs text-granite-500 dark:text-deep-space-blue-300">
           Este token fue validado y devuelto por el controlador <code>/api/auth/[google|microsoft]</code>{' '}
           del backend en ASP.NET Core y se adjunta de forma automática en cada petición con{' '}
           <code>Authorization: Bearer &lt;token&gt;</code> mediante <code>apiClient</code>.
         </p>
 
-        <div className="p-3.5 rounded-xl bg-granite-50 dark:bg-granite-950 text-granite-700 dark:text-granite-300 font-mono text-xs overflow-x-auto border border-granite-200 dark:border-granite-800">
+        <div className="p-3.5 rounded-xl bg-granite-50 dark:bg-deep-space-blue-950/50 text-granite-700 dark:text-deep-space-blue-200 font-mono text-xs overflow-x-auto border border-granite-200 dark:border-deep-space-blue-800">
           <p className="break-all whitespace-pre-wrap">
             {token || 'No token found'}
           </p>
         </div>
       </section>
 
-      <section className="flex justify-end">
-        <button
-          type="button"
-          onClick={logout}
-          className="px-5 py-2.5 rounded-xl text-sm font-medium bg-granite-100 hover:bg-granite-200 dark:bg-granite-800 dark:hover:bg-granite-700 text-granite-900 dark:text-white border border-granite-200 dark:border-granite-700 transition-colors cursor-pointer"
-        >
-          Cerrar Sesión Segura
-        </button>
-      </section>
     </main>
   );
 }
@@ -151,7 +142,7 @@ export function App() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen flex flex-col bg-granite-50 dark:bg-granite-950 text-granite-900 dark:text-granite-100 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-deep-space-blue-950 text-granite-900 dark:text-white transition-colors duration-300">
       {isAuthenticated && <Navbar />}
       <div className="grow flex flex-col">
         {isAuthenticated ? <DashboardView /> : <LoginPage />}
