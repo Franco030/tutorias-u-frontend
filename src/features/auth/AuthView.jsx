@@ -40,9 +40,9 @@ export function AuthView({ onComplete }) {
           {!isAuthenticated && (
             <motion.div 
               key="login"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 30 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
               className="flex-1 flex flex-col justify-center p-8 sm:p-12 lg:p-16"
             >
@@ -115,7 +115,7 @@ export function AuthView({ onComplete }) {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 30 }}
-              transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+              transition={{ duration: 0.6, delay: 1.3, ease: "easeOut" }}
               className="flex-1 flex flex-col justify-center p-8 sm:p-12 lg:p-16"
             >
               <div className="w-full max-w-md mx-auto flex flex-col justify-center h-full">
