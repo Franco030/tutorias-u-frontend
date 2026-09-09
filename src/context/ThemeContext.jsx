@@ -3,9 +3,6 @@ import { AUTH_STORAGE_KEYS } from '../types/auth.types';
 
 export const ThemeContext = createContext(null);
 
-/**
- * Proveedor de tema para alternar entre modo Claro y Oscuro mediante la clase 'dark' en el documento raíz.
- */
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(() => {
     if (typeof window === 'undefined') return 'light';
@@ -13,7 +10,6 @@ export function ThemeProvider({ children }) {
     if (stored === 'light' || stored === 'dark') {
       return stored;
     }
-    // Si no hay preferencia guardada, verificar preferencia del sistema operativo
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
@@ -29,7 +25,6 @@ export function ThemeProvider({ children }) {
     localStorage.setItem(AUTH_STORAGE_KEYS.THEME, theme);
   }, [theme]);
 
-  // Escuchar cambios de preferencia del sistema si el usuario no tiene una configuración forzada
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e) => {
@@ -66,10 +61,6 @@ export function ThemeProvider({ children }) {
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
-/**
- * Hook personalizado para consumir el contexto de tema (Dark/Light mode).
- * @returns {{ theme: 'light' | 'dark', isDark: boolean, toggleTheme: () => void, setTheme: (theme: 'light' | 'dark') => void }}
- */
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {

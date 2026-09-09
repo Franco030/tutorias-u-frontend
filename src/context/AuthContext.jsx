@@ -3,10 +3,6 @@ import authService from '../features/auth/authService';
 
 export const AuthContext = createContext(null);
 
-/**
- * Proveedor global de autenticación para TutoriasU.
- * Gestiona el ciclo de vida de la sesión, sincronización con localStorage y estado de usuario.
- */
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => authService.getStoredSession().token);
   const [user, setUser] = useState(() => authService.getStoredSession().user);
@@ -19,9 +15,6 @@ export function AuthProvider({ children }) {
     setError(null);
   }, []);
 
-  /**
-   * Cierra la sesión activa en el frontend y limpia el almacenamiento local.
-   */
   const logout = useCallback(() => {
     authService.clearSession();
     setToken(null);
@@ -29,7 +22,7 @@ export function AuthProvider({ children }) {
     setError(null);
   }, []);
 
-  // Escuchar evento de token expirado o 401 Unauthorized desde apiClient
+  // Si apiClient emite 401, cerramos sesión local
   useEffect(() => {
     const handleUnauthorized = () => {
       console.warn('[AuthContext] Sesión expirada o no autorizada (401). Cerrando sesión...');
@@ -41,10 +34,6 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
   }, [logout]);
 
-  /**
-   * Autenticación con Google enviando la credencial (idToken) al backend.
-   * @param {string} idToken - Credential de Google devuelta por el login popup
-   */
   const loginWithGoogle = useCallback(async (idToken) => {
     setIsLoading(true);
     setError(null);
@@ -65,10 +54,6 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  /**
-   * Autenticación con Microsoft enviando el idToken al backend.
-   * @param {string} idToken - Token emitido por Microsoft Entra ID
-   */
   const loginWithMicrosoft = useCallback(async (idToken) => {
     setIsLoading(true);
     setError(null);
@@ -107,20 +92,6 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/**
- * Hook personalizado para consumir el estado de autenticación de la aplicación.
- * @returns {{
- *   user: import('../types/auth.types').User | null,
- *   token: string | null,
- *   isAuthenticated: boolean,
- *   isLoading: boolean,
- *   error: string | null,
- *   loginWithGoogle: (idToken: string) => Promise<any>,
- *   loginWithMicrosoft: (idToken: string) => Promise<any>,
- *   logout: () => void,
- *   clearError: () => void
- * }}
- */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

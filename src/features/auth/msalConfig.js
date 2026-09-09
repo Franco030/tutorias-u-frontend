@@ -2,9 +2,6 @@ import { PublicClientApplication, LogLevel } from '@azure/msal-browser';
 
 const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID || '467af7d5-3833-4dac-8597-dc0822e39baa';
 
-/**
- * Configuración de MSAL para Microsoft Entra ID / Microsoft Identity Platform.
- */
 export const msalConfig = {
   auth: {
     clientId: clientId,
@@ -13,7 +10,7 @@ export const msalConfig = {
     postLogoutRedirectUri: typeof window !== 'undefined' ? window.location.origin : (import.meta.env.VITE_FRONTEND_URL || 'http://localhost:5173'),
   },
   cache: {
-    cacheLocation: 'localStorage', // ⭐️ Crucial para compartir estado entre ventana principal y popup
+    cacheLocation: 'localStorage',
     storeAuthStateInCookie: false,
   },
   system: {
@@ -35,14 +32,8 @@ export const msalConfig = {
   },
 };
 
-/**
- * Scopes requeridos para obtener el idToken y el perfil básico del usuario institucional.
- */
 export const loginRequest = {
   scopes: ['openid', 'profile', 'email'],
 };
 
-/**
- * Instancia singleton de MSAL Browser.
- */
 export const msalInstance = new PublicClientApplication(msalConfig);

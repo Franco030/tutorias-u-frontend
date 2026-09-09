@@ -3,17 +3,65 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
-  --color-primary-950: #172554;
+  --color-deep-space-blue-50: #edf3f8;
+  --color-deep-space-blue-100: #dbe6f0;
+  --color-deep-space-blue-200: #b7cde1;
+  --color-deep-space-blue-300: #92b5d3;
+  --color-deep-space-blue-400: #6e9cc4;
+  --color-deep-space-blue-500: #4a83b5;
+  --color-deep-space-blue-600: #3b6991;
+  --color-deep-space-blue-700: #2c4f6d;
+  --color-deep-space-blue-800: #1e3448;
+  --color-deep-space-blue-900: #0f1a24;
+  --color-deep-space-blue-950: #0a1219;
+
+  --color-granite-50: #f1f4f2;
+  --color-granite-100: #e3e8e5;
+  --color-granite-200: #c6d2cb;
+  --color-granite-300: #aabbb1;
+  --color-granite-400: #8ea497;
+  --color-granite-500: #718e7d;
+  --color-granite-600: #5b7164;
+  --color-granite-700: #44554b;
+  --color-granite-800: #2d3932;
+  --color-granite-900: #171c19;
+  --color-granite-950: #101412;
+
+  --color-sage-green-50: #f1f5ef;
+  --color-sage-green-100: #e4ebe0;
+  --color-sage-green-200: #c9d7c1;
+  --color-sage-green-300: #adc3a2;
+  --color-sage-green-400: #92af83;
+  --color-sage-green-500: #779c63;
+  --color-sage-green-600: #5f7c50;
+  --color-sage-green-700: #475d3c;
+  --color-sage-green-800: #303e28;
+  --color-sage-green-900: #181f14;
+  --color-sage-green-950: #11160e;
+
+  --color-tea-green-50: #f4f8ed;
+  --color-tea-green-100: #e9f1da;
+  --color-tea-green-200: #d4e3b5;
+  --color-tea-green-300: #bed590;
+  --color-tea-green-400: #a8c76b;
+  --color-tea-green-500: #93b946;
+  --color-tea-green-600: #759438;
+  --color-tea-green-700: #586f2a;
+  --color-tea-green-800: #3b4a1c;
+  --color-tea-green-900: #1d250e;
+  --color-tea-green-950: #151a0a;
+
+  --color-burgundy-50: #fbeaeb;
+  --color-burgundy-100: #f7d4d7;
+  --color-burgundy-200: #eeaab0;
+  --color-burgundy-300: #e67f88;
+  --color-burgundy-400: #dd5560;
+  --color-burgundy-500: #d52a38;
+  --color-burgundy-600: #aa222d;
+  --color-burgundy-700: #801922;
+  --color-burgundy-800: #551117;
+  --color-burgundy-900: #2b080b;
+  --color-burgundy-950: #1e0608;
 }
 
 :root {
@@ -27,7 +75,11 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+  font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+  ::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
 }
