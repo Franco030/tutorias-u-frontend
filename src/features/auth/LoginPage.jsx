@@ -6,6 +6,7 @@ import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { UsersThree, Clock } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { AnimatedThemeToggler } from '../../components/ui/animated-theme-toggler';
+import { motion } from 'framer-motion';
 
 export function LoginPage() {
   const { user, isAuthenticated, logout, error, clearError } = useAuth();
@@ -14,11 +15,8 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-white dark:bg-deep-space-blue-950 transition-colors duration-300">
-      <div className="w-full md:w-1/2 p-8 sm:p-12 lg:p-16 flex flex-col justify-center relative">
-        <div className="absolute bottom-6 left-6">
-          <AnimatedThemeToggler className="p-2 rounded-full bg-granite-100 dark:bg-deep-space-blue-900 hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors" />
-        </div>
+    <div className="w-full p-8 sm:p-12 lg:p-16 flex flex-col justify-center h-full">
+
         {isAuthenticated && user ? (
           <div className="text-center space-y-6">
             <div className="w-16 h-16 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
@@ -106,15 +104,6 @@ export function LoginPage() {
             </div>
           </div>
         )}
-      </div>
-
-      <div className="hidden md:block md:w-1/2 p-4 lg:p-6">
-         <div 
-           className="w-full h-full rounded-[2rem] bg-cover bg-center shadow-lg"
-           style={{ backgroundImage: `url('/tutoring-bg.jpg')` }}
-         >
-         </div>
-      </div>
     </div>
   );
 }

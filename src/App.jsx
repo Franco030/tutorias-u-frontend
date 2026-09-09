@@ -1,6 +1,8 @@
 import { useAuth } from './context/AuthContext';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Navbar } from './components/Navbar';
-import { LoginPage } from './features/auth/LoginPage';
+import { AuthView } from './features/auth/AuthView';
+import { AnimatedThemeToggler } from './components/ui/animated-theme-toggler';
 import {
   BookOpen,
   Clock,
@@ -140,13 +142,26 @@ function DashboardView() {
 
 export function App() {
   const { isAuthenticated } = useAuth();
+  const [hasSelectedRole, setHasSelectedRole] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-deep-space-blue-950 text-granite-900 dark:text-white transition-colors duration-300">
-      {isAuthenticated && <Navbar />}
-      <div className="grow flex flex-col">
-        {isAuthenticated ? <DashboardView /> : <LoginPage />}
-      </div>
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-deep-space-blue-950 text-granite-900 dark:text-white transition-colors duration-300 relative">
+      {isAuthenticated && hasSelectedRole ? (
+        <div className="grow relative flex flex-col">
+          <Navbar />
+          <motion.div 
+            key="dashboard" 
+            className="flex-1 flex flex-col z-0"
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <DashboardView />
+          </motion.div>
+        </div>
+      ) : (
+        <AuthView onComplete={() => setHasSelectedRole(true)} />
+      )}
     </div>
   );
 }
