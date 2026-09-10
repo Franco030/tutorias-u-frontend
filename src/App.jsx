@@ -1,3 +1,5 @@
+import { Routes, Route } from 'react-router-dom';
+import VerifyEmailPage from './features/auth/VerifyEmailPage';
 import { useAuth } from './context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Navbar } from './components/Navbar';
@@ -140,7 +142,7 @@ function DashboardView() {
   );
 }
 
-export function App() {
+function AppContent() {
   const { isAuthenticated } = useAuth();
   const [hasSelectedRole, setHasSelectedRole] = useState(false);
 
@@ -163,6 +165,15 @@ export function App() {
         <AuthView onComplete={() => setHasSelectedRole(true)} />
       )}
     </div>
+  );
+}
+
+export function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<AppContent />} />
+      <Route path="/verificar-correo" element={<VerifyEmailPage />} />
+    </Routes>
   );
 }
 

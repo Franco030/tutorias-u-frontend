@@ -24,6 +24,28 @@ export const authService = {
     );
   },
 
+  async loginLocal(email, password) {
+    return apiClient.post(
+      '/api/auth/login',
+      { email, password },
+      { skipAuth: true }
+    );
+  },
+
+  async registerLocal(email, nombre, password) {
+    return apiClient.post(
+      '/api/auth/register',
+      { email, nombre, password },
+      { skipAuth: true }
+    );
+  },
+
+  async verifyEmail(token) {
+    return apiClient.get(`/api/auth/verify-email?token=${encodeURIComponent(token)}`, {
+      skipAuth: true
+    });
+  },
+
   saveSession(authData) {
     if (!authData || !authData.token) return;
 

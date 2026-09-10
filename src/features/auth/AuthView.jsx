@@ -6,6 +6,7 @@ import { AnimatedThemeToggler } from '../../components/ui/animated-theme-toggler
 // Login dependencies
 import GoogleLoginButton from './GoogleLoginButton';
 import MicrosoftLoginButton from './MicrosoftLoginButton';
+import LocalAuthForm from './LocalAuthForm';
 import { UsersThree, Clock } from '@phosphor-icons/react';
 import { AlertCircle } from 'lucide-react';
 
@@ -71,34 +72,18 @@ export function AuthView({ onComplete }) {
                 )}
 
                 <div className="flex flex-col gap-3 mb-8">
+                   <LocalAuthForm />
+
+                   <div className="relative flex py-2 items-center">
+                     <div className="grow border-t border-granite-200 dark:border-granite-800" />
+                     <span className="shrink mx-3 text-xs font-medium text-granite-400 dark:text-granite-500 uppercase tracking-wider">
+                       o continúa con
+                     </span>
+                     <div className="grow border-t border-granite-200 dark:border-granite-800" />
+                   </div>
+
                    <GoogleLoginButton />
                    <MicrosoftLoginButton />
-                </div>
-
-                <div className="mt-8 space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2.5 rounded-xl bg-deep-space-blue-50 dark:bg-deep-space-blue-900/50 text-deep-space-blue-600 dark:text-deep-space-blue-400 shrink-0">
-                      <UsersThree weight="duotone" className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-granite-900 dark:text-white">Conecta con Expertos</h4>
-                      <p className="text-xs text-granite-500 dark:text-deep-space-blue-200 mt-1 leading-relaxed">
-                        Encuentra tutores especializados en las materias que necesitas para dominar tu semestre.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 shrink-0">
-                      <Clock weight="duotone" className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-granite-900 dark:text-white">Aprende a tu Ritmo</h4>
-                      <p className="text-xs text-granite-500 dark:text-deep-space-blue-200 mt-1 leading-relaxed">
-                        Organiza tus sesiones, revisa el material y avanza sin presiones apoyándote en la comunidad.
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </motion.div>
