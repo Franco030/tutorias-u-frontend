@@ -74,6 +74,26 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const loginLocal = useCallback(async (email, password) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const authData = await authService.loginLocal(email, password);
+      const savedUser = authService.saveSession(authData);
+
+      setToken(authData.token);
+      setUser(savedUser);
+      return authData;
+    } catch (err) {
+      const errorMsg = err?.message || 'Error al iniciar sesión local';
+      setError(errorMsg);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -83,10 +103,11 @@ export function AuthProvider({ children }) {
       error,
       loginWithGoogle,
       loginWithMicrosoft,
+      loginLocal,
       logout,
       clearError,
     }),
-    [user, token, isAuthenticated, isLoading, error, loginWithGoogle, loginWithMicrosoft, logout, clearError]
+    [user, token, isAuthenticated, isLoading, error, loginWithGoogle, loginWithMicrosoft, loginLocal, logout, clearError]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
