@@ -2,6 +2,7 @@ import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 
 import { AnimatedThemeToggler } from './ui/animated-theme-toggler';
+import { NumberSevenIcon } from '@phosphor-icons/react';
 
 export function DarkModeToggle({ className = '' }) {
   const { theme, setTheme } = useTheme();
