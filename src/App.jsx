@@ -5,18 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Navbar } from "./components/Navbar";
 import { AuthView } from "./features/auth/AuthView";
 import { AnimatedThemeToggler } from "./components/ui/animated-theme-toggler";
-import {
-  BookOpen,
-  Clock,
-  Award,
-  CheckCircle,
-  ExternalLink,
-  Shield,
-  Key,
-  Copy,
-} from "lucide-react";
 import { useState } from "react";
-import { getApiBaseUrl } from "./services/apiClient";
 
 function DashboardView({ selectedRole }) {
   const { user, logout } = useAuth();
@@ -80,13 +69,16 @@ function DashboardView({ selectedRole }) {
 }
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
-  const [hasSelectedRole, setHasSelectedRole] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(null);
+  const { isAuthenticated, user } = useAuth();
+  const [hasSelectedRoleState, setHasSelectedRoleState] = useState(false);
+  const [selectedRoleState, setSelectedRoleState] = useState(null);
+
+  const hasSelectedRole = hasSelectedRoleState || (isAuthenticated && !!user?.rol);
+  const selectedRole = selectedRoleState || (isAuthenticated && user?.rol ? user.rol : null);
 
   const handleRoleSelection = (role) => {
-    setSelectedRole(role);
-    setHasSelectedRole(true);
+    setSelectedRoleState(role);
+    setHasSelectedRoleState(true);
   };
 
   return (
