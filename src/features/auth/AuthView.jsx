@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { AnimatedThemeToggler } from "../../components/ui/animated-theme-toggler";
@@ -7,10 +6,9 @@ import { AnimatedThemeToggler } from "../../components/ui/animated-theme-toggler
 import GoogleLoginButton from "./GoogleLoginButton";
 import MicrosoftLoginButton from "./MicrosoftLoginButton";
 import LocalAuthForm from "./LocalAuthForm";
-import { AlertCircle, GraduationCap, BookOpen } from "lucide-react";
 
 export function AuthView({ onComplete }) {
-  const { isAuthenticated, error, clearError } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="grow relative flex flex-col md:flex-row overflow-hidden bg-white dark:bg-deep-space-blue-950 transition-colors duration-300">
@@ -126,7 +124,7 @@ export function AuthView({ onComplete }) {
                 <div className="flex flex-col gap-6 group/list">
                   <button
                     type="button"
-                    onClick={() => onComplete("student")}
+                    onClick={() => onComplete("Estudiante")}
                     className="group/btn relative inline-flex items-center justify-start w-max px-8 py-4 cursor-pointer transition-opacity duration-700 opacity-100 group-hover/list:opacity-20 hover:!opacity-100"
                   >
                     <span className="absolute top-0 left-0 h-[1px] w-0 bg-deep-space-blue-600 dark:bg-emerald-400 transition-all duration-[200ms] delay-[600ms] group-hover/btn:w-full group-hover/btn:delay-0 ease-linear"></span>
@@ -147,7 +145,7 @@ export function AuthView({ onComplete }) {
 
                   <button
                     type="button"
-                    onClick={() => onComplete("tutor")}
+                    onClick={() => onComplete("Tutor")}
                     className="group/btn relative inline-flex items-center justify-start w-max px-8 py-4 cursor-pointer transition-opacity duration-700 opacity-100 group-hover/list:opacity-20 hover:!opacity-100"
                   >
                     <span className="absolute top-0 left-0 h-[1px] w-0 bg-deep-space-blue-600 dark:bg-emerald-400 transition-all duration-[200ms] delay-[600ms] group-hover/btn:w-full group-hover/btn:delay-0 ease-linear"></span>

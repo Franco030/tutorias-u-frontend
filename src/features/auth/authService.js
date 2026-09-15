@@ -46,6 +46,10 @@ export const authService = {
     });
   },
 
+  async asignarRol(nuevoRol) {
+    return apiClient.post('/api/auth/asignar-rol', { nuevoRol });
+  },
+
   saveSession(authData) {
     if (!authData || !authData.token) return;
 

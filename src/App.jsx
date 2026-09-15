@@ -1,10 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import VerifyEmailPage from "./features/auth/VerifyEmailPage";
 import { useAuth } from "./context/AuthContext";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Navbar } from "./components/Navbar";
 import { AuthView } from "./features/auth/AuthView";
-import { AnimatedThemeToggler } from "./components/ui/animated-theme-toggler";
 import { useState } from "react";
 
 function DashboardView({ selectedRole }) {
@@ -69,16 +68,22 @@ function DashboardView({ selectedRole }) {
 }
 
 function AppContent() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, updateRole } = useAuth();
   const [hasSelectedRoleState, setHasSelectedRoleState] = useState(false);
   const [selectedRoleState, setSelectedRoleState] = useState(null);
 
-  const hasSelectedRole = hasSelectedRoleState || (isAuthenticated && !!user?.rol);
-  const selectedRole = selectedRoleState || (isAuthenticated && user?.rol ? user.rol : null);
+  const hasSelectedRole = hasSelectedRoleState || (isAuthenticated && user?.rol && user.rol !== "Nuevo");
+  const selectedRole = selectedRoleState || (isAuthenticated && user?.rol && user.rol !== "Nuevo" ? user.rol : null);
 
-  const handleRoleSelection = (role) => {
-    setSelectedRoleState(role);
-    setHasSelectedRoleState(true);
+  const handleRoleSelection = async (role) => {
+    try {
+      await updateRole(role);
+      setSelectedRoleState(role);
+      setHasSelectedRoleState(true);
+    } catch (err) {
+      console.error('Error al asignar el rol:', err);
+      // Opcional: Podrías mostrar un toast o mensaje de error aquí
+    }
   };
 
   return (
