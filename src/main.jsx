@@ -14,19 +14,9 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'TU_GOOGLE_CLIEN
 async function initApp() {
   try {
     await msalInstance.initialize();
-  } catch {}
-
-  msalInstance.handleRedirectPromise().then(async (response) => {
-    if (response !== null && response.idToken) {
-      try {
-        const authService = (await import('./features/auth/authService')).default;
-        const authData = await authService.loginWithMicrosoft(response.idToken);
-        authService.saveSession(authData);
-        // Recargar para que AuthContext detecte la sesión
-        window.location.assign('/');
-      } catch (backendErr) {}
-    }
-  }).catch(() => {});
+  } catch (err) {
+    console.error('[MSAL] Error initializing:', err);
+  }
 
   createRoot(document.getElementById('root')).render(
     <StrictMode>

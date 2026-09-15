@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { DarkModeToggle } from './DarkModeToggle';
-import { GraduationCap, LogOut, ShieldCheck, Sparkles } from 'lucide-react';
+import { LogOut, ShieldCheck, Sparkles } from 'lucide-react';
 import { getApiBaseUrl } from '../services/apiClient';
 
 export function Navbar() {

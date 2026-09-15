@@ -1,13 +1,46 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useMsal } from '@azure/msal-react';
 import authService from '../features/auth/authService';
 
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const { instance, inProgress } = useMsal();
   const [token, setToken] = useState(() => authService.getStoredSession().token);
   const [user, setUser] = useState(() => authService.getStoredSession().user);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Procesar redirección de Microsoft de manera transparente
+  useEffect(() => {
+    const handleMsalResponse = async () => {
+      try {
+        const response = await instance.handleRedirectPromise();
+        if (response && response.idToken) {
+          setIsLoading(true);
+          try {
+            const authData = await authService.loginWithMicrosoft(response.idToken);
+            const savedUser = authService.saveSession(authData);
+            setToken(authData.token);
+            setUser(savedUser);
+            // Limpiar la URL para quitar el hash
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } catch (backendErr) {
+            setError(backendErr?.message || 'Error al validar con el servidor.');
+          } finally {
+            setIsLoading(false);
+          }
+        }
+      } catch (msalErr) {
+        console.error('[MSAL] Error en redirección:', msalErr);
+      }
+    };
+    
+    // Si Msal está en estado de redirección, lo procesamos
+    if (inProgress === "none") {
+      handleMsalResponse();
+    }
+  }, [instance, inProgress]);
 
   const isAuthenticated = Boolean(token && user);
 
