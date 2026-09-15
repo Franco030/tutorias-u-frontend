@@ -1,0 +1,60 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Flujo de Autenticación Local y Roles', () => {
+  test('debe iniciar sesión exitosamente y llevar a la selección de roles y luego al Dashboard', async ({ page }) => {
+    // Interceptar la llamada de Login para simular una respuesta exitosa del Backend
+    await page.route('**/api/auth/login', async route => {
+      const json = {
+        token: 'fake-jwt-token-123',
+        id: 1,
+        email: 'test@tutoriasu.com',
+        nombre: 'Usuario de Prueba',
+        rol: 'Nuevo' // Empezamos como "Nuevo" para forzar la pantalla de selección de roles
+      };
+      await route.fulfill({ json });
+    });
+
+    // Interceptar la llamada de Asignar Rol
+    await page.route('**/api/auth/asignar-rol', async route => {
+      const json = {
+        token: 'fake-jwt-token-456',
+        id: 1,
+        email: 'test@tutoriasu.com',
+        nombre: 'Usuario de Prueba',
+        rol: 'Estudiante'
+      };
+      // Pequeño retraso simulado seguro
+      await new Promise(r => setTimeout(r, 200));
+      await route.fulfill({ json });
+    });
+
+    // 1. Ir a la página principal
+    await page.goto('/');
+
+    // 2. Llenar el formulario de inicio de sesión
+    await page.getByPlaceholder('Correo electrónico').fill('test@tutoriasu.com');
+    await page.getByPlaceholder('Contraseña').fill('password123');
+    
+    // 3. Hacer clic en "Iniciar sesión"
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+
+    // 4. Verificar que aparece la pantalla de selección de roles
+    const roleHeading = page.getByRole('heading', { name: 'Selecciona tu perfil' });
+    await expect(roleHeading).toBeVisible();
+
+    // 5. Seleccionar "Estudiante"
+    await page.getByRole('button', { name: 'Estudiante' }).click();
+
+    // 6. Verificar el flujo optimista (debe llevarnos al Dashboard instantáneamente)
+    const userMenuButton = page.locator('button[title="Menú de usuario"]');
+    await expect(userMenuButton).toBeVisible();
+
+    // 7. Abrir el menú y verificar que muestra el nombre del usuario
+    await userMenuButton.click();
+    await expect(page.getByText('Usuario de Prueba').first()).toBeVisible();
+    await expect(page.getByText('test@tutoriasu.com').first()).toBeVisible();
+    
+    // Verificar que también muestra el rol en algún lugar del navbar (UI optimista lo puso ahí)
+    await expect(page.getByText('Estudiante', { exact: true }).first()).toBeVisible();
+  });
+});

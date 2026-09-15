@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useState, useMemo } from 'react';
 import { AUTH_STORAGE_KEYS } from '../types/auth.types';
 
 export const ThemeContext = createContext(null);
@@ -15,7 +15,7 @@ export function ThemeProvider({ children }) {
 
   const isDark = theme === 'dark';
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
       root.classList.add('dark');

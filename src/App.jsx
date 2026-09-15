@@ -75,15 +75,16 @@ function AppContent() {
   const hasSelectedRole = hasSelectedRoleState || (isAuthenticated && user?.rol && user.rol !== "Nuevo");
   const selectedRole = selectedRoleState || (isAuthenticated && user?.rol && user.rol !== "Nuevo" ? user.rol : null);
 
-  const handleRoleSelection = async (role) => {
-    try {
-      await updateRole(role);
-      setSelectedRoleState(role);
-      setHasSelectedRoleState(true);
-    } catch (err) {
-      console.error('Error al asignar el rol:', err);
-      // Opcional: Podrías mostrar un toast o mensaje de error aquí
-    }
+  const handleRoleSelection = (role) => {
+    // Actualización optimista: Avanzamos la UI inmediatamente
+    setSelectedRoleState(role);
+    setHasSelectedRoleState(true);
+
+    // Ejecutamos la petición en segundo plano
+    updateRole(role).catch((err) => {
+      console.error('Error en segundo plano al asignar el rol:', err);
+      // TODO: Mostrar un toast al usuario notificando el fallo silencioso
+    });
   };
 
   return (

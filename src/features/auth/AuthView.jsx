@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
-import { AnimatedThemeToggler } from "../../components/ui/animated-theme-toggler";
+import DarkModeToggle from "../../components/DarkModeToggle";
 
 // Login dependencies
 import GoogleLoginButton from "./GoogleLoginButton";
@@ -16,7 +16,7 @@ export function AuthView({ onComplete }) {
       <div
         className={`absolute z-30 transition-all duration-1000 ease-[cubic-bezier(0.25,0.1,0.25,1)] ${!isAuthenticated ? "bottom-6 left-6" : "top-6 right-6 md:bottom-6 md:top-auto md:right-6 md:left-auto"}`}
       >
-        <AnimatedThemeToggler className="p-2 rounded-full bg-granite-100 dark:bg-deep-space-blue-900 hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors shadow-sm" />
+        <DarkModeToggle className="p-2 rounded-full bg-granite-100 dark:bg-deep-space-blue-900 hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors shadow-sm" />
       </div>
 
       {/* BACKGROUND IMAGE - ABSOLUTE POSITIONING TO PREVENT TELEPORTING */}
