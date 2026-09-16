@@ -81,8 +81,17 @@ function AppContent() {
     }
   }, [isAuthenticated, isAdministrator, navigate]);
 
-  const hasSelectedRole = hasSelectedRoleState || (isAuthenticated && user?.rol && user.rol !== "Nuevo");
-  const selectedRole = selectedRoleState || (isAuthenticated && user?.rol && user.rol !== "Nuevo" ? user.rol : null);
+  const isRolNuevo = user?.rol ? user.rol.trim().toLowerCase() === 'nuevo' : false;
+  const hasSelectedRole = hasSelectedRoleState || (isAuthenticated && user?.rol && !isRolNuevo);
+  const selectedRole = selectedRoleState || (isAuthenticated && user?.rol && !isRolNuevo ? user.rol : null);
+
+  // Limpiar el estado local si el usuario cierra sesión
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHasSelectedRoleState(false);
+      setSelectedRoleState(null);
+    }
+  }, [isAuthenticated]);
 
   const handleRoleSelection = async (role) => {
     // Actualización optimista: Avanzamos la UI inmediatamente
@@ -100,6 +109,17 @@ function AppContent() {
       // TODO: Mostrar un toast al usuario notificando el fallo silencioso
     }
   };
+
+  // DEBUG: Para diagnosticar por qué se salta la pantalla de rol
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log("[DEBUG APP] Estado de Autenticación:", { 
+        rolUsuario: user?.rol, 
+        isRolNuevo, 
+        hasSelectedRole 
+      });
+    }
+  }, [isAuthenticated, user?.rol, isRolNuevo, hasSelectedRole]);
 
   return (
     <div className="min-h-screen flex flex-col bg-granite-50 dark:bg-deep-space-blue-950 text-granite-900 dark:text-white transition-colors duration-300 relative">
