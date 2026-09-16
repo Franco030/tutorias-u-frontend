@@ -1,10 +1,11 @@
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route, useNavigate } from "react-router-dom";
 import VerifyEmailPage from "./features/auth/VerifyEmailPage";
+import AprobacionTutores from "./features/admin/AprobacionTutores";
 import { useAuth } from "./context/AuthContext";
 import { motion } from "framer-motion";
 import { Navbar } from "./components/Navbar";
 import { AuthView } from "./features/auth/AuthView";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function DashboardView({ selectedRole }) {
   const { user, logout } = useAuth();
@@ -69,22 +70,35 @@ function DashboardView({ selectedRole }) {
 
 function AppContent() {
   const { isAuthenticated, user, updateRole } = useAuth();
+  const navigate = useNavigate();
   const [hasSelectedRoleState, setHasSelectedRoleState] = useState(false);
   const [selectedRoleState, setSelectedRoleState] = useState(null);
+  const isAdministrator = user?.rol?.trim().toLowerCase() === "administrador";
+
+  useEffect(() => {
+    if (isAuthenticated && isAdministrator) {
+      navigate("/admin/aprobaciones", { replace: true });
+    }
+  }, [isAuthenticated, isAdministrator, navigate]);
 
   const hasSelectedRole = hasSelectedRoleState || (isAuthenticated && user?.rol && user.rol !== "Nuevo");
   const selectedRole = selectedRoleState || (isAuthenticated && user?.rol && user.rol !== "Nuevo" ? user.rol : null);
 
-  const handleRoleSelection = (role) => {
+  const handleRoleSelection = async (role) => {
     // Actualización optimista: Avanzamos la UI inmediatamente
     setSelectedRoleState(role);
     setHasSelectedRoleState(true);
 
-    // Ejecutamos la petición en segundo plano
-    updateRole(role).catch((err) => {
+    try {
+      const authData = await updateRole(role);
+
+      if (authData?.rol?.trim().toLowerCase() === "administrador" || role === "Administrador") {
+        navigate("/admin/aprobaciones", { replace: true });
+      }
+    } catch (err) {
       console.error('Error en segundo plano al asignar el rol:', err);
       // TODO: Mostrar un toast al usuario notificando el fallo silencioso
-    });
+    }
   };
 
   return (
@@ -109,11 +123,23 @@ function AppContent() {
   );
 }
 
+function AdminGuard() {
+  const { isAuthenticated, user } = useAuth();
+  const isAdministrator = user?.rol?.trim().toLowerCase() === "administrador";
+
+  if (!isAuthenticated || !isAdministrator) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <AprobacionTutores />;
+}
+
 export function App() {
   return (
     <Routes>
       <Route path="/" element={<AppContent />} />
       <Route path="/verificar-correo" element={<VerifyEmailPage />} />
+      <Route path="/admin/aprobaciones" element={<AdminGuard />} />
     </Routes>
   );
 }
