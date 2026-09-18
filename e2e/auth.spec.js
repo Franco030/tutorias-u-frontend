@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Flujo de Autenticación Local y Roles', () => {
-  test('debe iniciar sesión exitosamente y llevar a la selección de roles y luego al Dashboard', async ({ page }) => {
+  test('debe iniciar sesión, seleccionar rol, pasar por intereses y llegar al Dashboard', async ({ page }) => {
     // Interceptar la llamada de Login para simular una respuesta exitosa del Backend
     await page.route('**/api/auth/login', async route => {
       const json = {
@@ -28,6 +28,15 @@ test.describe('Flujo de Autenticación Local y Roles', () => {
       await route.fulfill({ json });
     });
 
+    // Interceptar GET de materias
+    await page.route('**/api/materias', async route => {
+      const json = [
+        {id: 1, nombre: 'Matemáticas', categoriaId: 1, categoria: 'Ciencias Exactas'},
+        {id: 2, nombre: 'Física', categoriaId: 1, categoria: 'Ciencias Exactas'}
+      ];
+      await route.fulfill({ json });
+    });
+
     // 1. Ir a la página principal
     await page.goto('/');
 
@@ -45,11 +54,21 @@ test.describe('Flujo de Autenticación Local y Roles', () => {
     // 5. Seleccionar "Estudiante"
     await page.getByRole('button', { name: 'Estudiante' }).click();
 
-    // 6. Verificar el flujo optimista (debe llevarnos al Dashboard instantáneamente)
+    // 6. Verificar que ahora se muestra el selector de intereses
+    await expect(page).toHaveURL(/\/intereses/);
+    const interesesHeading = page.getByRole('heading', {name: '¿Qué materias te interesan?'});
+    await expect(interesesHeading).toBeVisible();
+
+    // 7. Omitir intereses para continuar al Dashboard
+    await page.getByRole('button', { name: 'Omitir por ahora' }).click();
+
+    // 8. Verificar que ya estamos en el Dashboard
+    await expect(page).toHaveURL('/');
+
     const userMenuButton = page.locator('button[title="Menú de usuario"]');
     await expect(userMenuButton).toBeVisible();
 
-    // 7. Abrir el menú y verificar que muestra el nombre del usuario
+    // 9. Abrir el menú y verificar la información del usuario
     await userMenuButton.click();
     await expect(page.getByText('Usuario de Prueba').first()).toBeVisible();
     await expect(page.getByText('test@tutoriasu.com').first()).toBeVisible();
