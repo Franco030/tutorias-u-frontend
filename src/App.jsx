@@ -11,6 +11,8 @@ import SelectorIntereses from "./features/onboarding/SelectorIntereses";
 function DashboardView({ selectedRole }) {
   const { user, logout } = useAuth();
 
+  // comentario para un commit
+
   return (
     <main className="w-full flex-1 flex flex-col items-center justify-center px-4 py-16 sm:py-24">
       <div className="text-center space-y-8 max-w-lg w-full">
