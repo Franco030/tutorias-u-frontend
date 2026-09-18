@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Navbar } from "./components/Navbar";
 import { AuthView } from "./features/auth/AuthView";
 import { useEffect, useState } from "react";
+import SelectorIntereses from "./features/onboarding/SelectorIntereses";
 
 function DashboardView({ selectedRole }) {
   const { user, logout } = useAuth();
@@ -92,19 +93,27 @@ function AppContent() {
   }
 
   const handleRoleSelection = async (role) => {
-    // Actualización optimista: Avanzamos la UI inmediatamente
-    setSelectedRoleState(role);
-    setHasSelectedRoleState(true);
-
     try {
       const authData = await updateRole(role);
 
-      if (authData?.rol?.trim().toLowerCase() === "administrador" || role === "Administrador") {
-        navigate("/admin/aprobaciones", { replace: true });
+      const rolNormalizado =
+        authData?.rol?.trim().toLowerCase() ||
+        role.trim().toLowerCase();
+
+      if (rolNormalizado === "estudiante") {
+        navigate("/intereses", { replace: true });
+        return;
       }
+
+      if (rolNormalizado === "administrador") {
+        navigate("/admin/aprobaciones", { replace: true });
+        return;
+      }
+
+      setSelectedRoleState(role);
+      setHasSelectedRoleState(true);
     } catch (err) {
-      console.error('Error en segundo plano al asignar el rol:', err);
-      // TODO: Mostrar un toast al usuario notificando el fallo silencioso
+      console.error("Error al asignar el rol:", err);
     }
   };
 
@@ -147,8 +156,26 @@ export function App() {
       <Route path="/" element={<AppContent />} />
       <Route path="/verificar-correo" element={<VerifyEmailPage />} />
       <Route path="/admin/aprobaciones" element={<AdminGuard />} />
+      <Route path="/intereses"element={<StudentInterestsGuard />} />
     </Routes>
   );
+}
+
+function StudentInterestsGuard() {
+  const { isAuthenticated, user } = useAuth();
+
+  const isStudent =
+    user?.rol?.trim().toLowerCase() === "estudiante";
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (!isStudent) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <SelectorIntereses />;
 }
 
 export default App;
