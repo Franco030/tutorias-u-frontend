@@ -7,6 +7,7 @@ import { Navbar } from "./components/Navbar";
 import { AuthView } from "./features/auth/AuthView";
 import { useEffect, useState } from "react";
 import SelectorIntereses from "./features/onboarding/SelectorIntereses";
+import AplicacionTutor from "./features/onboarding/AplicacionTutor";
 
 function DashboardView({ selectedRole }) {
   const { user, logout } = useAuth();
@@ -159,6 +160,7 @@ export function App() {
       <Route path="/verificar-correo" element={<VerifyEmailPage />} />
       <Route path="/admin/aprobaciones" element={<AdminGuard />} />
       <Route path="/intereses"element={<StudentInterestsGuard />} />
+      <Route path="/aplicar-tutor" element={<AplicacionTutor />} />
     </Routes>
   );
 }
