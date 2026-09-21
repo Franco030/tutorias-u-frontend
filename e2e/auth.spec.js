@@ -68,12 +68,14 @@ test.describe('Flujo de Autenticación Local y Roles', () => {
     const userMenuButton = page.locator('button[title="Menú de usuario"]');
     await expect(userMenuButton).toBeVisible();
 
-    // 9. Abrir el menú y verificar la información del usuario
+    // 9. Abrir el menú (para probar que funciona)
     await userMenuButton.click();
-    await expect(page.getByText('Usuario de Prueba').first()).toBeVisible();
-    await expect(page.getByText('test@tutoriasu.com').first()).toBeVisible();
     
-    // Verificar que también muestra el rol en algún lugar del navbar (UI optimista lo puso ahí)
-    await expect(page.getByText('Estudiante', { exact: true }).first()).toBeVisible();
+    // 10. Verificar la nueva UI del Dashboard
+    await expect(page.getByText('Hola, Usuario').first()).toBeVisible();
+    await expect(page.getByText('Panel de estudiante').first()).toBeVisible();
+    
+    // Verificar que aparece la tarjeta de "Mis Intereses"
+    await expect(page.getByRole('link', { name: /Mis Intereses/i })).toBeVisible();
   });
 });

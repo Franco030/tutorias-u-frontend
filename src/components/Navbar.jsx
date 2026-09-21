@@ -91,7 +91,7 @@ export function Navbar() {
  {user.nombre}
  </p>
  <p className="text-xs text-granite-500 dark:text-deep-space-blue-300 truncate">
- {user.correo}
+ {user.email}
  </p>
  </div>
  <div className="p-1.5">
