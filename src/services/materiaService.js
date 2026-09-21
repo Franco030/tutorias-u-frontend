@@ -9,3 +9,7 @@ export const guardarIntereses = (materiaIds) => {
     materiaIds,
   });
 };
+
+export const getMisIntereses = () => {
+  return apiClient.get("/api/estudiantes/intereses");
+};

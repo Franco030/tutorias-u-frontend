@@ -39,8 +39,11 @@ const normalizarTexto = (texto = "") => {
     .toLowerCase();
 };
 
+import { useAuth } from "../../context/AuthContext";
+
 export default function SelectorIntereses() {
   const navigate = useNavigate();
+  const { markOnboardingAsComplete } = useAuth();
 
   const [materias, setMaterias] = useState([]);
   const [seleccionadas, setSeleccionadas] = useState([]);
@@ -110,7 +113,8 @@ export default function SelectorIntereses() {
       setError("");
 
       await guardarIntereses(seleccionadas);
-
+      
+      markOnboardingAsComplete();
       navigate("/", { replace: true });
     } catch (err) {
       console.error("Error al guardar intereses:", err);
@@ -125,6 +129,7 @@ export default function SelectorIntereses() {
   };
 
   const handleOmitir = () => {
+    markOnboardingAsComplete();
     navigate("/", { replace: true });
   };
 

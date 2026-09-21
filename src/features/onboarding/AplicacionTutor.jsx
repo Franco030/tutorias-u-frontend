@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 import { getMaterias } from "../../services/materiaService";
 import { subirArchivo } from "../../services/fileService";
@@ -35,6 +37,9 @@ const preguntasExamen = [
 ];
 
 export default function AplicacionTutor() {
+  const navigate = useNavigate();
+  const { updateLocalUser } = useAuth();
+
   const [materias, setMaterias] = useState([]);
   const [materiasSeleccionadas, setMateriasSeleccionadas] = useState([]);
   const [archivo, setArchivo] = useState(null);
@@ -92,8 +97,15 @@ const formularioValido =
       materiaIds: materiasSeleccionadas,
     });
 
-    // 4. Mostramos confirmación
+    // 4. Mostramos confirmación y actualizamos la sesión
+    updateLocalUser({ estadoAprobacion: "Pendiente" });
     setMensajeExito("Tu solicitud está en revisión");
+    
+    // Navegamos al estado de la solicitud después de un pequeño retraso visual
+    setTimeout(() => {
+      navigate("/estado-solicitud", { replace: true });
+    }, 1500);
+
   } catch (err) {
     console.error("Error al enviar la postulación:", err);
 

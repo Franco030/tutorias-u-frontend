@@ -61,6 +61,8 @@ export const authService = {
       nombre: authData.nombre,
       rol: authData.rol,
       fotoUrl: authData.fotoUrl ?? null,
+      onboardingCompleto: authData.onboardingCompleto ?? false,
+      estadoAprobacion: authData.estadoAprobacion ?? "Ninguno",
     };
     localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(user));
     return user;

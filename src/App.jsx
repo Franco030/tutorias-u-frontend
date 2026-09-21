@@ -8,69 +8,10 @@ import { AuthView } from "./features/auth/AuthView";
 import { useEffect, useState } from "react";
 import SelectorIntereses from "./features/onboarding/SelectorIntereses";
 import AplicacionTutor from "./features/onboarding/AplicacionTutor";
+import MisIntereses from "./features/dashboard/MisIntereses";
+import EstadoSolicitud from "./features/onboarding/EstadoSolicitud";
 
-function DashboardView({ selectedRole }) {
-  const { user, logout } = useAuth();
-
-  // comentario para un commit
-
-  return (
-    <main className="w-full flex-1 flex flex-col items-center justify-center px-4 py-16 sm:py-24">
-      <div className="text-center space-y-8 max-w-lg w-full">
-        <h1 className="text-4xl md:text-5xl font-light tracking-tight text-granite-900 dark:text-white">
-          Has ingresado como{" "}
-          <span className="font-medium text-deep-space-blue-600 dark:text-emerald-400 capitalize">
-            {selectedRole || user?.rol || "Estudiante"}
-          </span>
-        </h1>
-
-        <p className="text-sm text-granite-500 dark:text-deep-space-blue-300 tracking-wide">
-          El panel principal y sus herramientas estarán disponibles
-          próximamente. Por el momento, hemos verificado tu identidad con éxito:
-        </p>
-
-        <div className="py-12 flex flex-col items-center gap-5 relative">
-          <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-granite-200 dark:bg-deep-space-blue-800 -z-10 -translate-y-1/2"></div>
-
-          {user?.fotoUrl ? (
-            <img
-              src={user.fotoUrl}
-              alt={user.nombre}
-              className="w-24 h-24 rounded-full object-cover bg-white dark:bg-deep-space-blue-950 p-1 ring-1 ring-granite-200 dark:ring-deep-space-blue-800"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-full bg-white dark:bg-deep-space-blue-950 text-deep-space-blue-600 dark:text-emerald-400 text-3xl font-light flex items-center justify-center ring-1 ring-granite-200 dark:ring-deep-space-blue-800 p-1">
-              <div className="w-full h-full rounded-full bg-deep-space-blue-50 dark:bg-deep-space-blue-900/50 flex items-center justify-center">
-                {user?.nombre?.charAt(0)?.toUpperCase() || "U"}
-              </div>
-            </div>
-          )}
-
-          <div className="bg-white dark:bg-deep-space-blue-950 px-6 py-2">
-            <h2 className="text-2xl font-medium text-granite-900 dark:text-white">
-              {user?.nombre}
-            </h2>
-            <p className="text-sm text-granite-500 dark:text-deep-space-blue-400 mt-1">
-              {user?.email}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={logout}
-          className="group relative inline-flex items-center justify-center w-max px-8 py-3 cursor-pointer mt-4"
-        >
-          <span className="absolute inset-0 border border-granite-200 dark:border-deep-space-blue-800 group-hover:border-burgundy-600 dark:group-hover:border-burgundy-500 transition-colors duration-500 rounded-full"></span>
-          <span className="inline-block text-xs font-semibold text-granite-600 dark:text-deep-space-blue-300 group-hover:text-burgundy-600 dark:group-hover:text-burgundy-400 tracking-widest uppercase transition-colors duration-500 relative z-10">
-            Cerrar Sesión
-          </span>
-        </button>
-      </div>
-    </main>
-  );
-}
+import { DashboardView } from "./features/dashboard/DashboardView";
 
 function AppContent() {
   const { isAuthenticated, user, updateRole } = useAuth();
@@ -153,18 +94,6 @@ function AdminGuard() {
   return <AprobacionTutores />;
 }
 
-export function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<AppContent />} />
-      <Route path="/verificar-correo" element={<VerifyEmailPage />} />
-      <Route path="/admin/aprobaciones" element={<AdminGuard />} />
-      <Route path="/intereses"element={<StudentInterestsGuard />} />
-      <Route path="/aplicar-tutor" element={<AplicacionTutor />} />
-    </Routes>
-  );
-}
-
 function StudentInterestsGuard() {
   const { isAuthenticated, user } = useAuth();
 
@@ -179,7 +108,36 @@ function StudentInterestsGuard() {
     return <Navigate to="/" replace />;
   }
 
+  if (user?.onboardingCompleto) {
+    return <MisIntereses />;
+  }
+
   return <SelectorIntereses />;
+}
+
+function AplicacionTutorGuard() {
+  const { isAuthenticated, user } = useAuth();
+
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+
+  if (user?.estadoAprobacion && user.estadoAprobacion.trim().toLowerCase() !== "ninguno") {
+    return <Navigate to="/estado-solicitud" replace />;
+  }
+
+  return <AplicacionTutor />;
+}
+
+export function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<AppContent />} />
+      <Route path="/verificar-correo" element={<VerifyEmailPage />} />
+      <Route path="/admin/aprobaciones" element={<AdminGuard />} />
+      <Route path="/intereses" element={<StudentInterestsGuard />} />
+      <Route path="/aplicar-tutor" element={<AplicacionTutorGuard />} />
+      <Route path="/estado-solicitud" element={<EstadoSolicitud />} />
+    </Routes>
+  );
 }
 
 export default App;

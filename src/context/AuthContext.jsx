@@ -147,6 +147,24 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const markOnboardingAsComplete = useCallback(() => {
+    setUser((prevUser) => {
+      if (!prevUser) return prevUser;
+      const updatedUser = { ...prevUser, onboardingCompleto: true };
+      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+  }, []);
+
+  const updateLocalUser = useCallback((nuevosDatos) => {
+    setUser((prevUser) => {
+      if (!prevUser) return prevUser;
+      const updatedUser = { ...prevUser, ...nuevosDatos };
+      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+      return updatedUser;
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -160,8 +178,10 @@ export function AuthProvider({ children }) {
       updateRole,
       logout,
       clearError,
+      markOnboardingAsComplete,
+      updateLocalUser,
     }),
-    [user, token, isAuthenticated, isLoading, error, loginWithGoogle, loginWithMicrosoft, loginLocal, updateRole, logout, clearError]
+    [user, token, isAuthenticated, isLoading, error, loginWithGoogle, loginWithMicrosoft, loginLocal, updateRole, logout, clearError, markOnboardingAsComplete, updateLocalUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
