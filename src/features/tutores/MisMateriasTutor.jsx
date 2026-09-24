@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Save, BookOpen } from "lucide-react";
+import { ArrowLeft, Search, Save } from "lucide-react";
 import { getMaterias } from "../../services/materiaService";
 import { getTutorById, updateMisMaterias } from "../../services/tutorService";
 import { useAuth } from "../../context/AuthContext";
@@ -40,7 +40,6 @@ export default function MisMateriasTutor() {
         setMaterias(mats);
         
         if (tutorData && tutorData.materias) {
-          // tutorData.materias es un arreglo de nombres de materias
           const nombresTutor = tutorData.materias.map(m => normalizarTexto(m));
           const idsSeleccionados = mats
             .filter(m => nombresTutor.includes(normalizarTexto(m.nombre)))
@@ -68,8 +67,6 @@ export default function MisMateriasTutor() {
     return nombreNormalizado.includes(busquedaNormalizada);
   });
 
-  // Agrupación por categoría (si el backend devuelve la propiedad "categoria").
-  // Si no, lo agrupamos en "Todas las materias"
   const materiasPorCategoria = materiasFiltradas.reduce((acc, materia) => {
     const cat = materia.categoria || "Todas las materias";
     if (!acc[cat]) acc[cat] = [];
@@ -107,7 +104,7 @@ export default function MisMateriasTutor() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-granite-50 dark:bg-deep-space-blue-950">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full border-4 border-deep-space-blue-200 border-t-deep-space-blue-600 dark:border-deep-space-blue-800 dark:border-t-emerald-400 animate-spin"></div>
+          <div className="w-10 h-10 border-4 border-deep-space-blue-200 border-t-deep-space-blue-600 dark:border-deep-space-blue-800 dark:border-t-emerald-400 animate-spin"></div>
           <p className="text-deep-space-blue-600 dark:text-emerald-400 font-medium">Cargando materias...</p>
         </div>
       </main>
@@ -115,21 +112,20 @@ export default function MisMateriasTutor() {
   }
 
   return (
-    <main className="min-h-screen bg-granite-50 dark:bg-deep-space-blue-950 py-12 px-6">
-      <div className="max-w-3xl mx-auto space-y-8">
+    <main className="min-h-screen bg-granite-50 dark:bg-deep-space-blue-950 py-10 px-6">
+      <div className="max-w-4xl mx-auto space-y-8">
         
         {/* Header con botón regresar */}
         <div className="flex items-center gap-4 border-b border-granite-200 dark:border-deep-space-blue-800 pb-6">
           <button
             onClick={() => navigate("/")}
-            className="p-2 rounded-full hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors text-granite-600 dark:text-deep-space-blue-300"
+            className="p-2 rounded-md hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors text-granite-600 dark:text-deep-space-blue-300"
             aria-label="Volver al panel"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-medium text-granite-900 dark:text-white flex items-center gap-2">
-              <BookOpen className="w-6 h-6 text-emerald-500" />
+            <h1 className="text-2xl font-semibold text-granite-900 dark:text-white tracking-tight">
               Materias que Imparto
             </h1>
             <p className="text-sm text-granite-500 dark:text-deep-space-blue-300 mt-1">
@@ -140,13 +136,13 @@ export default function MisMateriasTutor() {
 
         {/* Notificaciones */}
         {error && (
-          <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+          <div className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
             {error}
           </div>
         )}
         
         {mensajeExito && (
-          <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400">
+          <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400">
             {mensajeExito}
           </div>
         )}
@@ -162,7 +158,7 @@ export default function MisMateriasTutor() {
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar materia por nombre..."
             className="
-              w-full rounded-xl border border-granite-200 bg-white
+              w-full rounded-md border border-granite-200 bg-white
               pl-11 pr-4 py-3 text-sm text-granite-900 outline-none transition-colors
               placeholder:text-granite-400 focus:border-deep-space-blue-500
               dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40 dark:text-white
@@ -174,7 +170,7 @@ export default function MisMateriasTutor() {
         {/* Resumen */}
         <div className="flex justify-between items-end mb-2">
           <h2 className="text-lg font-medium text-granite-900 dark:text-white">Catálogo de materias</h2>
-          <span className="text-xs font-medium text-deep-space-blue-600 dark:text-emerald-400 bg-deep-space-blue-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full">
+          <span className="text-xs font-medium text-deep-space-blue-600 dark:text-emerald-400 bg-deep-space-blue-50 dark:bg-emerald-500/10 px-3 py-1 rounded-md">
             {seleccionadas.length} seleccionadas
           </span>
         </div>
@@ -183,13 +179,13 @@ export default function MisMateriasTutor() {
         {Object.keys(materiasPorCategoria).length > 0 ? (
           <div className="space-y-6">
             {Object.entries(materiasPorCategoria).map(([categoria, mats]) => (
-              <div key={categoria} className="bg-white dark:bg-deep-space-blue-900/20 border border-granite-200 dark:border-deep-space-blue-800 rounded-2xl p-6">
+              <div key={categoria} className="bg-white dark:bg-deep-space-blue-900/20 border border-granite-200 dark:border-deep-space-blue-800 rounded-lg p-6">
                 {categoria !== "Todas las materias" && (
-                  <h3 className="text-sm font-semibold text-granite-500 dark:text-deep-space-blue-400 uppercase tracking-wider mb-4 border-b border-granite-100 dark:border-deep-space-blue-800/50 pb-2">
+                  <h3 className="text-sm font-semibold text-granite-600 dark:text-deep-space-blue-400 uppercase tracking-wider mb-4 border-b border-granite-100 dark:border-deep-space-blue-800/50 pb-2">
                     {categoria}
                   </h3>
                 )}
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2">
                   {mats.map((materia) => {
                     const estaSeleccionada = seleccionadas.includes(materia.id);
 
@@ -199,7 +195,7 @@ export default function MisMateriasTutor() {
                         type="button"
                         onClick={() => toggleMateria(materia.id)}
                         className={`
-                          rounded-full border px-4 py-2 text-sm font-medium cursor-pointer transition-all duration-200
+                          rounded-md border px-4 py-2 text-sm font-medium cursor-pointer transition-all duration-200
                           ${
                             estaSeleccionada
                               ? "bg-deep-space-blue-600 border-deep-space-blue-600 text-white shadow-sm dark:bg-emerald-500 dark:border-emerald-500 dark:text-deep-space-blue-950"
@@ -216,7 +212,7 @@ export default function MisMateriasTutor() {
             ))}
           </div>
         ) : (
-          <div className="p-8 text-center bg-white dark:bg-deep-space-blue-900/20 border border-granite-200 dark:border-deep-space-blue-800 rounded-2xl">
+          <div className="p-8 text-center bg-white dark:bg-deep-space-blue-900/20 border border-granite-200 dark:border-deep-space-blue-800 rounded-lg">
             <p className="text-granite-500 dark:text-deep-space-blue-300">
               No se encontraron materias con el nombre "{busqueda}"
             </p>
@@ -228,7 +224,7 @@ export default function MisMateriasTutor() {
           <button
             onClick={handleGuardar}
             disabled={guardando}
-            className="flex items-center gap-2 bg-deep-space-blue-600 hover:bg-deep-space-blue-700 text-white px-8 py-3 rounded-full font-medium transition-colors disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:text-deep-space-blue-950 shadow-lg shadow-deep-space-blue-600/20 dark:shadow-emerald-500/10"
+            className="flex items-center gap-2 bg-deep-space-blue-600 hover:bg-deep-space-blue-700 text-white px-8 py-3 rounded-md font-medium transition-colors disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:text-deep-space-blue-950"
           >
             <Save className="w-4 h-4" />
             {guardando ? "Guardando..." : "Guardar Cambios"}

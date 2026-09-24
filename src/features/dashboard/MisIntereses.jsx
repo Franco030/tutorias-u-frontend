@@ -28,15 +28,13 @@ export default function MisIntereses() {
         setCargando(true);
         setError("");
 
-        // Cargar ambas promesas al mismo tiempo
         const [todasLasMaterias, misIntereses] = await Promise.all([
           getMaterias(),
-          getMisIntereses().catch(() => []) // Fallback a vacío si falla (ej. si backend no tiene el endpoint)
+          getMisIntereses().catch(() => [])
         ]);
 
         setMaterias(todasLasMaterias || []);
         
-        // Asumiendo que getMisIntereses devuelve un array de IDs o un array de objetos con ID
         if (Array.isArray(misIntereses)) {
           const ids = misIntereses.map(m => typeof m === 'object' ? m.id : m);
           setSeleccionadas(ids);
@@ -76,7 +74,6 @@ export default function MisIntereses() {
       await guardarIntereses(seleccionadas);
       setMensajeExito("Tus intereses se han actualizado correctamente.");
       
-      // Ocultar el mensaje después de 3 segundos
       setTimeout(() => setMensajeExito(""), 3000);
     } catch (err) {
       console.error("Error al guardar intereses:", err);
@@ -89,26 +86,29 @@ export default function MisIntereses() {
   if (cargando) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-granite-50 dark:bg-deep-space-blue-950">
-        <p className="text-granite-500 dark:text-deep-space-blue-300">Cargando tus intereses...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-deep-space-blue-200 border-t-deep-space-blue-600 dark:border-deep-space-blue-800 dark:border-t-emerald-400 animate-spin"></div>
+          <p className="text-deep-space-blue-600 dark:text-emerald-400 font-medium">Cargando tus intereses...</p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-granite-50 dark:bg-deep-space-blue-950 py-12 px-6">
-      <div className="max-w-3xl mx-auto space-y-8">
+    <main className="min-h-screen bg-granite-50 dark:bg-deep-space-blue-950 py-10 px-6">
+      <div className="max-w-4xl mx-auto space-y-8">
         
         {/* Header con botón regresar */}
         <div className="flex items-center gap-4 border-b border-granite-200 dark:border-deep-space-blue-800 pb-6">
           <button
             onClick={() => navigate("/")}
-            className="p-2 rounded-full hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors text-granite-600 dark:text-deep-space-blue-300"
+            className="p-2 rounded-md hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors text-granite-600 dark:text-deep-space-blue-300"
             aria-label="Volver al panel"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-medium text-granite-900 dark:text-white">Mis Intereses</h1>
+            <h1 className="text-2xl font-semibold text-granite-900 dark:text-white tracking-tight">Mis Intereses</h1>
             <p className="text-sm text-granite-500 dark:text-deep-space-blue-300 mt-1">
               Administra las materias en las que deseas recibir ayuda.
             </p>
@@ -117,13 +117,13 @@ export default function MisIntereses() {
 
         {/* Notificaciones */}
         {error && (
-          <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+          <div className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-600 dark:text-red-400">
             {error}
           </div>
         )}
         
         {mensajeExito && (
-          <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400">
+          <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400">
             {mensajeExito}
           </div>
         )}
@@ -139,7 +139,7 @@ export default function MisIntereses() {
             onChange={(e) => setBusqueda(e.target.value)}
             placeholder="Buscar materia por nombre..."
             className="
-              w-full rounded-xl border border-granite-200 bg-white
+              w-full rounded-md border border-granite-200 bg-white
               pl-11 pr-4 py-3 text-sm text-granite-900 outline-none transition-colors
               placeholder:text-granite-400 focus:border-deep-space-blue-500
               dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40 dark:text-white
@@ -148,17 +148,17 @@ export default function MisIntereses() {
           />
         </div>
 
-        {/* Sección de materias seleccionadas y disponibles combinadas (estilo chips) */}
+        {/* Sección de materias */}
         <div>
-          <div className="flex justify-between items-end mb-4">
+          <div className="flex justify-between items-end mb-2">
             <h2 className="text-lg font-medium text-granite-900 dark:text-white">Catálogo de materias</h2>
-            <span className="text-xs font-medium text-deep-space-blue-600 dark:text-emerald-400 bg-deep-space-blue-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full">
+            <span className="text-xs font-medium text-deep-space-blue-600 dark:text-emerald-400 bg-deep-space-blue-50 dark:bg-emerald-500/10 px-3 py-1 rounded-md">
               {seleccionadas.length} seleccionadas
             </span>
           </div>
 
           {materiasFiltradas.length > 0 ? (
-            <div className="flex flex-wrap gap-3 p-6 bg-white dark:bg-deep-space-blue-900/20 border border-granite-200 dark:border-deep-space-blue-800 rounded-2xl">
+            <div className="flex flex-wrap gap-2 p-6 bg-white dark:bg-deep-space-blue-900/20 border border-granite-200 dark:border-deep-space-blue-800 rounded-lg">
               {materiasFiltradas.map((materia) => {
                 const estaSeleccionada = seleccionadas.includes(materia.id);
 
@@ -168,7 +168,7 @@ export default function MisIntereses() {
                     type="button"
                     onClick={() => toggleMateria(materia.id)}
                     className={`
-                      rounded-full border px-4 py-2 text-sm font-medium cursor-pointer transition-all duration-200
+                      rounded-md border px-4 py-2 text-sm font-medium cursor-pointer transition-all duration-200
                       ${
                         estaSeleccionada
                           ? "bg-deep-space-blue-600 border-deep-space-blue-600 text-white shadow-sm dark:bg-emerald-500 dark:border-emerald-500 dark:text-deep-space-blue-950"
@@ -182,7 +182,7 @@ export default function MisIntereses() {
               })}
             </div>
           ) : (
-            <div className="p-8 text-center bg-white dark:bg-deep-space-blue-900/20 border border-granite-200 dark:border-deep-space-blue-800 rounded-2xl">
+            <div className="p-8 text-center bg-white dark:bg-deep-space-blue-900/20 border border-granite-200 dark:border-deep-space-blue-800 rounded-lg">
               <p className="text-granite-500 dark:text-deep-space-blue-300">
                 No se encontraron materias con el nombre "{busqueda}"
               </p>
@@ -195,7 +195,7 @@ export default function MisIntereses() {
           <button
             onClick={handleGuardar}
             disabled={guardando}
-            className="flex items-center gap-2 bg-deep-space-blue-600 hover:bg-deep-space-blue-700 text-white px-8 py-3 rounded-full font-medium transition-colors disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:text-deep-space-blue-950"
+            className="flex items-center gap-2 bg-deep-space-blue-600 hover:bg-deep-space-blue-700 text-white px-8 py-3 rounded-md font-medium transition-colors disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:text-deep-space-blue-950"
           >
             <Save className="w-4 h-4" />
             {guardando ? "Guardando..." : "Guardar Cambios"}
