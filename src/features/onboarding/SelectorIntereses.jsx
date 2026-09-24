@@ -136,9 +136,10 @@ export default function SelectorIntereses() {
   if (cargandoMaterias) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-granite-50 dark:bg-deep-space-blue-950">
-        <p className="text-granite-500 dark:text-deep-space-blue-300">
-          Cargando materias...
-        </p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-deep-space-blue-200 border-t-deep-space-blue-600 dark:border-deep-space-blue-800 dark:border-t-emerald-400 animate-spin"></div>
+          <p className="text-deep-space-blue-600 dark:text-emerald-400 font-medium">Cargando materias...</p>
+        </div>
       </main>
     );
   }
@@ -156,7 +157,7 @@ export default function SelectorIntereses() {
                 Personaliza tu experiencia
               </p>
 
-              <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-granite-900 dark:text-white">
+              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-granite-900 dark:text-white">
                 ¿Qué materias te interesan?
               </h1>
 
@@ -184,7 +185,7 @@ export default function SelectorIntereses() {
                 autoComplete="off"
                 className="
                   w-full
-                  rounded-xl
+                  rounded-md
                   border
                   border-granite-200
                   bg-white
@@ -207,7 +208,7 @@ export default function SelectorIntereses() {
 
             {/* Chips */}
             {materiasFiltradas.length > 0 ? (
-              <div className="flex flex-wrap gap-3 mb-8">
+              <div className="flex flex-wrap gap-2 mb-8">
                 {materiasFiltradas.map((materia) => {
                   const estaSeleccionada =
                     seleccionadas.includes(materia.id);
@@ -219,10 +220,10 @@ export default function SelectorIntereses() {
                       onClick={() => toggleMateria(materia.id)}
                       aria-pressed={estaSeleccionada}
                       className={`
-                        rounded-full
+                        rounded-md
                         border
-                        px-5
-                        py-2.5
+                        px-4
+                        py-2
                         text-sm
                         font-medium
                         cursor-pointer
@@ -258,7 +259,7 @@ export default function SelectorIntereses() {
                 })}
               </div>
             ) : (
-              <div className="mb-8 rounded-xl border border-granite-200 bg-white px-5 py-6 text-center dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40">
+              <div className="mb-8 rounded-md border border-granite-200 bg-white px-5 py-6 text-center dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40">
                 <p className="text-sm text-granite-500 dark:text-deep-space-blue-300">
                   No se encontraron materias que coincidan con
                   {" "}
@@ -284,7 +285,7 @@ export default function SelectorIntereses() {
             {error && (
               <div
                 role="alert"
-                className="mb-6 rounded-lg border border-burgundy-200 bg-burgundy-50 px-4 py-3 text-sm text-burgundy-700"
+                className="mb-6 rounded-md border border-burgundy-200 bg-burgundy-50 px-4 py-3 text-sm text-burgundy-700"
               >
                 {error}
               </div>
@@ -301,12 +302,12 @@ export default function SelectorIntereses() {
                 }
                 className="
                   w-full
-                  rounded-full
+                  rounded-md
                   bg-deep-space-blue-600
                   px-8
                   py-3
                   text-sm
-                  font-semibold
+                  font-medium
                   text-white
                   cursor-pointer
                   transition

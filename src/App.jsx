@@ -52,6 +52,11 @@ function AppContent() {
         return;
       }
 
+      if (rolNormalizado === "tutor") {
+        navigate("/aplicar-tutor", { replace: true });
+        return;
+      }
+
       if (rolNormalizado === "administrador") {
         navigate("/admin/aprobaciones", { replace: true });
         return;
@@ -141,12 +146,17 @@ function StudentGuard({ children }) {
   return children;
 }
 
-function TutorGuard({ children }) {
+function ApprovedTutorGuard({ children }) {
   const { isAuthenticated, user } = useAuth();
   const isTutor = user?.rol?.trim().toLowerCase() === "tutor";
+  const isApproved = user?.estadoAprobacion?.trim().toLowerCase() === "aprobado";
 
   if (!isAuthenticated || !isTutor) {
     return <Navigate to="/" replace />;
+  }
+
+  if (!isApproved) {
+    return <Navigate to="/estado-solicitud" replace />;
   }
 
   return children;
@@ -163,7 +173,7 @@ export function App() {
       <Route path="/estado-solicitud" element={<EstadoSolicitud />} />
       <Route path="/tutores" element={<StudentGuard><CatalogoTutores /></StudentGuard>} />
       <Route path="/tutor/:id" element={<StudentGuard><PerfilTutor /></StudentGuard>} />
-      <Route path="/tutor/mis-materias" element={<TutorGuard><MisMateriasTutor /></TutorGuard>} />
+      <Route path="/tutor/mis-materias" element={<ApprovedTutorGuard><MisMateriasTutor /></ApprovedTutorGuard>} />
     </Routes>
   );
 }

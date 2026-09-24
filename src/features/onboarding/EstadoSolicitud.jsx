@@ -37,13 +37,13 @@ export default function EstadoSolicitud() {
   }
 
   return (
-    <main className="min-h-screen bg-granite-50 dark:bg-deep-space-blue-950 py-12 px-6 flex items-center justify-center">
+    <main className="min-h-screen bg-granite-50 dark:bg-deep-space-blue-950 py-10 px-6 flex items-center justify-center">
       <div className="max-w-md w-full space-y-8 text-center">
         
         <div className="flex justify-start">
           <button
             onClick={() => navigate("/")}
-            className="p-2 rounded-full hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors text-granite-600 dark:text-deep-space-blue-300"
+            className="p-2 rounded-md hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors text-granite-600 dark:text-deep-space-blue-300"
             aria-label="Volver al panel"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -66,7 +66,7 @@ export default function EstadoSolicitud() {
         <div className="pt-8 border-t border-granite-200 dark:border-deep-space-blue-800">
           <button
             onClick={() => navigate("/")}
-            className="w-full bg-white dark:bg-deep-space-blue-900 border border-granite-200 dark:border-deep-space-blue-800 text-granite-700 dark:text-white px-6 py-3 rounded-full font-medium hover:bg-granite-50 dark:hover:bg-deep-space-blue-800 transition-colors"
+            className="w-full bg-white dark:bg-deep-space-blue-900 border border-granite-200 dark:border-deep-space-blue-800 text-granite-700 dark:text-white px-6 py-3 rounded-md font-medium hover:bg-granite-50 dark:hover:bg-deep-space-blue-800 transition-colors shadow-sm"
           >
             Volver al Inicio
           </button>

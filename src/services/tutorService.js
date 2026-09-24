@@ -12,6 +12,10 @@ export const getTutores = () => {
   return apiClient.get("/api/tutores");
 };
 
+export const getTutoresRecomendados = async () => {
+  return apiClient.get("/api/tutores/recomendados");
+};
+
 export const updateMisMaterias = (materiaIds) => {
   return apiClient.put("/api/tutores/mis-materias", { materiaIds });
 };
