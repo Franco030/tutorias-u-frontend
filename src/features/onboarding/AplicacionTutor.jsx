@@ -89,12 +89,27 @@ const formularioValido =
     const respuestaArchivo = await subirArchivo(archivo);
 
     // 2. Obtenemos la URL que regresó el backend
-    const urlCredencial = respuestaArchivo.url;
+    let urlCredencial = "";
+    if (typeof respuestaArchivo === "string") {
+      urlCredencial = respuestaArchivo;
+    } else if (respuestaArchivo) {
+      urlCredencial = respuestaArchivo.url || respuestaArchivo.urlArchivo || respuestaArchivo.fileUrl || Object.values(respuestaArchivo)[0];
+    }
 
-    // 3. Registramos la postulación para tutor
+    if (!urlCredencial) {
+      throw new Error("El servidor no devolvió una URL válida para el archivo.");
+    }
+
+    // Asegurar que sea absoluta si el backend lo exige
+    if (!urlCredencial.startsWith("http")) {
+      const baseUrl = window.location.origin; // O el VITE_API_URL
+      urlCredencial = `${baseUrl}${urlCredencial.startsWith("/") ? "" : "/"}${urlCredencial}`;
+    }
+
+    // 3. Registramos la postulación para tutor, asegurando enteros
     await aplicarComoTutor({
-      urlCredencial,
-      materiaIds: materiasSeleccionadas,
+      urlCredencial: urlCredencial,
+      materiaIds: materiasSeleccionadas.map(id => Number(id)),
     });
 
     // 4. Mostramos confirmación y actualizamos la sesión

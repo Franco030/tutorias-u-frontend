@@ -35,12 +35,18 @@ export function DashboardView({ selectedRole }) {
             href: "/intereses",
             color: "border-deep-space-blue-500/20 bg-deep-space-blue-500/5 hover:border-deep-space-blue-500/50 hover:bg-deep-space-blue-500/10"
           },
-          {
+          (user?.estadoAprobacion?.trim().toLowerCase() === "aprobado") ? {
             title: "Materias que Imparto",
             description: "Configura las especialidades que enseñas como tutor.",
             icon: <BookOpen className="w-6 h-6 text-emerald-500" />,
             href: "/tutor/mis-materias",
             color: "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/50 hover:bg-emerald-500/10"
+          } : {
+            title: "Materias que Imparto",
+            description: "Tu solicitud debe ser aprobada antes de configurar tus materias.",
+            icon: <BookOpen className="w-6 h-6 text-granite-400 dark:text-granite-500" />,
+            href: "#",
+            color: "border-granite-200 dark:border-deep-space-blue-800 bg-granite-50 dark:bg-deep-space-blue-900/30 opacity-70 cursor-not-allowed"
           },
           {
             title: "Mis Tutorías",

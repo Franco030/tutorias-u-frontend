@@ -78,7 +78,7 @@ export async function apiClient(endpoint, options = {}) {
       let errorMessage = `Error en la petición: ${response.status} ${response.statusText}`;
 
       if (data && typeof data === 'object') {
-        errorMessage = data.message || data.error || data.title || errorMessage;
+        errorMessage = data.message || data.error || data.title || data.mensaje || data.Error || errorMessage;
       } else if (typeof data === 'string' && data.trim().length > 0) {
         errorMessage = data;
       }
