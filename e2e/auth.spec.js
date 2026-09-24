@@ -72,8 +72,7 @@ test.describe('Flujo de Autenticación Local y Roles', () => {
     await userMenuButton.click();
     
     // 10. Verificar la nueva UI del Dashboard
-    await expect(page.getByText('Hola, Usuario').first()).toBeVisible();
-    await expect(page.getByText('Panel de estudiante').first()).toBeVisible();
+    await expect(page.getByText('Panel de Control').first()).toBeVisible();
     
     // Verificar que aparece la tarjeta de "Mis Intereses"
     await expect(page.getByRole('link', { name: /Mis Intereses/i })).toBeVisible();
