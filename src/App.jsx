@@ -10,6 +10,9 @@ import SelectorIntereses from "./features/onboarding/SelectorIntereses";
 import AplicacionTutor from "./features/onboarding/AplicacionTutor";
 import MisIntereses from "./features/dashboard/MisIntereses";
 import EstadoSolicitud from "./features/onboarding/EstadoSolicitud";
+import PerfilTutor from "./features/tutores/PerfilTutor";
+import CatalogoTutores from "./features/tutores/CatalogoTutores";
+import MisMateriasTutor from "./features/tutores/MisMateriasTutor";
 
 import { DashboardView } from "./features/dashboard/DashboardView";
 
@@ -127,6 +130,28 @@ function AplicacionTutorGuard() {
   return <AplicacionTutor />;
 }
 
+function StudentGuard({ children }) {
+  const { isAuthenticated, user } = useAuth();
+  const isStudent = user?.rol?.trim().toLowerCase() === "estudiante";
+
+  if (!isAuthenticated || !isStudent) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
+function TutorGuard({ children }) {
+  const { isAuthenticated, user } = useAuth();
+  const isTutor = user?.rol?.trim().toLowerCase() === "tutor";
+
+  if (!isAuthenticated || !isTutor) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
 export function App() {
   return (
     <Routes>
@@ -136,6 +161,9 @@ export function App() {
       <Route path="/intereses" element={<StudentInterestsGuard />} />
       <Route path="/aplicar-tutor" element={<AplicacionTutorGuard />} />
       <Route path="/estado-solicitud" element={<EstadoSolicitud />} />
+      <Route path="/tutores" element={<StudentGuard><CatalogoTutores /></StudentGuard>} />
+      <Route path="/tutor/:id" element={<StudentGuard><PerfilTutor /></StudentGuard>} />
+      <Route path="/tutor/mis-materias" element={<TutorGuard><MisMateriasTutor /></TutorGuard>} />
     </Routes>
   );
 }
