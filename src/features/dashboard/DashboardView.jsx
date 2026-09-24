@@ -35,6 +35,13 @@ export function DashboardView({ selectedRole }) {
             color: "border-deep-space-blue-500/20 bg-deep-space-blue-500/5 hover:border-deep-space-blue-500/50 hover:bg-deep-space-blue-500/10"
           },
           {
+            title: "Materias que Imparto",
+            description: "Configura las especialidades que enseñas como tutor.",
+            icon: <BookOpen className="w-6 h-6 text-emerald-500" />,
+            href: "/tutor/mis-materias",
+            color: "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/50 hover:bg-emerald-500/10"
+          },
+          {
             title: "Mis Tutorías",
             description: "Gestiona tus sesiones y alumnos. (Próximamente)",
             icon: <GraduationCap className="w-6 h-6 text-burgundy-500" />,
@@ -52,6 +59,13 @@ export function DashboardView({ selectedRole }) {
             href: "/intereses",
             color: "border-deep-space-blue-500/20 bg-deep-space-blue-500/5 hover:border-deep-space-blue-500/50 hover:bg-deep-space-blue-500/10"
           },
+          {
+            title: "Buscar Tutores",
+            description: "Explora el catálogo de tutores disponibles y agenda una clase.",
+            icon: <Users className="w-6 h-6 text-emerald-500 dark:text-emerald-400" />,
+            href: "/tutores",
+            color: "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/50 hover:bg-emerald-500/10"
+          },
           (user?.estadoAprobacion && user.estadoAprobacion.trim().toLowerCase() !== "ninguno") ? {
             title: "Estado de Solicitud",
             description: "Revisa cómo va el proceso de tu postulación para ser tutor.",
@@ -61,9 +75,9 @@ export function DashboardView({ selectedRole }) {
           } : {
             title: "Conviértete en Tutor",
             description: "Aplica para impartir tutorías y ayudar a otros estudiantes.",
-            icon: <GraduationCap className="w-6 h-6 text-emerald-500" />,
+            icon: <GraduationCap className="w-6 h-6 text-amber-500 dark:text-amber-400" />,
             href: "/aplicar-tutor",
-            color: "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/50 hover:bg-emerald-500/10"
+            color: "border-amber-500/20 bg-amber-500/5 hover:border-amber-500/50 hover:bg-amber-500/10"
           }
         ];
     }
