@@ -6,6 +6,7 @@ import {
   Users, 
   LogOut
 } from "lucide-react";
+import Home from "../home/Home";
 
 export function DashboardView({ selectedRole }) {
   const { user, logout } = useAuth();
@@ -169,6 +170,8 @@ export function DashboardView({ selectedRole }) {
             ))}
           </div>
         </div>
+
+        {activeRole === "estudiante" && <Home />}
       </div>
     </main>
   );
