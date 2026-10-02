@@ -33,6 +33,16 @@ export function DashboardView({ selectedRole }) {
             href: "#",
             disabled: true
           },
+          (user?.estadoAprobacion?.trim().toLowerCase() === "aprobado") ? {
+            title: "Disponibilidad",
+            description: "Añade o retira los horarios en los que puedes recibir citas.",
+            href: "/tutor/disponibilidad",
+          } : {
+            title: "Disponibilidad",
+            description: "Tu solicitud debe ser aprobada antes de configurar tus horarios.",
+            href: "#",
+            disabled: true
+          },
           {
             title: "Mis Tutorías",
             description: "Gestiona tus sesiones y alumnos. (Próximamente)",
