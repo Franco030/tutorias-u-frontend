@@ -19,3 +19,11 @@ export const getTutoresRecomendados = async () => {
 export const updateMisMaterias = (materiaIds) => {
   return apiClient.put("/api/tutores/mis-materias", { materiaIds });
 };
+
+export const getDisponibilidadTutor = (tutorId) => {
+  return apiClient.get(`/api/tutores/${tutorId}/disponibilidad`);
+};
+
+export const guardarDisponibilidadTutor = (bloques) => {
+  return apiClient.post("/api/tutores/disponibilidad", bloques);
+};

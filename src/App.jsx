@@ -13,6 +13,7 @@ import EstadoSolicitud from "./features/onboarding/EstadoSolicitud";
 import PerfilTutor from "./features/tutores/PerfilTutor";
 import CatalogoTutores from "./features/tutores/CatalogoTutores";
 import MisMateriasTutor from "./features/tutores/MisMateriasTutor";
+import ConfiguracionDisponibilidad from "./features/tutores/ConfiguracionDisponibilidad";
 
 import { DashboardView } from "./features/dashboard/DashboardView";
 
@@ -174,6 +175,7 @@ export function App() {
       <Route path="/tutores" element={<StudentGuard><CatalogoTutores /></StudentGuard>} />
       <Route path="/tutor/:id" element={<StudentGuard><PerfilTutor /></StudentGuard>} />
       <Route path="/tutor/mis-materias" element={<ApprovedTutorGuard><MisMateriasTutor /></ApprovedTutorGuard>} />
+      <Route path="/tutor/disponibilidad" element={<ApprovedTutorGuard><ConfiguracionDisponibilidad /></ApprovedTutorGuard>} />
     </Routes>
   );
 }
