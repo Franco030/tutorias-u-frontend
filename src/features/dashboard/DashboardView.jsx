@@ -44,10 +44,9 @@ export function DashboardView({ selectedRole }) {
             disabled: true
           },
           {
-            title: "Mis Tutorías",
-            description: "Gestiona tus sesiones y alumnos. (Próximamente)",
-            href: "#",
-            disabled: true
+            title: "Solicitudes Pendientes",
+            description: "Consulta las sesiones que los estudiantes han solicitado contigo.",
+            href: "/tutor/solicitudes-pendientes",
           }
         ];
       case "estudiante":

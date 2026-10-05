@@ -13,3 +13,7 @@ export const agendarCita = ({
     fechaHoraFin,
   });
 };
+
+export const obtenerCitasPendientes = () => {
+  return apiClient.get("/api/citas/pendientes");
+};
