@@ -43,9 +43,13 @@ export function DashboardView({ selectedRole }) {
             href: "#",
             disabled: true
           },
-          {
+          (user?.estadoAprobacion?.trim().toLowerCase() === "aprobado") ? {
             title: "Mis Tutorías",
-            description: "Gestiona tus sesiones y alumnos. (Próximamente)",
+            description: "Acepta o rechaza solicitudes de tutoría pendientes.",
+            href: "/tutor/mis-tutorias",
+          } : {
+            title: "Mis Tutorías",
+            description: "Tu solicitud debe ser aprobada antes de gestionar tutorías.",
             href: "#",
             disabled: true
           }

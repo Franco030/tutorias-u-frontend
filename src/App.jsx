@@ -14,6 +14,7 @@ import PerfilTutor from "./features/tutores/PerfilTutor";
 import CatalogoTutores from "./features/tutores/CatalogoTutores";
 import MisMateriasTutor from "./features/tutores/MisMateriasTutor";
 import ConfiguracionDisponibilidad from "./features/tutores/ConfiguracionDisponibilidad";
+import MisTutorias from "./features/tutores/MisTutorias";
 
 import { DashboardView } from "./features/dashboard/DashboardView";
 
@@ -176,6 +177,9 @@ export function App() {
       <Route path="/tutor/:id" element={<StudentGuard><PerfilTutor /></StudentGuard>} />
       <Route path="/tutor/mis-materias" element={<ApprovedTutorGuard><MisMateriasTutor /></ApprovedTutorGuard>} />
       <Route path="/tutor/disponibilidad" element={<ApprovedTutorGuard><ConfiguracionDisponibilidad /></ApprovedTutorGuard>} />
+      <Route path="/tutor/mis-materias" element={<ApprovedTutorGuard><MisMateriasTutor /></ApprovedTutorGuard>}/>
+      <Route path="/tutor/disponibilidad" element={<ApprovedTutorGuard><ConfiguracionDisponibilidad /></ApprovedTutorGuard>}/>
+      <Route path="/tutor/mis-tutorias" element={<ApprovedTutorGuard><MisTutorias /></ApprovedTutorGuard>}/>
     </Routes>
   );
 }
