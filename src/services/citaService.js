@@ -13,3 +13,15 @@ export const agendarCita = ({
     fechaHoraFin,
   });
 };
+
+export const getCitasPendientes = () => {
+  return apiClient.get("/api/citas/pendientes");
+};
+
+export const aceptarCita = (id, data) => {
+  return apiClient.put(`/api/citas/${id}/aceptar`, data);
+};
+
+export const rechazarCita = (id) => {
+  return apiClient.put(`/api/citas/${id}/rechazar`);
+};
