@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function ConfirmarTutoriaModal({
   cita,
@@ -10,16 +10,14 @@ export default function ConfirmarTutoriaModal({
   const [linkReunion, setLinkReunion] = useState("");
   const [notas, setNotas] = useState("");
 
-  useEffect(() => {
-    if (abierto) {
-      setLinkReunion("");
-      setNotas("");
-    }
-  }, [abierto, cita]);
-
   if (!abierto || !cita) {
     return null;
   }
+
+  const limpiarFormulario = () => {
+    setLinkReunion("");
+    setNotas("");
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -28,6 +26,8 @@ export default function ConfirmarTutoriaModal({
       linkReunion: linkReunion.trim() || null,
       notas: notas.trim() || null,
     });
+
+    limpiarFormulario();
   };
 
   return (
@@ -35,7 +35,10 @@ export default function ConfirmarTutoriaModal({
       <button
         type="button"
         aria-label="Cerrar modal"
-        onClick={onCerrar}
+        onClick={() => {
+          limpiarFormulario();
+          onCerrar();
+        }}
         disabled={guardando}
         className="absolute inset-0 bg-deep-space-blue-950/60 backdrop-blur-sm"
       />
@@ -144,7 +147,10 @@ export default function ConfirmarTutoriaModal({
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
-              onClick={onCerrar}
+              onClick={() => {
+                limpiarFormulario();
+                onCerrar();
+              }}
               disabled={guardando}
               className="
                 rounded-full
