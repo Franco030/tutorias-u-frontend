@@ -90,10 +90,10 @@ export default function PerfilTutor() {
         <div className="max-w-3xl mx-auto">
           <button
             onClick={() => navigate(-1)}
-            className="mb-6 flex items-center gap-2 text-granite-600 dark:text-deep-space-blue-300 hover:text-deep-space-blue-600 dark:hover:text-emerald-400 transition-colors"
+            className="mb-6 inline-flex items-center gap-2 px-3 py-2 -ml-3 rounded-md text-granite-600 dark:text-deep-space-blue-300 hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            Volver
+            <span className="font-medium">Volver</span>
           </button>
 
           <div className="bg-white dark:bg-deep-space-blue-900/40 border border-granite-200 dark:border-deep-space-blue-800 rounded-lg overflow-hidden">

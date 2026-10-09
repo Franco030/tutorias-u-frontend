@@ -218,123 +218,147 @@ export default function BookingModal({
           Selecciona una materia y un horario habilitado por el tutor.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-          <div>
-            <label
-              htmlFor="materia"
-              className="mb-2 block text-sm font-medium text-granite-800 dark:text-white"
-            >
-              Materia
-            </label>
-            <select
-              id="materia"
-              value={materiaId}
-              onChange={(event) => setMateriaId(event.target.value)}
-              disabled={cargando || submitting}
-              className="w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 outline-none focus:border-deep-space-blue-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
-            >
-              <option value="">Selecciona una materia</option>
-              {materias.map((materia) => (
-                <option key={materia.id} value={materia.id}>
-                  {materia.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="fecha"
-              className="mb-2 block text-sm font-medium text-granite-800 dark:text-white"
-            >
-              Fecha
-            </label>
-            <select
-              id="fecha"
-              value={fecha}
-              onChange={(event) => {
-                setFecha(event.target.value);
-                setBloqueSeleccionado("");
-              }}
-              disabled={cargando || submitting || disponibilidad.length === 0}
-              className="w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 outline-none focus:border-deep-space-blue-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
-            >
-              <option value="">Selecciona una fecha</option>
-              {opcionesFecha.map((opcion) => (
-                <option
-                  key={opcion.value}
-                  value={opcion.value}
-                  disabled={opcion.disabled}
-                >
-                  {opcion.label}
-                  {opcion.disabled ? " (sin horarios)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="bloque"
-              className="mb-2 block text-sm font-medium text-granite-800 dark:text-white"
-            >
-              Horario disponible
-            </label>
-            <select
-              id="bloque"
-              value={bloqueSeleccionado}
-              onChange={(event) => setBloqueSeleccionado(event.target.value)}
-              disabled={cargando || submitting || !fecha}
-              className="w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 outline-none focus:border-deep-space-blue-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
-            >
-              <option value="">Selecciona un bloque</option>
-              {bloquesDisponibles.map((bloque, indice) => (
-                <option key={`${bloque.horaInicio}-${indice}`} value={indice}>
-                  {bloque.horaInicio} – {bloque.horaFin}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {cargando && (
-            <p role="status" className="text-sm text-granite-500 dark:text-deep-space-blue-300">
-              Cargando horarios...
+        {mensajeExito ? (
+          <div className="mt-6 flex flex-col items-center space-y-4 text-center">
+            <div className="rounded-full bg-emerald-100 p-4 dark:bg-emerald-500/20">
+              <svg
+                className="h-10 w-10 text-emerald-600 dark:text-emerald-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p className="text-xl font-semibold text-granite-900 dark:text-white">
+              ¡Cita agendada!
             </p>
-          )}
-          {!cargando && disponibilidad.length === 0 && (
             <p className="text-sm text-granite-600 dark:text-deep-space-blue-300">
-              Este tutor aún no tiene horarios disponibles para reservar.
-            </p>
-          )}
-          {error && (
-            <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
-              {error}
-            </p>
-          )}
-          {mensajeExito && (
-            <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
               {mensajeExito}
             </p>
-          )}
-
-          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
-              disabled={submitting}
-              className="rounded-md border border-granite-300 px-5 py-2.5 font-medium text-granite-700 transition-colors hover:bg-granite-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-deep-space-blue-700 dark:text-white dark:hover:bg-deep-space-blue-900"
+              className="mt-6 w-full rounded-md bg-deep-space-blue-600 px-5 py-2.5 font-medium text-white transition-colors hover:bg-deep-space-blue-700 dark:bg-emerald-500 dark:text-deep-space-blue-950 dark:hover:bg-emerald-600"
             >
               Cerrar
             </button>
-            <button
-              type="submit"
-              disabled={cargando || submitting || disponibilidad.length === 0}
-              className="rounded-md bg-deep-space-blue-600 px-5 py-2.5 font-medium text-white transition-colors hover:bg-deep-space-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-500 dark:text-deep-space-blue-950 dark:hover:bg-emerald-600"
-            >
-              {submitting ? "Agendando..." : "Confirmar cita"}
-            </button>
           </div>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+            <div>
+              <label
+                htmlFor="materia"
+                className="mb-2 block text-sm font-medium text-granite-800 dark:text-white"
+              >
+                Materia
+              </label>
+              <select
+                id="materia"
+                value={materiaId}
+                onChange={(event) => setMateriaId(event.target.value)}
+                disabled={cargando || submitting}
+                className="w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 outline-none focus:border-deep-space-blue-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
+              >
+                <option value="">Selecciona una materia</option>
+                {materias.map((materia) => (
+                  <option key={materia.id} value={materia.id}>
+                    {materia.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="fecha"
+                className="mb-2 block text-sm font-medium text-granite-800 dark:text-white"
+              >
+                Fecha
+              </label>
+              <select
+                id="fecha"
+                value={fecha}
+                onChange={(event) => {
+                  setFecha(event.target.value);
+                  setBloqueSeleccionado("");
+                }}
+                disabled={cargando || submitting || disponibilidad.length === 0}
+                className="w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 outline-none focus:border-deep-space-blue-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
+              >
+                <option value="">Selecciona una fecha</option>
+                {opcionesFecha.map((opcion) => (
+                  <option
+                    key={opcion.value}
+                    value={opcion.value}
+                    disabled={opcion.disabled}
+                  >
+                    {opcion.label}
+                    {opcion.disabled ? " (sin horarios)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="bloque"
+                className="mb-2 block text-sm font-medium text-granite-800 dark:text-white"
+              >
+                Horario disponible
+              </label>
+              <select
+                id="bloque"
+                value={bloqueSeleccionado}
+                onChange={(event) => setBloqueSeleccionado(event.target.value)}
+                disabled={cargando || submitting || !fecha}
+                className="w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 outline-none focus:border-deep-space-blue-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
+              >
+                <option value="">Selecciona un bloque</option>
+                {bloquesDisponibles.map((bloque, indice) => (
+                  <option key={`${bloque.horaInicio}-${indice}`} value={indice}>
+                    {bloque.horaInicio} – {bloque.horaFin}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {cargando && (
+              <p role="status" className="text-sm text-granite-500 dark:text-deep-space-blue-300">
+                Cargando horarios...
+              </p>
+            )}
+            {!cargando && disponibilidad.length === 0 && (
+              <p className="text-sm text-granite-600 dark:text-deep-space-blue-300">
+                Este tutor aún no tiene horarios disponibles para reservar.
+              </p>
+            )}
+            {error && (
+              <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
+                {error}
+              </p>
+            )}
+
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                className="rounded-md border border-granite-300 px-5 py-2.5 font-medium text-granite-700 transition-colors hover:bg-granite-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-deep-space-blue-700 dark:text-white dark:hover:bg-deep-space-blue-900"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={cargando || submitting || disponibilidad.length === 0}
+                className="rounded-md bg-deep-space-blue-600 px-5 py-2.5 font-medium text-white transition-colors hover:bg-deep-space-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-500 dark:text-deep-space-blue-950 dark:hover:bg-emerald-600"
+              >
+                {submitting ? "Agendando..." : "Confirmar cita"}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

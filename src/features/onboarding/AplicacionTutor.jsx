@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { ArrowLeft, UploadCloud, FileCheck } from "lucide-react";
 
 import { getMaterias } from "../../services/materiaService";
 import { subirArchivo } from "../../services/fileService";
@@ -125,6 +126,14 @@ export default function AplicacionTutor() {
   return (
     <main className="min-h-screen bg-granite-50 dark:bg-deep-space-blue-950">
       <div className="mx-auto max-w-3xl px-6 py-10">
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-6 inline-flex items-center gap-2 px-3 py-2 -ml-3 rounded-md text-granite-600 dark:text-deep-space-blue-300 hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="font-medium">Volver</span>
+        </button>
+
         <h1 className="text-2xl font-semibold text-granite-900 dark:text-white tracking-tight">
           Conviértete en Tutor
         </h1>
@@ -171,19 +180,33 @@ export default function AplicacionTutor() {
             Sube tu comprobante en formato PDF o imagen.
           </p>
 
-          <input
-            type="file"
-            accept=".pdf,image/*"
-            onChange={(e) => setArchivo(e.target.files[0] || null)}
-            className="mt-4 block w-full text-sm text-granite-600 dark:text-deep-space-blue-200
-              file:mr-4 file:py-2 file:px-4
-              file:rounded-md file:border-0
-              file:text-sm file:font-medium
-              file:bg-granite-100 file:text-granite-700
-              hover:file:bg-granite-200
-              dark:file:bg-deep-space-blue-800 dark:file:text-deep-space-blue-200 dark:hover:file:bg-deep-space-blue-700
-              cursor-pointer"
-          />
+          <div className="mt-4">
+            <label
+              htmlFor="file-upload"
+              className="relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors border-granite-300 bg-white hover:bg-granite-50 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900/40 dark:hover:border-emerald-500"
+            >
+              {archivo ? (
+                <div className="flex flex-col items-center text-emerald-600 dark:text-emerald-400">
+                  <FileCheck className="w-8 h-8 mb-2" />
+                  <span className="text-sm font-medium">{archivo.name}</span>
+                  <span className="mt-1 text-xs text-granite-500 dark:text-deep-space-blue-300">Click para cambiar</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center text-granite-500 dark:text-deep-space-blue-300">
+                  <UploadCloud className="w-8 h-8 mb-2" />
+                  <span className="text-sm font-medium text-granite-700 dark:text-white">Haz click para subir un archivo</span>
+                  <span className="mt-1 text-xs">PDF o Imágenes (Max 5MB)</span>
+                </div>
+              )}
+              <input
+                id="file-upload"
+                type="file"
+                accept=".pdf,image/*"
+                onChange={(e) => setArchivo(e.target.files[0] || null)}
+                className="hidden"
+              />
+            </label>
+          </div>
         </div>
 
         <div className="mt-10">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { Search } from "lucide-react";
 
 import {
   getMaterias,
@@ -168,7 +169,7 @@ export default function SelectorIntereses() {
             </div>
 
             {/* Buscador */}
-            <div className="mb-6">
+            <div className="relative mb-6">
               <label
                 htmlFor="buscar-materia"
                 className="sr-only"
@@ -176,12 +177,16 @@ export default function SelectorIntereses() {
                 Buscar materia
               </label>
 
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-granite-400 dark:text-deep-space-blue-400" />
+              </div>
+
               <input
                 id="buscar-materia"
                 type="text"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar materia"
+                placeholder="Buscar materia..."
                 autoComplete="off"
                 className="
                   w-full
@@ -189,7 +194,8 @@ export default function SelectorIntereses() {
                   border
                   border-granite-200
                   bg-white
-                  px-4
+                  pl-11
+                  pr-4
                   py-3
                   text-sm
                   text-granite-900

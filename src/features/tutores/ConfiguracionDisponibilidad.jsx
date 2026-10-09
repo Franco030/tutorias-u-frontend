@@ -198,21 +198,26 @@ export default function ConfiguracionDisponibilidad() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-4 sm:items-end">
-            <label className="text-sm font-medium text-granite-800 dark:text-white">
-              Día
-              <select
-                value={diaSemana}
-                onChange={(event) => setDiaSemana(event.target.value)}
-                disabled={guardando}
-                className="mt-2 w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
-              >
+            <div className="col-span-full sm:col-span-1">
+              <span className="block text-sm font-medium text-granite-800 dark:text-white mb-2">Día</span>
+              <div className="flex flex-wrap gap-2">
                 {DIAS_SEMANA.map((dia, index) => (
-                  <option key={dia} value={index}>
-                    {dia}
-                  </option>
+                  <button
+                    key={dia}
+                    type="button"
+                    onClick={() => setDiaSemana(String(index))}
+                    disabled={guardando}
+                    className={`px-3 py-2 rounded-md text-sm font-medium border transition-colors ${
+                      diaSemana === String(index)
+                        ? "bg-deep-space-blue-600 text-white border-deep-space-blue-600 dark:bg-emerald-500 dark:text-deep-space-blue-950 dark:border-emerald-500"
+                        : "bg-white text-granite-700 border-granite-300 hover:bg-granite-50 dark:bg-deep-space-blue-900 dark:text-deep-space-blue-200 dark:border-deep-space-blue-700 dark:hover:bg-deep-space-blue-800"
+                    } disabled:opacity-50`}
+                  >
+                    {dia.slice(0, 3)}
+                  </button>
                 ))}
-              </select>
-            </label>
+              </div>
+            </div>
 
             <label className="text-sm font-medium text-granite-800 dark:text-white">
               Hora de inicio

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import {
   aceptarCita,
   getCitasPendientes,
@@ -137,8 +138,9 @@ export default function MisTutorias() {
 
             <Link
               to="/"
-              className="text-sm font-medium text-deep-space-blue-600 hover:underline dark:text-emerald-400"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-granite-600 dark:text-deep-space-blue-300 hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors"
             >
+              <ArrowLeft className="w-4 h-4" />
               Volver al panel
             </Link>
           </div>
