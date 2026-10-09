@@ -127,7 +127,7 @@ function StudentInterestsGuard() {
   const isStudent =
     user?.rol?.trim().toLowerCase() === "estudiante";
 
-  if (!isAuthenticated()) {
+  if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
