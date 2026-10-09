@@ -1,3 +1,4 @@
+
 import apiClient from "./apiClient";
 
 export const agendarCita = ({
@@ -24,4 +25,9 @@ export const aceptarCita = (id, data) => {
 
 export const rechazarCita = (id) => {
   return apiClient.put(`/api/citas/${id}/rechazar`);
+};
+
+// US-4: Consultar las próximas tutorías del usuario autenticado
+export const getProximasTutorias = () => {
+  return apiClient.get("/api/citas/proximas");
 };
