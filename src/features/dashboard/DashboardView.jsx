@@ -1,5 +1,6 @@
 import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
+import { Lock } from "lucide-react";
 
 export function DashboardView({ selectedRole }) {
   const { user } = useAuth();
@@ -115,9 +116,12 @@ export function DashboardView({ selectedRole }) {
                 key={idx}
                 className="flex flex-col p-6 rounded-lg bg-granite-50 dark:bg-deep-space-blue-950/40 border border-granite-200 dark:border-deep-space-blue-800 opacity-75 cursor-not-allowed"
               >
-                <h3 className="text-base font-medium text-granite-700 dark:text-granite-300 mb-2">
-                  {card.title}
-                </h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-base font-medium text-granite-700 dark:text-granite-300">
+                    {card.title}
+                  </h3>
+                  <Lock className="w-4 h-4 text-granite-400 dark:text-deep-space-blue-500" />
+                </div>
                 <p className="text-sm text-granite-500 dark:text-deep-space-blue-400 leading-relaxed">
                   {card.description}
                 </p>
