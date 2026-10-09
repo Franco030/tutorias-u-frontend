@@ -1,3 +1,4 @@
+
 import { Navigate, Routes, Route, useNavigate } from "react-router-dom";
 import VerifyEmailPage from "./features/auth/VerifyEmailPage";
 import AprobacionTutores from "./features/admin/AprobacionTutores";
@@ -15,6 +16,7 @@ import CatalogoTutores from "./features/tutores/CatalogoTutores";
 import MisMateriasTutor from "./features/tutores/MisMateriasTutor";
 import ConfiguracionDisponibilidad from "./features/tutores/ConfiguracionDisponibilidad";
 import MisTutorias from "./features/tutores/MisTutorias";
+import ProximasTutorias from "./features/tutores/ProximasTutorias";
 
 import { DashboardView } from "./features/dashboard/DashboardView";
 
@@ -23,7 +25,9 @@ function AppContent() {
   const navigate = useNavigate();
   const [hasSelectedRoleState, setHasSelectedRoleState] = useState(false);
   const [selectedRoleState, setSelectedRoleState] = useState(null);
-  const isAdministrator = user?.rol?.trim().toLowerCase() === "administrador";
+
+  const isAdministrator =
+    user?.rol?.trim().toLowerCase() === "administrador";
 
   useEffect(() => {
     if (isAuthenticated && isAdministrator) {
@@ -31,12 +35,22 @@ function AppContent() {
     }
   }, [isAuthenticated, isAdministrator, navigate]);
 
-  const isRolNuevo = user?.rol ? user.rol.trim().toLowerCase() === 'nuevo' : false;
-  const hasSelectedRole = hasSelectedRoleState || (isAuthenticated && user?.rol && !isRolNuevo);
-  const selectedRole = selectedRoleState || (isAuthenticated && user?.rol && !isRolNuevo ? user.rol : null);
+  const isRolNuevo = user?.rol
+    ? user.rol.trim().toLowerCase() === "nuevo"
+    : false;
 
-  // Limpiar el estado local si el usuario cierra sesión (Actualización en fase de render, mejor práctica que useEffect)
-  if (!isAuthenticated && (hasSelectedRoleState || selectedRoleState !== null)) {
+  const hasSelectedRole =
+    hasSelectedRoleState ||
+    (isAuthenticated && user?.rol && !isRolNuevo);
+
+  const selectedRole =
+    selectedRoleState ||
+    (isAuthenticated && user?.rol && !isRolNuevo ? user.rol : null);
+
+  if (
+    !isAuthenticated &&
+    (hasSelectedRoleState || selectedRoleState !== null)
+  ) {
     setHasSelectedRoleState(false);
     setSelectedRoleState(null);
   }
@@ -76,6 +90,7 @@ function AppContent() {
       {isAuthenticated && hasSelectedRole ? (
         <div className="grow relative flex flex-col">
           <Navbar />
+
           <motion.div
             key="dashboard"
             className="flex-1 flex flex-col z-0"
@@ -95,7 +110,9 @@ function AppContent() {
 
 function AdminGuard() {
   const { isAuthenticated, user } = useAuth();
-  const isAdministrator = user?.rol?.trim().toLowerCase() === "administrador";
+
+  const isAdministrator =
+    user?.rol?.trim().toLowerCase() === "administrador";
 
   if (!isAuthenticated || !isAdministrator) {
     return <Navigate to="/" replace />;
@@ -110,7 +127,7 @@ function StudentInterestsGuard() {
   const isStudent =
     user?.rol?.trim().toLowerCase() === "estudiante";
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated()) {
     return <Navigate to="/" replace />;
   }
 
@@ -128,9 +145,14 @@ function StudentInterestsGuard() {
 function AplicacionTutorGuard() {
   const { isAuthenticated, user } = useAuth();
 
-  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
-  if (user?.estadoAprobacion && user.estadoAprobacion.trim().toLowerCase() !== "ninguno") {
+  if (
+    user?.estadoAprobacion &&
+    user.estadoAprobacion.trim().toLowerCase() !== "ninguno"
+  ) {
     return <Navigate to="/estado-solicitud" replace />;
   }
 
@@ -139,7 +161,9 @@ function AplicacionTutorGuard() {
 
 function StudentGuard({ children }) {
   const { isAuthenticated, user } = useAuth();
-  const isStudent = user?.rol?.trim().toLowerCase() === "estudiante";
+
+  const isStudent =
+    user?.rol?.trim().toLowerCase() === "estudiante";
 
   if (!isAuthenticated || !isStudent) {
     return <Navigate to="/" replace />;
@@ -150,8 +174,12 @@ function StudentGuard({ children }) {
 
 function ApprovedTutorGuard({ children }) {
   const { isAuthenticated, user } = useAuth();
-  const isTutor = user?.rol?.trim().toLowerCase() === "tutor";
-  const isApproved = user?.estadoAprobacion?.trim().toLowerCase() === "aprobado";
+
+  const isTutor =
+    user?.rol?.trim().toLowerCase() === "tutor";
+
+  const isApproved =
+    user?.estadoAprobacion?.trim().toLowerCase() === "aprobado";
 
   if (!isAuthenticated || !isTutor) {
     return <Navigate to="/" replace />;
@@ -164,22 +192,106 @@ function ApprovedTutorGuard({ children }) {
   return children;
 }
 
+// US-4: Acceso para estudiantes y tutores autenticados.
+function ProximasTutoriasGuard({ children }) {
+  const { isAuthenticated, user } = useAuth();
+
+  const rol = user?.rol?.trim().toLowerCase();
+
+  const tieneAcceso =
+    isAuthenticated &&
+    (rol === "estudiante" || rol === "tutor");
+
+  if (!tieneAcceso) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
 export function App() {
   return (
     <Routes>
       <Route path="/" element={<AppContent />} />
-      <Route path="/verificar-correo" element={<VerifyEmailPage />} />
-      <Route path="/admin/aprobaciones" element={<AdminGuard />} />
-      <Route path="/intereses" element={<StudentInterestsGuard />} />
-      <Route path="/aplicar-tutor" element={<AplicacionTutorGuard />} />
-      <Route path="/estado-solicitud" element={<EstadoSolicitud />} />
-      <Route path="/tutores" element={<StudentGuard><CatalogoTutores /></StudentGuard>} />
-      <Route path="/tutor/:id" element={<StudentGuard><PerfilTutor /></StudentGuard>} />
-      <Route path="/tutor/mis-materias" element={<ApprovedTutorGuard><MisMateriasTutor /></ApprovedTutorGuard>} />
-      <Route path="/tutor/disponibilidad" element={<ApprovedTutorGuard><ConfiguracionDisponibilidad /></ApprovedTutorGuard>} />
-      <Route path="/tutor/mis-materias" element={<ApprovedTutorGuard><MisMateriasTutor /></ApprovedTutorGuard>}/>
-      <Route path="/tutor/disponibilidad" element={<ApprovedTutorGuard><ConfiguracionDisponibilidad /></ApprovedTutorGuard>}/>
-      <Route path="/tutor/mis-tutorias" element={<ApprovedTutorGuard><MisTutorias /></ApprovedTutorGuard>}/>
+
+      <Route
+        path="/verificar-correo"
+        element={<VerifyEmailPage />}
+      />
+
+      <Route
+        path="/admin/aprobaciones"
+        element={<AdminGuard />}
+      />
+
+      <Route
+        path="/intereses"
+        element={<StudentInterestsGuard />}
+      />
+
+      <Route
+        path="/aplicar-tutor"
+        element={<AplicacionTutorGuard />}
+      />
+
+      <Route
+        path="/estado-solicitud"
+        element={<EstadoSolicitud />}
+      />
+
+      <Route
+        path="/tutores"
+        element={
+          <StudentGuard>
+            <CatalogoTutores />
+          </StudentGuard>
+        }
+      />
+
+      <Route
+        path="/tutor/:id"
+        element={
+          <StudentGuard>
+            <PerfilTutor />
+          </StudentGuard>
+        }
+      />
+
+      <Route
+        path="/tutor/mis-materias"
+        element={
+          <ApprovedTutorGuard>
+            <MisMateriasTutor />
+          </ApprovedTutorGuard>
+        }
+      />
+
+      <Route
+        path="/tutor/disponibilidad"
+        element={
+          <ApprovedTutorGuard>
+            <ConfiguracionDisponibilidad />
+          </ApprovedTutorGuard>
+        }
+      />
+
+      <Route
+        path="/tutor/mis-tutorias"
+        element={
+          <ApprovedTutorGuard>
+            <MisTutorias />
+          </ApprovedTutorGuard>
+        }
+      />
+
+      <Route
+        path="/mis-tutorias"
+        element={
+          <ProximasTutoriasGuard>
+            <ProximasTutorias />
+          </ProximasTutoriasGuard>
+        }
+      />
     </Routes>
   );
 }
