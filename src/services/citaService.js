@@ -31,3 +31,16 @@ export const rechazarCita = (id) => {
 export const getProximasTutorias = () => {
   return apiClient.get("/api/citas/proximas");
 };
+
+export const getHistorialTutorias = () => {
+  return apiClient.get("/api/citas/historial");
+};
+
+export const getHorasOcupadas = (tutorId, fecha) => {
+  const params = new URLSearchParams({ tutorId: String(tutorId), fecha });
+  return apiClient.get(`/api/citas/ocupadas?${params.toString()}`);
+};
+
+export const cancelarCita = (id, motivo = "") => {
+  return apiClient.put(`/api/citas/${id}/cancelar`, { motivo });
+};

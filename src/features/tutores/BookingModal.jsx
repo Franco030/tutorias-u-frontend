@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
-import { agendarCita } from "../../services/citaService";
+import { agendarCita, getHorasOcupadas } from "../../services/citaService";
 import { getMaterias } from "../../services/materiaService";
 import { getDisponibilidadTutor } from "../../services/tutorService";
 
@@ -38,6 +38,9 @@ export default function BookingModal({
   const [bloqueSeleccionado, setBloqueSeleccionado] = useState("");
   const [materias, setMaterias] = useState([]);
   const [disponibilidad, setDisponibilidad] = useState([]);
+  const [horariosOcupados, setHorariosOcupados] = useState([]);
+  const [cargandoOcupados, setCargandoOcupados] = useState(false);
+  const [errorOcupados, setErrorOcupados] = useState("");
   const [cargando, setCargando] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -57,6 +60,8 @@ export default function BookingModal({
         setBloqueSeleccionado("");
         setMaterias([]);
         setDisponibilidad([]);
+        setHorariosOcupados([]);
+        setErrorOcupados("");
 
         const [catalogo, bloquesTutor] = await Promise.all([
           getMaterias(),
@@ -97,6 +102,40 @@ export default function BookingModal({
       activo = false;
     };
   }, [isOpen, tutorId, materiasDisponibles]);
+
+  useEffect(() => {
+    if (!isOpen || !fecha) return undefined;
+
+    let activo = true;
+    const cargarHorariosOcupados = async () => {
+      try {
+        setCargandoOcupados(true);
+        setErrorOcupados("");
+        setHorariosOcupados([]);
+        const horarios = await getHorasOcupadas(tutorId, fecha);
+        if (!Array.isArray(horarios)) {
+          throw new Error("La respuesta de horarios ocupados no es válida.");
+        }
+        if (activo) {
+          setHorariosOcupados(horarios);
+        }
+      } catch (err) {
+        console.error("Error al consultar los horarios ocupados:", err);
+        if (activo) {
+          setErrorOcupados(
+            "No se pudieron verificar los horarios ocupados. Intenta nuevamente."
+          );
+        }
+      } finally {
+        if (activo) setCargandoOcupados(false);
+      }
+    };
+
+    cargarHorariosOcupados();
+    return () => {
+      activo = false;
+    };
+  }, [isOpen, fecha, tutorId]);
 
   const opcionesFecha = useMemo(() => {
     const hoy = new Date();
@@ -139,8 +178,11 @@ export default function BookingModal({
       (bloque) =>
         bloque.diaSemana === diaSemana &&
         new Date(crearFechaHoraUtc(fecha, bloque.horaInicio)) > ahora
-    );
-  }, [disponibilidad, fecha]);
+    ).map((bloque) => ({
+      ...bloque,
+      ocupado: horariosOcupados.includes(bloque.horaInicio),
+    }));
+  }, [disponibilidad, fecha, horariosOcupados]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -149,6 +191,10 @@ export default function BookingModal({
     setError("");
     setMensajeExito("");
 
+    if (errorOcupados) {
+      setError(errorOcupados);
+      return;
+    }
     if (!materiaId) {
       setError("Selecciona una materia.");
       return;
@@ -159,7 +205,7 @@ export default function BookingModal({
     }
 
     const bloque = bloquesDisponibles[Number(bloqueSeleccionado)];
-    if (!bloque) {
+    if (!bloque || bloque.ocupado) {
       setError("El horario seleccionado ya no está disponible.");
       return;
     }
@@ -283,6 +329,9 @@ export default function BookingModal({
                 onChange={(event) => {
                   setFecha(event.target.value);
                   setBloqueSeleccionado("");
+                  setHorariosOcupados([]);
+                  setErrorOcupados("");
+                  setCargandoOcupados(Boolean(event.target.value));
                 }}
                 disabled={cargando || submitting || disponibilidad.length === 0}
                 className="w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 outline-none focus:border-deep-space-blue-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
@@ -317,13 +366,28 @@ export default function BookingModal({
               >
                 <option value="">Selecciona un bloque</option>
                 {bloquesDisponibles.map((bloque, indice) => (
-                  <option key={`${bloque.horaInicio}-${indice}`} value={indice}>
+                  <option
+                    key={`${bloque.horaInicio}-${indice}`}
+                    value={indice}
+                    disabled={bloque.ocupado}
+                  >
                     {bloque.horaInicio} – {bloque.horaFin}
+                    {bloque.ocupado ? " (ocupado)" : ""}
                   </option>
                 ))}
               </select>
             </div>
 
+            {cargandoOcupados && fecha && (
+              <p role="status" className="text-sm text-granite-500 dark:text-deep-space-blue-300">
+                Verificando compromisos del tutor...
+              </p>
+            )}
+            {errorOcupados && (
+              <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
+                {errorOcupados}
+              </p>
+            )}
             {cargando && (
               <p role="status" className="text-sm text-granite-500 dark:text-deep-space-blue-300">
                 Cargando horarios...
@@ -351,7 +415,7 @@ export default function BookingModal({
               </button>
               <button
                 type="submit"
-                disabled={cargando || submitting || disponibilidad.length === 0}
+                disabled={cargando || submitting || cargandoOcupados || Boolean(errorOcupados) || disponibilidad.length === 0}
                 className="rounded-md bg-deep-space-blue-600 px-5 py-2.5 font-medium text-white transition-colors hover:bg-deep-space-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-500 dark:text-deep-space-blue-950 dark:hover:bg-emerald-600"
               >
                 {submitting ? "Agendando..." : "Confirmar cita"}
