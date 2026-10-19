@@ -1,15 +1,24 @@
 
+import { useState } from "react";
 import { CalendarDays, Clock3, BookOpen, UserRound, Video, FileText, X } from "lucide-react";
+import { cancelarCita } from "../../services/citaService";
 
 export default function TutoriaDetallesModal({
   isOpen,
   onClose,
   tutoria,
+  onCancelled,
 }) {
+  const [confirmandoCancelacion, setConfirmandoCancelacion] = useState(false);
+  const [motivo, setMotivo] = useState("");
+  const [cancelando, setCancelando] = useState(false);
+  const [errorCancelacion, setErrorCancelacion] = useState("");
+
   if (!isOpen || !tutoria) {
     return null;
   }
 
+  const puedeCancelar = ["Pendiente", "Aceptada"].includes(tutoria.estado);
   const fecha = new Date(tutoria.fechaHoraInicio);
 
   const fechaFormateada = fecha.toLocaleDateString("es-MX", {
@@ -23,10 +32,34 @@ export default function TutoriaDetallesModal({
     minute: "2-digit",
   });
 
+  const handleCancelar = async () => {
+    if (cancelando) return;
+
+    try {
+      setCancelando(true);
+      setErrorCancelacion("");
+      await cancelarCita(tutoria.id, motivo.trim());
+      onCancelled(tutoria);
+      handleClose();
+    } catch (err) {
+      console.error("Error al cancelar la tutoría:", err);
+      setErrorCancelacion(err.message || "No se pudo cancelar la tutoría.");
+    } finally {
+      setCancelando(false);
+    }
+  };
+
+  const handleClose = () => {
+    setConfirmandoCancelacion(false);
+    setMotivo("");
+    setErrorCancelacion("");
+    onClose();
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         role="dialog"
@@ -37,7 +70,7 @@ export default function TutoriaDetallesModal({
       >
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           aria-label="Cerrar detalles"
           className="absolute right-5 top-5 cursor-pointer text-granite-500 transition-colors hover:text-granite-900 dark:text-deep-space-blue-300 dark:hover:text-white"
         >
@@ -52,7 +85,7 @@ export default function TutoriaDetallesModal({
         </h2>
 
         <p className="mt-2 text-sm text-granite-600 dark:text-deep-space-blue-300">
-          Información de tu próxima sesión.
+          Información de tu sesión.
         </p>
 
         <div className="mt-7 space-y-5">
@@ -143,15 +176,88 @@ export default function TutoriaDetallesModal({
           )}
         </div>
 
+        {puedeCancelar && (
+          <div className="mt-8 border-t border-granite-200 pt-5 dark:border-deep-space-blue-800">
+            {confirmandoCancelacion ? (
+              <div className="space-y-3">
+                <label
+                  htmlFor="motivo-cancelacion"
+                  className="block text-sm font-medium text-granite-800 dark:text-white"
+                >
+                  Motivo (opcional)
+                </label>
+                <textarea
+                  id="motivo-cancelacion"
+                  value={motivo}
+                  onChange={(event) => setMotivo(event.target.value)}
+                  maxLength={1000}
+                  rows={3}
+                  disabled={cancelando}
+                  className="w-full rounded-md border border-granite-300 bg-white px-3 py-2 text-sm text-granite-900 outline-none focus:border-red-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
+                />
+                <p className="text-sm text-granite-600 dark:text-deep-space-blue-300">
+                  ¿Confirmas que deseas cancelar esta tutoría?
+                </p>
+                {errorCancelacion && (
+                  <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
+                    {errorCancelacion}
+                  </p>
+                )}
+                <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmandoCancelacion(false);
+                      setMotivo("");
+                      setErrorCancelacion("");
+                    }}
+                    disabled={cancelando}
+                    className="rounded-md border border-granite-300 px-5 py-2.5 font-medium text-granite-700 transition-colors hover:bg-granite-100 disabled:opacity-50 dark:border-deep-space-blue-700 dark:text-white dark:hover:bg-deep-space-blue-900"
+                  >
+                    Volver
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelar}
+                    disabled={cancelando}
+                    className="rounded-md bg-red-600 px-5 py-2.5 font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {cancelando ? "Cancelando..." : "Confirmar cancelación"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col-reverse justify-between gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => setConfirmandoCancelacion(true)}
+                  className="rounded-md bg-red-600 px-5 py-2.5 font-medium text-white transition-colors hover:bg-red-700"
+                >
+                  Cancelar tutoría
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="rounded-md bg-deep-space-blue-600 px-6 py-2.5 font-medium text-white transition-colors hover:bg-deep-space-blue-700 dark:bg-emerald-500 dark:text-deep-space-blue-950 dark:hover:bg-emerald-600"
+                >
+                  Cerrar
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!puedeCancelar && (
         <div className="mt-8 flex justify-end border-t border-granite-200 pt-5 dark:border-deep-space-blue-800">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="cursor-pointer rounded-md bg-deep-space-blue-600 px-6 py-2.5 font-medium text-white transition-colors hover:bg-deep-space-blue-700 dark:bg-emerald-500 dark:text-deep-space-blue-950 dark:hover:bg-emerald-600"
           >
             Cerrar
           </button>
         </div>
+        )}
       </div>
     </div>
   );

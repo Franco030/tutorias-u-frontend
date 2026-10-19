@@ -5,6 +5,9 @@ import {
   getCitasPendientes,
   aceptarCita,
   rechazarCita,
+  getHistorialTutorias,
+  getHorasOcupadas,
+  cancelarCita,
 } from "./citaService";
 
 vi.mock("./apiClient", () => ({
@@ -152,6 +155,35 @@ describe("citaService", () => {
     expect(apiClient.post).toHaveBeenCalledWith(
       "/api/citas/agendar",
       datos
+    );
+  });
+
+  it("debe consultar el historial de tutorías", async () => {
+    apiClient.get.mockResolvedValue([]);
+
+    await getHistorialTutorias();
+
+    expect(apiClient.get).toHaveBeenCalledWith("/api/citas/historial");
+  });
+
+  it("debe consultar horarios ocupados para una fecha y tutor", async () => {
+    apiClient.get.mockResolvedValue(["10:00"]);
+
+    await getHorasOcupadas(7, "2026-10-19");
+
+    expect(apiClient.get).toHaveBeenCalledWith(
+      "/api/citas/ocupadas?tutorId=7&fecha=2026-10-19"
+    );
+  });
+
+  it("debe cancelar una tutoría enviando el motivo opcional", async () => {
+    apiClient.put.mockResolvedValue({ mensaje: "Cita cancelada" });
+
+    await cancelarCita(12, "Imprevisto");
+
+    expect(apiClient.put).toHaveBeenCalledWith(
+      "/api/citas/12/cancelar",
+      { motivo: "Imprevisto" }
     );
   });
 });
