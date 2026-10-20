@@ -37,12 +37,20 @@ test.describe('Flujo de Autenticación Local y Roles', () => {
       await route.fulfill({ json });
     });
 
+    // Interceptar las secciones del panel del estudiante (sin datos)
+    await page.route('**/api/citas/proximas', async route => {
+      await route.fulfill({ json: [] });
+    });
+    await page.route('**/api/tutores/recomendados', async route => {
+      await route.fulfill({ json: [] });
+    });
+
     // 1. Ir a la página principal
     await page.goto('/');
 
     // 2. Llenar el formulario de inicio de sesión
-    await page.getByPlaceholder('Correo electrónico').fill('test@tutoriasu.com');
-    await page.getByPlaceholder('Contraseña').fill('password123');
+    await page.getByRole('textbox', { name: 'Correo electrónico' }).fill('test@tutoriasu.com');
+    await page.locator('#password').fill('password123');
     
     // 3. Hacer clic en "Iniciar sesión"
     await page.getByRole('button', { name: 'Iniciar sesión' }).click();

@@ -1,15 +1,35 @@
-import { useTheme } from '../context/ThemeContext';
-import { AnimatedThemeToggler } from './ui/animated-theme-toggler';
+import { Button, makeStyles, tokens, Tooltip } from "@fluentui/react-components";
+import { WeatherMoon20Regular, WeatherSunny20Regular } from "@fluentui/react-icons";
+import { useTheme } from "../context/ThemeContext";
+import { keyframes } from "../theme/motion";
 
-export function DarkModeToggle({ className = '' }) {
-  const { theme, setTheme } = useTheme();
+const useStyles = makeStyles({
+  icon: {
+    display: "flex",
+    animationName: keyframes.spinIn,
+    animationDuration: tokens.durationGentle,
+    animationTimingFunction: tokens.curveDecelerateMax,
+  },
+});
+
+export function DarkModeToggle({ className }) {
+  const styles = useStyles();
+  const { isDark, toggleTheme } = useTheme();
+  const label = isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro";
 
   return (
-    <AnimatedThemeToggler
-      theme={theme}
-      onThemeChange={setTheme}
-      className={`relative inline-flex items-center justify-center p-2 rounded-xl text-granite-600 dark:text-granite-300 hover:text-deep-space-blue-600 dark:hover:text-deep-space-blue-400 hover:bg-granite-100 dark:hover:bg-granite-800/80 transition-all duration-200 outline-none ${className}`}
-    />
+    <Tooltip content={label} relationship="label" withArrow>
+      <Button
+        appearance="subtle"
+        className={className}
+        icon={
+          <span key={isDark ? "sol" : "luna"} className={styles.icon}>
+            {isDark ? <WeatherSunny20Regular /> : <WeatherMoon20Regular />}
+          </span>
+        }
+        onClick={toggleTheme}
+      />
+    </Tooltip>
   );
 }
 

@@ -6,7 +6,7 @@ test.describe('Theme Persistence & Toggling', () => {
     await page.goto('/');
 
     // Asegurarse de que el botón de tema existe y es visible
-    const themeToggle = page.getByRole('button', { name: 'Toggle theme' });
+    const themeToggle = page.getByRole('button', { name: /Cambiar a tema/ });
     await expect(themeToggle).toBeVisible();
 
     // Obtener la clase inicial del HTML (para saber en qué modo estamos por el SO)

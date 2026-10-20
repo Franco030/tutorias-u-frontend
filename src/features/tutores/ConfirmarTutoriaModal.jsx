@@ -1,4 +1,45 @@
 import { useState } from "react";
+import {
+  Body1,
+  Button,
+  Caption1,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  Field,
+  Input,
+  makeStyles,
+  Spinner,
+  Text,
+  Textarea,
+  tokens,
+} from "@fluentui/react-components";
+import { Dismiss24Regular } from "@fluentui/react-icons";
+
+const useStyles = makeStyles({
+  surface: {
+    width: "min(520px, calc(100vw - 32px))",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalL,
+  },
+  summary: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXXS,
+    padding: tokens.spacingHorizontalM,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground3,
+  },
+  muted: {
+    color: tokens.colorNeutralForeground3,
+  },
+});
 
 export default function ConfirmarTutoriaModal({
   cita,
@@ -7,6 +48,7 @@ export default function ConfirmarTutoriaModal({
   onConfirmar,
   guardando,
 }) {
+  const styles = useStyles();
   const [linkReunion, setLinkReunion] = useState("");
   const [notas, setNotas] = useState("");
 
@@ -17,6 +59,11 @@ export default function ConfirmarTutoriaModal({
   const limpiarFormulario = () => {
     setLinkReunion("");
     setNotas("");
+  };
+
+  const cerrar = () => {
+    limpiarFormulario();
+    onCerrar();
   };
 
   const handleSubmit = (e) => {
@@ -31,171 +78,78 @@ export default function ConfirmarTutoriaModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <button
-        type="button"
-        aria-label="Cerrar modal"
-        onClick={() => {
-          limpiarFormulario();
-          onCerrar();
-        }}
-        disabled={guardando}
-        className="absolute inset-0 bg-deep-space-blue-950/60 backdrop-blur-sm"
-      />
-
-      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-granite-200 bg-white p-6 shadow-xl dark:border-deep-space-blue-800 dark:bg-deep-space-blue-950">
-        <div className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-deep-space-blue-500 dark:text-emerald-400">
-            Confirmar tutoría
-          </p>
-
-          <h2 className="mt-2 text-2xl font-semibold text-granite-900 dark:text-white">
-            Aceptar solicitud
-          </h2>
-
-          <p className="mt-2 text-sm text-granite-500 dark:text-deep-space-blue-300">
-            Puedes agregar un enlace de reunión y notas para el estudiante.
-          </p>
-        </div>
-
-        <div className="mb-6 rounded-xl border border-granite-200 bg-granite-50 p-4 dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40">
-          <p className="font-medium text-granite-900 dark:text-white">
-            {cita.materiaNombre}
-          </p>
-
-          <p className="mt-1 text-sm text-granite-500 dark:text-deep-space-blue-300">
-            Estudiante: {cita.estudianteNombre}
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label
-              htmlFor="linkReunion"
-              className="mb-2 block text-sm font-medium text-granite-700 dark:text-deep-space-blue-200"
+    <Dialog
+      open
+      onOpenChange={(_, data) => {
+        if (!data.open && !guardando) cerrar();
+      }}
+    >
+      <DialogSurface className={styles.surface}>
+        <form onSubmit={handleSubmit}>
+          <DialogBody>
+            <DialogTitle
+              action={
+                <Button
+                  appearance="subtle"
+                  aria-label="Cerrar"
+                  icon={<Dismiss24Regular />}
+                  onClick={cerrar}
+                  disabled={guardando}
+                />
+              }
             >
-              Enlace de reunión
-            </label>
+              Aceptar solicitud
+            </DialogTitle>
 
-            <input
-              id="linkReunion"
-              type="url"
-              value={linkReunion}
-              onChange={(e) => setLinkReunion(e.target.value)}
-              placeholder="https://meet.google.com/..."
-              disabled={guardando}
-              className="
-                w-full
-                rounded-xl
-                border
-                border-granite-200
-                bg-white
-                px-4
-                py-3
-                text-sm
-                text-granite-900
-                outline-none
-                transition
-                placeholder:text-granite-400
-                focus:border-deep-space-blue-500
-                dark:border-deep-space-blue-800
-                dark:bg-deep-space-blue-900/40
-                dark:text-white
-                dark:focus:border-emerald-500
-              "
-            />
-          </div>
+            <DialogContent className={styles.form}>
+              <div className={styles.summary}>
+                <Text weight="semibold">{cita.materiaNombre}</Text>
+                <Caption1 className={styles.muted}>Estudiante: {cita.estudianteNombre}</Caption1>
+              </div>
 
-          <div>
-            <label
-              htmlFor="notas"
-              className="mb-2 block text-sm font-medium text-granite-700 dark:text-deep-space-blue-200"
-            >
-              Notas
-            </label>
+              <Body1 className={styles.muted}>
+                Agrega el enlace de la reunión y cualquier indicación para el estudiante. Ambos son opcionales.
+              </Body1>
 
-            <textarea
-              id="notas"
-              value={notas}
-              onChange={(e) => setNotas(e.target.value)}
-              placeholder="Información adicional para la sesión..."
-              rows={4}
-              disabled={guardando}
-              className="
-                w-full
-                resize-none
-                rounded-xl
-                border
-                border-granite-200
-                bg-white
-                px-4
-                py-3
-                text-sm
-                text-granite-900
-                outline-none
-                transition
-                placeholder:text-granite-400
-                focus:border-deep-space-blue-500
-                dark:border-deep-space-blue-800
-                dark:bg-deep-space-blue-900/40
-                dark:text-white
-                dark:focus:border-emerald-500
-              "
-            />
-          </div>
+              <Field label="Enlace de reunión">
+                <Input
+                  id="linkReunion"
+                  type="url"
+                  value={linkReunion}
+                  onChange={(_, data) => setLinkReunion(data.value)}
+                  placeholder="https://meet.google.com/abc-defg-hij"
+                  disabled={guardando}
+                />
+              </Field>
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                limpiarFormulario();
-                onCerrar();
-              }}
-              disabled={guardando}
-              className="
-                rounded-full
-                border
-                border-granite-200
-                px-6
-                py-2.5
-                text-sm
-                font-medium
-                text-granite-600
-                transition
-                hover:bg-granite-50
-                disabled:opacity-50
-                dark:border-deep-space-blue-800
-                dark:text-deep-space-blue-300
-                dark:hover:bg-deep-space-blue-900/50
-              "
-            >
-              Cancelar
-            </button>
+              <Field label="Notas">
+                <Textarea
+                  id="notas"
+                  value={notas}
+                  onChange={(_, data) => setNotas(data.value)}
+                  rows={4}
+                  resize="vertical"
+                  disabled={guardando}
+                />
+              </Field>
+            </DialogContent>
 
-            <button
-              type="submit"
-              disabled={guardando}
-              className="
-                rounded-full
-                bg-deep-space-blue-600
-                px-6
-                py-2.5
-                text-sm
-                font-semibold
-                text-white
-                transition
-                hover:bg-deep-space-blue-700
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-                dark:bg-emerald-500
-                dark:text-deep-space-blue-950
-              "
-            >
-              {guardando ? "Aceptando..." : "Confirmar tutoría"}
-            </button>
-          </div>
+            <DialogActions>
+              <Button appearance="secondary" onClick={cerrar} disabled={guardando}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                appearance="primary"
+                disabled={guardando}
+                icon={guardando ? <Spinner size="tiny" /> : undefined}
+              >
+                {guardando ? "Aceptando…" : "Confirmar tutoría"}
+              </Button>
+            </DialogActions>
+          </DialogBody>
         </form>
-      </div>
-    </div>
+      </DialogSurface>
+    </Dialog>
   );
 }

@@ -1,12 +1,66 @@
 import { useEffect, useState } from 'react';
-import { Check, LoaderCircle, RefreshCw, UserRound } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { Navbar } from '../../components/Navbar';
-import { useAuth } from '../../context/AuthContext';
+import {
+  Avatar,
+  Button,
+  Caption1,
+  makeStyles,
+  MessageBar,
+  MessageBarActions,
+  MessageBarBody,
+  Spinner,
+  Text,
+  tokens,
+} from '@fluentui/react-components';
+import { ArrowClockwise20Regular, Checkmark20Regular, PeopleCheckmark24Regular } from '@fluentui/react-icons';
 import {
   aprobarTutor,
   getSolicitudesPendientes,
 } from '../../services/adminService';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { Page, PageHeader, PageSection, Surface } from '../../components/ui/Page';
+import { SessionListSkeleton } from '../../components/ui/SessionList';
+
+const useStyles = makeStyles({
+  list: {
+    margin: 0,
+    padding: 0,
+    listStyleType: 'none',
+  },
+  row: {
+    display: 'grid',
+    gridTemplateColumns: '40px minmax(0, 1fr)',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalM,
+    paddingBlock: tokens.spacingVerticalM,
+    paddingInline: tokens.spacingHorizontalL,
+    borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke3}`,
+    ':last-child': {
+      borderBottomStyle: 'none',
+    },
+    '@media (min-width: 640px)': {
+      gridTemplateColumns: '40px minmax(0, 1fr) auto',
+    },
+  },
+  identity: {
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
+  },
+  truncate: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  email: {
+    color: tokens.colorNeutralForeground3,
+  },
+  action: {
+    gridColumn: '1 / -1',
+    '@media (min-width: 640px)': {
+      gridColumn: 'auto',
+    },
+  },
+});
 
 function getErrorMessage(error) {
   if (error?.status === 403) {
@@ -17,7 +71,7 @@ function getErrorMessage(error) {
 }
 
 export default function AprobacionTutores() {
-  const { user } = useAuth();
+  const styles = useStyles();
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState(null);
@@ -73,7 +127,7 @@ export default function AprobacionTutores() {
     try {
       await aprobarTutor(id);
       setSolicitudes((current) => current.filter((solicitud) => solicitud.id !== id));
-      setFeedback('Tutor aprobado correctamente.');
+      setFeedback('Tutor aprobado. Ya puede configurar sus materias y horarios.');
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -82,113 +136,82 @@ export default function AprobacionTutores() {
   };
 
   return (
-    <div className="min-h-screen bg-granite-50 text-granite-900 dark:bg-deep-space-blue-950 dark:text-white">
-      <Navbar />
-      <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <motion.header
-          className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-burgundy-600 dark:text-emerald-400">
-              Administración
-            </p>
-            <h1 className="text-3xl font-light tracking-tight sm:text-4xl">
-              Aprobación de tutores
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-granite-500 dark:text-deep-space-blue-300">
-              Revisa las solicitudes pendientes antes de habilitar a un tutor para enseñar.
-            </p>
-          </div>
-          <p className="text-sm text-granite-500 dark:text-deep-space-blue-300">
-            Sesión: <span className="font-medium text-granite-800 dark:text-white">{user?.nombre}</span>
-          </p>
-        </motion.header>
-
-        {feedback && (
-          <div
-            role="status"
-            className="mb-6 flex items-center gap-3 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+    <Page>
+      <PageHeader
+        title="Aprobación de tutores"
+        description="Revisa las solicitudes pendientes antes de habilitar a un tutor para enseñar."
+        actions={
+          <Button
+            appearance="secondary"
+            icon={<ArrowClockwise20Regular />}
+            onClick={cargarSolicitudes}
+            disabled={loading}
           >
-            <Check size={18} aria-hidden="true" />
-            {feedback}
-          </div>
+            Actualizar
+          </Button>
+        }
+      />
+
+      {feedback && (
+        <MessageBar intent="success" layout="multiline">
+          <MessageBarBody>{feedback}</MessageBarBody>
+        </MessageBar>
+      )}
+
+      {error && (
+        <MessageBar intent="error" layout="multiline">
+          <MessageBarBody>{error}</MessageBarBody>
+          <MessageBarActions>
+            <Button onClick={cargarSolicitudes}>Reintentar</Button>
+          </MessageBarActions>
+        </MessageBar>
+      )}
+
+      <PageSection
+        id="pendientes"
+        title={loading ? 'Solicitudes pendientes' : `Solicitudes pendientes (${solicitudes.length})`}
+      >
+        {loading ? (
+          <SessionListSkeleton rows={3} />
+        ) : solicitudes.length === 0 ? (
+          <EmptyState
+            icon={<PeopleCheckmark24Regular />}
+            title="No hay solicitudes por revisar"
+            description="Cuando un estudiante se postule como tutor, su solicitud aparecerá aquí."
+          />
+        ) : (
+          <Surface flush>
+            <ul className={styles.list}>
+              {solicitudes.map((solicitud) => {
+                const aprobando = approvingId === solicitud.id;
+                return (
+                  <li key={solicitud.id} className={styles.row}>
+                    <Avatar name={solicitud.nombre} color="colorful" />
+                    <div className={styles.identity}>
+                      <Text weight="semibold" className={styles.truncate}>
+                        {solicitud.nombre}
+                      </Text>
+                      <Caption1 className={styles.truncate}>
+                        <span className={styles.email}>{solicitud.correo}</span>
+                      </Caption1>
+                    </div>
+                    <Button
+                      appearance="primary"
+                      className={styles.action}
+                      onClick={() => handleAprobar(solicitud.id)}
+                      disabled={approvingId !== null}
+                      icon={aprobando ? <Spinner size="tiny" /> : <Checkmark20Regular />}
+                      aria-label={`Aprobar a ${solicitud.nombre}`}
+                    >
+                      {aprobando ? 'Aprobando…' : 'Aprobar'}
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          </Surface>
         )}
-
-        {error && (
-          <div
-            role="alert"
-            className="mb-6 flex flex-col gap-3 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <span>{error}</span>
-            <button
-              type="button"
-              onClick={cargarSolicitudes}
-              className="inline-flex w-fit items-center gap-2 border border-current px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-opacity hover:opacity-75"
-            >
-              <RefreshCw size={14} aria-hidden="true" />
-              Reintentar
-            </button>
-          </div>
-        )}
-
-        <section className="overflow-hidden border border-granite-200 bg-white shadow-sm dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40">
-          <div className="border-b border-granite-200 px-5 py-4 dark:border-deep-space-blue-800 sm:px-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-granite-700 dark:text-deep-space-blue-100">
-              Solicitudes pendientes
-            </h2>
-          </div>
-
-          {loading ? (
-            <div className="flex min-h-56 flex-col items-center justify-center gap-3 px-6 py-12 text-sm text-granite-500 dark:text-deep-space-blue-300">
-              <LoaderCircle className="animate-spin" size={24} aria-hidden="true" />
-              Cargando solicitudes...
-            </div>
-          ) : solicitudes.length === 0 ? (
-            <div className="flex min-h-56 flex-col items-center justify-center gap-3 px-6 py-12 text-center text-sm text-granite-500 dark:text-deep-space-blue-300">
-              <UserRound size={28} aria-hidden="true" />
-              <p>No hay solicitudes pendientes por revisar.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[38rem] text-left text-sm">
-                <thead className="bg-granite-50 text-xs uppercase tracking-wider text-granite-500 dark:bg-deep-space-blue-950/60 dark:text-deep-space-blue-300">
-                  <tr>
-                    <th className="px-5 py-4 font-semibold sm:px-6">Tutor</th>
-                    <th className="px-5 py-4 font-semibold sm:px-6">Correo</th>
-                    <th className="px-5 py-4 text-right font-semibold sm:px-6">Acción</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-granite-100 dark:divide-deep-space-blue-800">
-                  {solicitudes.map((solicitud) => (
-                    <tr key={solicitud.id} className="transition-colors hover:bg-granite-50/70 dark:hover:bg-deep-space-blue-900/70">
-                      <td className="px-5 py-5 font-medium sm:px-6">{solicitud.nombre}</td>
-                      <td className="px-5 py-5 text-granite-600 dark:text-deep-space-blue-300 sm:px-6">{solicitud.correo}</td>
-                      <td className="px-5 py-5 text-right sm:px-6">
-                        <button
-                          type="button"
-                          onClick={() => handleAprobar(solicitud.id)}
-                          disabled={approvingId !== null}
-                          className="inline-flex items-center gap-2 bg-burgundy-700 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-burgundy-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-600 dark:text-deep-space-blue-950 dark:hover:bg-emerald-500"
-                        >
-                          {approvingId === solicitud.id ? (
-                            <LoaderCircle className="animate-spin" size={15} aria-hidden="true" />
-                          ) : (
-                            <Check size={15} aria-hidden="true" />
-                          )}
-                          {approvingId === solicitud.id ? 'Aprobando...' : 'Aprobar'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      </main>
-    </div>
+      </PageSection>
+    </Page>
   );
 }

@@ -17,6 +17,11 @@ export function ThemeProvider({ children }) {
 
   useLayoutEffect(() => {
     const root = document.documentElement;
+    // El cambio de tema es instantáneo: se suspenden las transiciones durante un frame.
+    root.classList.add('theme-switching');
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => root.classList.remove('theme-switching'))
+    );
     if (theme === 'dark') {
       root.classList.add('dark');
     } else {

@@ -1,10 +1,9 @@
 
-import { Navigate, Routes, Route, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import VerifyEmailPage from "./features/auth/VerifyEmailPage";
 import AprobacionTutores from "./features/admin/AprobacionTutores";
 import { useAuth } from "./context/AuthContext";
-import { motion } from "framer-motion";
-import { Navbar } from "./components/Navbar";
+import { AppShell } from "./components/shell/AppShell";
 import { AuthView } from "./features/auth/AuthView";
 import { useEffect, useState } from "react";
 import SelectorIntereses from "./features/onboarding/SelectorIntereses";
@@ -85,27 +84,11 @@ function AppContent() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex flex-col bg-granite-50 dark:bg-deep-space-blue-950 text-granite-900 dark:text-white transition-colors duration-300 relative">
-      {isAuthenticated && hasSelectedRole ? (
-        <div className="grow relative flex flex-col">
-          <Navbar />
+  if (isAuthenticated && hasSelectedRole) {
+    return <DashboardView selectedRole={selectedRole} />;
+  }
 
-          <motion.div
-            key="dashboard"
-            className="flex-1 flex flex-col z-0"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <DashboardView selectedRole={selectedRole} />
-          </motion.div>
-        </div>
-      ) : (
-        <AuthView onComplete={handleRoleSelection} />
-      )}
-    </div>
-  );
+  return <AuthView onComplete={handleRoleSelection} />;
 }
 
 function AdminGuard() {
@@ -209,89 +192,116 @@ function ProximasTutoriasGuard({ children }) {
   return children;
 }
 
+/*
+ * Layout persistente: el shell (barra + navegación) se monta una sola vez y
+ * solo cambia el contenido de la ruta. Acceso, selección de rol y el
+ * onboarding de intereses se muestran sin shell.
+ */
+function ShellLayout() {
+  const { isAuthenticated, user } = useAuth();
+  const { pathname } = useLocation();
+
+  const rol = user?.rol?.trim().toLowerCase();
+  const tieneRol = isAuthenticated && Boolean(rol) && rol !== "nuevo";
+  const enOnboarding =
+    pathname === "/intereses" && rol === "estudiante" && !user?.onboardingCompleto;
+
+  if (!tieneRol || enOnboarding) {
+    return <Outlet />;
+  }
+
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>
+  );
+}
+
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<AppContent />} />
-
       <Route
         path="/verificar-correo"
         element={<VerifyEmailPage />}
       />
 
-      <Route
-        path="/admin/aprobaciones"
-        element={<AdminGuard />}
-      />
+      <Route element={<ShellLayout />}>
+        <Route path="/" element={<AppContent />} />
 
-      <Route
-        path="/intereses"
-        element={<StudentInterestsGuard />}
-      />
+        <Route
+          path="/admin/aprobaciones"
+          element={<AdminGuard />}
+        />
 
-      <Route
-        path="/aplicar-tutor"
-        element={<AplicacionTutorGuard />}
-      />
+        <Route
+          path="/intereses"
+          element={<StudentInterestsGuard />}
+        />
 
-      <Route
-        path="/estado-solicitud"
-        element={<EstadoSolicitud />}
-      />
+        <Route
+          path="/aplicar-tutor"
+          element={<AplicacionTutorGuard />}
+        />
 
-      <Route
-        path="/tutores"
-        element={
-          <StudentGuard>
-            <CatalogoTutores />
-          </StudentGuard>
-        }
-      />
+        <Route
+          path="/estado-solicitud"
+          element={<EstadoSolicitud />}
+        />
 
-      <Route
-        path="/tutor/:id"
-        element={
-          <StudentGuard>
-            <PerfilTutor />
-          </StudentGuard>
-        }
-      />
+        <Route
+          path="/tutores"
+          element={
+            <StudentGuard>
+              <CatalogoTutores />
+            </StudentGuard>
+          }
+        />
 
-      <Route
-        path="/tutor/mis-materias"
-        element={
-          <ApprovedTutorGuard>
-            <MisMateriasTutor />
-          </ApprovedTutorGuard>
-        }
-      />
+        <Route
+          path="/tutor/:id"
+          element={
+            <StudentGuard>
+              <PerfilTutor />
+            </StudentGuard>
+          }
+        />
 
-      <Route
-        path="/tutor/disponibilidad"
-        element={
-          <ApprovedTutorGuard>
-            <ConfiguracionDisponibilidad />
-          </ApprovedTutorGuard>
-        }
-      />
+        <Route
+          path="/tutor/mis-materias"
+          element={
+            <ApprovedTutorGuard>
+              <MisMateriasTutor />
+            </ApprovedTutorGuard>
+          }
+        />
 
-      <Route
-        path="/tutor/mis-tutorias"
-        element={
-          <ApprovedTutorGuard>
-            <MisTutorias />
-          </ApprovedTutorGuard>
-        }
-      />
+        <Route
+          path="/tutor/disponibilidad"
+          element={
+            <ApprovedTutorGuard>
+              <ConfiguracionDisponibilidad />
+            </ApprovedTutorGuard>
+          }
+        />
 
-      <Route
-        path="/mis-tutorias"
-        element={
-          <ProximasTutoriasGuard>
-            <ProximasTutorias />
-          </ProximasTutoriasGuard>
-        }
-      />
+        <Route
+          path="/tutor/mis-tutorias"
+          element={
+            <ApprovedTutorGuard>
+              <MisTutorias />
+            </ApprovedTutorGuard>
+          }
+        />
+
+        <Route
+          path="/mis-tutorias"
+          element={
+            <ProximasTutoriasGuard>
+              <ProximasTutorias />
+            </ProximasTutoriasGuard>
+          }
+        />
+      </Route>
     </Routes>
   );
 }

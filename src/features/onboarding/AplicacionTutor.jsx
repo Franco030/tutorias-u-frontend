@@ -1,7 +1,122 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  Body1,
+  Button,
+  Caption1,
+  Field,
+  makeStyles,
+  MessageBar,
+  MessageBarBody,
+  Radio,
+  RadioGroup,
+  Spinner,
+  Subtitle1,
+  Text,
+  tokens,
+} from "@fluentui/react-components";
+import { DocumentArrowUp24Regular } from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
-import { ArrowLeft, UploadCloud, FileCheck } from "lucide-react";
+import { MateriaSelector } from "../../components/ui/MateriaSelector";
+import { Page, Surface } from "../../components/ui/Page";
+import { PageHero } from "../../components/ui/PageHero";
+import { fotos } from "../../assets/fotos";
+import { Stepper } from "../../components/ui/Stepper";
+
+const useStyles = makeStyles({
+  layout: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXL,
+    "@media (min-width: 1024px)": {
+      display: "grid",
+      gridTemplateColumns: "220px minmax(0, 1fr)",
+      gap: tokens.spacingHorizontalXXXL,
+      alignItems: "start",
+    },
+  },
+  aside: {
+    "@media (min-width: 1024px)": {
+      position: "sticky",
+      top: tokens.spacingVerticalXXL,
+    },
+  },
+  content: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXL,
+    minWidth: 0,
+  },
+  section: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalL,
+    scrollMarginTop: tokens.spacingVerticalXXL,
+    ":focus-visible": {
+      outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`,
+      outlineOffset: "2px",
+    },
+  },
+  sectionHead: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXS,
+  },
+  muted: {
+    color: tokens.colorNeutralForeground3,
+  },
+  upload: {
+    display: "grid",
+    gridTemplateColumns: "24px minmax(0, 1fr)",
+    alignItems: "center",
+    gap: tokens.spacingHorizontalM,
+    padding: tokens.spacingHorizontalL,
+    borderRadius: tokens.borderRadiusMedium,
+    border: `${tokens.strokeWidthThin} dashed ${tokens.colorNeutralStroke1}`,
+    backgroundColor: tokens.colorNeutralBackground2,
+    "@media (min-width: 640px)": {
+      gridTemplateColumns: "24px minmax(0, 1fr) auto",
+    },
+    "& > button": {
+      gridColumn: "1 / -1",
+      "@media (min-width: 640px)": {
+        gridColumn: "auto",
+      },
+    },
+  },
+  uploadIcon: {
+    color: tokens.colorNeutralForeground3,
+  },
+  uploadText: {
+    display: "flex",
+    flexDirection: "column",
+    minWidth: 0,
+  },
+  fileName: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  hiddenInput: {
+    display: "none",
+  },
+  questions: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXL,
+  },
+  submitRow: {
+    display: "flex",
+    flexDirection: "column-reverse",
+    gap: tokens.spacingVerticalS,
+    "@media (min-width: 640px)": {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: tokens.spacingHorizontalL,
+    },
+  },
+});
 
 import { getMaterias } from "../../services/materiaService";
 import { subirArchivo } from "../../services/fileService";
@@ -38,8 +153,10 @@ const preguntasExamen = [
 ];
 
 export default function AplicacionTutor() {
+  const styles = useStyles();
   const navigate = useNavigate();
   const { updateLocalUser } = useAuth();
+  const inputArchivo = useRef(null);
 
   const [materias, setMaterias] = useState([]);
   const [materiasSeleccionadas, setMateriasSeleccionadas] = useState([]);
@@ -123,179 +240,156 @@ export default function AplicacionTutor() {
     }
   };
 
+  const pasos = [
+    {
+      id: "materias",
+      titulo: "Materias",
+      completo: materiasSeleccionadas.length > 0,
+      pendiente: "Elige al menos una",
+    },
+    {
+      id: "comprobante",
+      titulo: "Comprobante",
+      completo: archivo !== null,
+      pendiente: "Sube un archivo",
+    },
+    {
+      id: "cuestionario",
+      titulo: "Cuestionario",
+      completo: Object.keys(respuestasExamen).length === preguntasExamen.length,
+      pendiente: `${Object.keys(respuestasExamen).length} de ${preguntasExamen.length} respondidas`,
+    },
+  ];
+  const pendientes = pasos.filter((paso) => !paso.completo).map((paso) => paso.titulo.toLowerCase());
+
   return (
-    <main className="min-h-screen bg-granite-50 dark:bg-deep-space-blue-950">
-      <div className="mx-auto max-w-3xl px-6 py-10">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-6 inline-flex items-center gap-2 px-3 py-2 -ml-3 rounded-md text-granite-600 dark:text-deep-space-blue-300 hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Volver</span>
-        </button>
+    <Page>
+      <PageHero
+        title="Conviértete en tutor"
+        description="Comparte lo que dominas con otros estudiantes. Completa las tres partes; la administración revisa tu postulación antes de habilitarte."
+        foto={fotos.pizarron}
+      />
 
-        <h1 className="text-2xl font-semibold text-granite-900 dark:text-white tracking-tight">
-          Conviértete en Tutor
-        </h1>
-        
-        <div className="mt-8">
-          <h2 className="text-lg font-medium text-granite-900 dark:text-white border-b border-granite-200 dark:border-deep-space-blue-800 pb-2">
-            Materias que deseas impartir
-          </h2>
-          <p className="mt-2 text-sm text-granite-500 dark:text-deep-space-blue-300">
-            Selecciona una o más materias.
-          </p>
+      <div className={styles.layout}>
+        <aside className={styles.aside}>
+          <Stepper pasos={pasos} label="Progreso de la postulación" />
+        </aside>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {materias.map((materia) => {
-              const estaSeleccionada = materiasSeleccionadas.includes(materia.id);
+        <div className={styles.content}>
+          <Surface as="section" id="materias" tabIndex={-1} aria-labelledby="titulo-materias" className={styles.section}>
+            <div className={styles.sectionHead}>
+              <Subtitle1 as="h2" id="titulo-materias">
+                1. Materias que deseas impartir
+              </Subtitle1>
+              <Body1 className={styles.muted}>Selecciona una o más. Podrás ajustarlas una vez aprobado.</Body1>
+            </div>
+            <MateriaSelector
+              materias={materias}
+              seleccionadas={materiasSeleccionadas}
+              onToggle={toggleMateria}
+              disabled={loading}
+            />
+          </Surface>
 
-              return (
-                <button
-                  key={materia.id}
-                  type="button"
-                  onClick={() => toggleMateria(materia.id)}
-                  className={`
-                    rounded-md border px-4 py-2 text-sm font-medium
-                    cursor-pointer transition-all duration-200
-                    ${
-                      estaSeleccionada
-                        ? "bg-deep-space-blue-600 border-deep-space-blue-600 text-white shadow-sm dark:bg-emerald-500 dark:border-emerald-500 dark:text-deep-space-blue-950"
-                        : "bg-white border-granite-200 text-granite-700 hover:border-deep-space-blue-400 dark:bg-deep-space-blue-900/40 dark:border-deep-space-blue-800 dark:text-deep-space-blue-200 dark:hover:border-emerald-500"
-                    }
-                  `}
-                >
-                  {materia.nombre}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="mt-10">
-          <h2 className="text-lg font-medium text-granite-900 dark:text-white border-b border-granite-200 dark:border-deep-space-blue-800 pb-2">
-            Comprobante
-          </h2>
-          <p className="mt-2 text-sm text-granite-500 dark:text-deep-space-blue-300">
-            Sube tu comprobante en formato PDF o imagen.
-          </p>
-
-          <div className="mt-4">
-            <label
-              htmlFor="file-upload"
-              className="relative flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-lg cursor-pointer transition-colors border-granite-300 bg-white hover:bg-granite-50 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900/40 dark:hover:border-emerald-500"
-            >
-              {archivo ? (
-                <div className="flex flex-col items-center text-emerald-600 dark:text-emerald-400">
-                  <FileCheck className="w-8 h-8 mb-2" />
-                  <span className="text-sm font-medium">{archivo.name}</span>
-                  <span className="mt-1 text-xs text-granite-500 dark:text-deep-space-blue-300">Click para cambiar</span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center text-granite-500 dark:text-deep-space-blue-300">
-                  <UploadCloud className="w-8 h-8 mb-2" />
-                  <span className="text-sm font-medium text-granite-700 dark:text-white">Haz click para subir un archivo</span>
-                  <span className="mt-1 text-xs">PDF o Imágenes (Max 5MB)</span>
-                </div>
-              )}
+          <Surface as="section" id="comprobante" tabIndex={-1} aria-labelledby="titulo-comprobante" className={styles.section}>
+            <div className={styles.sectionHead}>
+              <Subtitle1 as="h2" id="titulo-comprobante">
+                2. Comprobante
+              </Subtitle1>
+              <Body1 className={styles.muted}>
+                Un documento que respalde tu dominio de las materias (kárdex, constancia, certificado). PDF o imagen de hasta 5 MB.
+              </Body1>
+            </div>
+            <div className={styles.upload}>
+              <DocumentArrowUp24Regular className={styles.uploadIcon} aria-hidden="true" />
+              <div className={styles.uploadText}>
+                <Text weight="semibold" className={styles.fileName}>
+                  {archivo ? archivo.name : "Ningún archivo seleccionado"}
+                </Text>
+                <Caption1 className={styles.muted}>
+                  {archivo ? `${(archivo.size / 1024 / 1024).toFixed(1)} MB` : "PDF, JPG o PNG"}
+                </Caption1>
+              </div>
+              <Button
+                appearance={archivo ? "secondary" : "primary"}
+                onClick={() => inputArchivo.current?.click()}
+                disabled={loading}
+              >
+                {archivo ? "Cambiar archivo" : "Elegir archivo"}
+              </Button>
               <input
+                ref={inputArchivo}
                 id="file-upload"
                 type="file"
                 accept=".pdf,image/*"
                 onChange={(e) => setArchivo(e.target.files[0] || null)}
-                className="hidden"
+                className={styles.hiddenInput}
+                tabIndex={-1}
+                aria-hidden="true"
               />
-            </label>
+            </div>
+          </Surface>
+
+          <Surface as="section" id="cuestionario" tabIndex={-1} aria-labelledby="titulo-cuestionario" className={styles.section}>
+            <div className={styles.sectionHead}>
+              <Subtitle1 as="h2" id="titulo-cuestionario">
+                3. Cuestionario introductorio
+              </Subtitle1>
+              <Body1 className={styles.muted}>Tres preguntas sobre cómo das una tutoría.</Body1>
+            </div>
+            <div className={styles.questions}>
+              {preguntasExamen.map((pregunta, index) => (
+                <Field key={pregunta.id} label={`${index + 1}. ${pregunta.pregunta}`} required>
+                  <RadioGroup
+                    name={`pregunta-${pregunta.id}`}
+                    value={respuestasExamen[pregunta.id] || ""}
+                    onChange={(_, data) =>
+                      setRespuestasExamen((prev) => ({
+                        ...prev,
+                        [pregunta.id]: data.value,
+                      }))
+                    }
+                    disabled={loading}
+                  >
+                    {pregunta.opciones.map((opcion) => (
+                      <Radio key={opcion} value={opcion} label={opcion} />
+                    ))}
+                  </RadioGroup>
+                </Field>
+              ))}
+            </div>
+          </Surface>
+
+          {error && (
+            <MessageBar intent="error" layout="multiline">
+              <MessageBarBody>{error}</MessageBarBody>
+            </MessageBar>
+          )}
+
+          {mensajeExito && (
+            <MessageBar intent="success" layout="multiline">
+              <MessageBarBody>{mensajeExito}. Te llevamos al estado de tu solicitud…</MessageBarBody>
+            </MessageBar>
+          )}
+
+          <div className={styles.submitRow}>
+            <Caption1 className={styles.muted} role="status">
+              {pendientes.length === 0
+                ? "Todo listo para enviar."
+                : `Falta completar: ${pendientes.join(", ")}.`}
+            </Caption1>
+            <Button
+              appearance="primary"
+              size="large"
+              onClick={handleSubmit}
+              disabled={!formularioValido || loading}
+              icon={loading ? <Spinner size="tiny" /> : undefined}
+            >
+              {loading ? "Enviando postulación…" : "Enviar postulación"}
+            </Button>
           </div>
         </div>
-
-        <div className="mt-10">
-          <h2 className="text-lg font-medium text-granite-900 dark:text-white border-b border-granite-200 dark:border-deep-space-blue-800 pb-2">
-            Cuestionario introductorio
-          </h2>
-          <p className="mt-2 text-sm text-granite-500 dark:text-deep-space-blue-300">
-            Responde las siguientes preguntas antes de enviar tu postulación.
-          </p>
-
-          <div className="mt-6 space-y-6">
-            {preguntasExamen.map((pregunta, index) => (
-              <div key={pregunta.id} className="bg-white dark:bg-deep-space-blue-900/20 p-6 rounded-lg border border-granite-200 dark:border-deep-space-blue-800">
-                <p className="font-medium text-granite-800 dark:text-white">
-                  {index + 1}. {pregunta.pregunta}
-                </p>
-                <div className="mt-4 space-y-3">
-                  {pregunta.opciones.map((opcion) => (
-                    <label
-                      key={opcion}
-                      className="flex items-center gap-3 text-sm text-granite-600 dark:text-deep-space-blue-200 cursor-pointer hover:text-deep-space-blue-600 dark:hover:text-emerald-400"
-                    >
-                      <input
-                        type="radio"
-                        name={`pregunta-${pregunta.id}`}
-                        value={opcion}
-                        checked={respuestasExamen[pregunta.id] === opcion}
-                        onChange={() =>
-                          setRespuestasExamen((prev) => ({
-                            ...prev,
-                            [pregunta.id]: opcion,
-                          }))
-                        }
-                        className="accent-deep-space-blue-600 dark:accent-emerald-500"
-                      />
-                      <span>{opcion}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {error && (
-          <div className="mt-8 rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3">
-            <p className="text-sm text-red-600 dark:text-red-400">
-              {error}
-            </p>
-          </div>
-        )}
-
-        {mensajeExito && (
-          <div className="mt-8 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
-            <p className="text-sm text-emerald-700 dark:text-emerald-400">
-              {mensajeExito}
-            </p>
-          </div>
-        )}
-
-        <div className="mt-8 pb-10">
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!formularioValido || loading}
-            className="
-              w-full sm:w-auto
-              rounded-md
-              bg-deep-space-blue-600
-              px-10
-              py-3
-              text-sm
-              font-medium
-              text-white
-              cursor-pointer
-              transition
-              hover:bg-deep-space-blue-700
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-              dark:bg-emerald-500
-              dark:hover:bg-emerald-600
-              dark:text-deep-space-blue-950
-            "
-          >
-            {loading ? "Enviando postulación..." : "Enviar postulación"}
-          </button>
-        </div>
-
       </div>
-    </main>
+    </Page>
   );
 }

@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { MsalProvider } from '@azure/msal-react';
 import { msalInstance } from './features/auth/msalConfig';
 import { ThemeProvider } from './context/ThemeContext';
+import { FluentThemeBridge } from './theme/FluentThemeBridge';
 import { AuthProvider } from './context/AuthContext';
 import App from './App.jsx';
 import './index.css';
@@ -23,11 +24,13 @@ async function initApp() {
       <GoogleOAuthProvider clientId={googleClientId}>
         <MsalProvider instance={msalInstance}>
           <ThemeProvider>
-            <AuthProvider>
-              <BrowserRouter>
-                <App />
-              </BrowserRouter>
-            </AuthProvider>
+            <FluentThemeBridge>
+              <AuthProvider>
+                <BrowserRouter>
+                  <App />
+                </BrowserRouter>
+              </AuthProvider>
+            </FluentThemeBridge>
           </ThemeProvider>
         </MsalProvider>
       </GoogleOAuthProvider>
