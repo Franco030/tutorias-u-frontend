@@ -125,20 +125,48 @@ function Esfera({ id, cx, cy, r, tono, sombra = true }) {
   );
 }
 
-// `ajuste="cubrir"` recorta (bandas anchas); `ajuste="contener"` no recorta (paneles altos).
-function Base({ id, children, className, label, ajuste = "cubrir" }) {
+// Panel de imagen de TarjetaIlustrada (240 × 176 con 20 px de aire) y el área
+// visual que debe ocupar cada ilustración en él.
+const PANEL = { ancho: 240, alto: 176, aire: 20 };
+const AREA_OBJETIVO = 23000;
+
+// Encuadre para tarjetas: centra el sujeto (su caja `encuadre` = [x, y, ancho,
+// alto] en el lienzo de 480 × 300) y lo escala para que todas las ilustraciones
+// ocupen un área parecida, sin salirse del panel. Así una composición ancha
+// (Comunidad) y una compacta (Calendario) se ven del mismo tamaño.
+function viewBoxTarjeta([x, y, ancho, alto]) {
+  const escala = Math.min(
+    Math.sqrt(AREA_OBJETIVO / (ancho * alto)),
+    (PANEL.ancho - PANEL.aire * 2) / ancho,
+    (PANEL.alto - PANEL.aire * 2) / alto
+  );
+  const vw = PANEL.ancho / escala;
+  const vh = PANEL.alto / escala;
+  return [x + ancho / 2 - vw / 2, y + alto / 2 - vh / 2, vw, vh];
+}
+
+// `ajuste="cubrir"` recorta (bandas anchas); `ajuste="contener"` no recorta
+// (paneles altos); `ajuste="tarjeta"` encuadra el sujeto (TarjetaIlustrada).
+function Base({ id, children, className, label, ajuste = "cubrir", encuadre }) {
   const s = useStyles();
+  const caja = ajuste === "tarjeta" && encuadre ? viewBoxTarjeta(encuadre) : [0, 0, 480, 300];
   return (
     <svg
-      viewBox="0 0 480 300"
-      preserveAspectRatio={ajuste === "contener" ? "xMidYMid meet" : "xMidYMid slice"}
+      viewBox={caja.join(" ")}
+      preserveAspectRatio={ajuste === "cubrir" ? "xMidYMid slice" : "xMidYMid meet"}
       className={mergeClasses(s.svg, className)}
       role={label ? "img" : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
     >
       <Defs id={id} />
-      <rect width="480" height="300" fill={`url(#${id}-${ajuste === "contener" ? "bgc" : "bg"})`} />
+      <rect
+        x={caja[0]}
+        y={caja[1]}
+        width={caja[2]}
+        height={caja[3]}
+        fill={`url(#${id}-${ajuste === "cubrir" ? "bg" : "bgc"})`}
+      />
       {children}
     </svg>
   );
@@ -148,26 +176,26 @@ function Base({ id, children, className, label, ajuste = "cubrir" }) {
 export function IlustracionComunidad({ className, label, ajuste }) {
   const s = useStyles();
   const id = `il-${limpiarId(useId())}`;
-  const anillo = { cx: 240, cy: 178, rx: 168, ry: 40 };
+  const anillo = { cx: 240, cy: 178, rx: 138, ry: 36 };
   const arco = (sup) =>
     `M${anillo.cx - anillo.rx} ${anillo.cy} A${anillo.rx} ${anillo.ry} 0 0 ${sup ? 1 : 0} ${anillo.cx + anillo.rx} ${anillo.cy}`;
 
   return (
-    <Base id={id} className={className} label={label} ajuste={ajuste}>
-      <ellipse cx="240" cy="194" rx="118" ry="24" className={s.floor} />
+    <Base id={id} className={className} label={label} ajuste={ajuste} encuadre={[96, 70, 288, 156]}>
+      <ellipse cx="240" cy="194" rx="104" ry="22" className={s.floor} />
       {/* Mitad trasera del anillo y las personas de atrás */}
       <path d={arco(true)} fill="none" stroke={`url(#${id}-ring)`} strokeWidth="9" strokeLinecap="round" opacity="0.55" />
-      <Persona id={id} x={132} y={156} s={21} tono="teal" />
-      <Persona id={id} x={350} y={154} s={21} tono="lavender" />
+      <Persona id={id} x={158} y={158} s={21} tono="teal" />
+      <Persona id={id} x={324} y={156} s={21} tono="lavender" />
       {/* Persona central sobre su plataforma */}
       <Persona id={id} x={240} y={182} s={38} tono="brand" />
       {/* Mitad delantera del anillo y las personas de adelante */}
       <path d={arco(false)} fill="none" stroke={`url(#${id}-ring)`} strokeWidth="11" strokeLinecap="round" />
-      <Persona id={id} x={162} y={214} s={23} tono="marigold" />
-      <Persona id={id} x={322} y={216} s={23} tono="berry" />
-      <Esfera id={id} cx={96} cy={100} r={9} tono="marigold" sombra={false} />
-      <Esfera id={id} cx={392} cy={96} r={12} tono="teal" sombra={false} />
-      <Esfera id={id} cx={298} cy={86} r={6} tono="berry" sombra={false} />
+      <Persona id={id} x={182} y={210} s={23} tono="marigold" />
+      <Persona id={id} x={300} y={212} s={23} tono="berry" />
+      <Esfera id={id} cx={120} cy={92} r={9} tono="marigold" sombra={false} />
+      <Esfera id={id} cx={364} cy={88} r={12} tono="teal" sombra={false} />
+      <Esfera id={id} cx={296} cy={80} r={6} tono="berry" sombra={false} />
     </Base>
   );
 }
@@ -178,7 +206,7 @@ export function IlustracionAprender({ className, label, ajuste }) {
   const id = `il-${limpiarId(useId())}`;
 
   return (
-    <Base id={id} className={className} label={label} ajuste={ajuste}>
+    <Base id={id} className={className} label={label} ajuste={ajuste} encuadre={[90, 63, 300, 189]}>
       <ellipse cx="240" cy="228" rx="150" ry="24" className={s.floor} />
       <Sombra id={id} cx={240} cy={226} rx={130} ry={16} />
       {/* Tapas y páginas */}
@@ -222,7 +250,7 @@ export function IlustracionRevision({ className, label, ajuste, estado = "pendie
   const config = ESTADOS[estado] || ESTADOS.pendiente;
 
   return (
-    <Base id={id} className={className} label={label} ajuste={ajuste}>
+    <Base id={id} className={className} label={label} ajuste={ajuste} encuadre={[110, 62, 269, 190]}>
       <ellipse cx="240" cy="230" rx="130" ry="22" className={s.floor} />
       <Sombra id={id} cx={232} cy={226} rx={92} ry={14} />
       {/* Documento trasero y delantero, ligeramente rotados */}
@@ -256,7 +284,7 @@ export function IlustracionCalendario({ className, label, ajuste }) {
   const id = `il-${limpiarId(useId())}`;
 
   return (
-    <Base id={id} className={className} label={label} ajuste={ajuste}>
+    <Base id={id} className={className} label={label} ajuste={ajuste} encuadre={[112, 70, 262, 195]}>
       <ellipse cx="240" cy="226" rx="128" ry="22" className={s.floor} />
       <Sombra id={id} cx={236} cy={222} rx={96} ry={14} />
       <g transform="rotate(-4 236 150)">

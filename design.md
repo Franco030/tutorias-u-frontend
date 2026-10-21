@@ -154,6 +154,9 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 - Fechas · `Calendar` de `@fluentui/react-calendar-compat` con
   `lib/calendarioEs.js` (español, semana desde el lunes); los días sin
   disponibilidad van en `restrictedDates`.
+- Horas · `SelectorHora` (TimePicker de `@fluentui/react-timepicker-compat`):
+  24 h, lista cada 30 min de unos 7 renglones y se puede escribir otra hora
+  ("09:15"). Nunca el `<input type="time">` del navegador.
 - Estados vacíos · `EmptyState` con `ilustracion` (Comunidad, Calendario,
   Revisión) en las pantallas principales; ícono simple en lugares secundarios.
 - Tarjetas ilustradas · siempre `TarjetaIlustrada` (la usa `EmptyState`):
@@ -161,6 +164,10 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   descripción y la acción **debajo** del texto. Nada de variantes propias con
   otro ancho de imagen o el botón al costado: dos tarjetas seguidas deben
   verse iguales.
+  Dentro del panel, cada ilustración se encuadra a su propio sujeto
+  (`encuadre` en `Ilustraciones.jsx`) y se escala a un área visual común,
+  así una composición ancha y una compacta pesan lo mismo. Una ilustración
+  nueva debe declarar su `encuadre`.
 - Ilustración en una banda más ancha que su proporción (p. ej. el encabezado
   del estado de solicitud) · `ajuste="contener"`, nunca recortada.
 - Estados de cada control · reposo, hover, foco, presionado, deshabilitado,

@@ -6,7 +6,6 @@ import {
   Button,
   Caption1,
   Field,
-  Input,
   makeStyles,
   MessageBar,
   MessageBarBody,
@@ -24,6 +23,7 @@ import {
   guardarDisponibilidadTutor,
 } from "../../services/tutorService";
 import { Page, PageHeader, PageLoading, Surface } from "../../components/ui/Page";
+import { SelectorHora } from "../../components/ui/SelectorHora";
 
 const DIAS_SEMANA = [
   "Domingo",
@@ -375,20 +375,10 @@ export default function ConfiguracionDisponibilidad() {
 
             <div className={styles.times}>
               <Field label="Inicio">
-                <Input
-                  type="time"
-                  value={horaInicio}
-                  onChange={(_, data) => setHoraInicio(data.value)}
-                  disabled={guardando}
-                />
+                <SelectorHora value={horaInicio} onChange={setHoraInicio} disabled={guardando} />
               </Field>
               <Field label="Fin">
-                <Input
-                  type="time"
-                  value={horaFin}
-                  onChange={(_, data) => setHoraFin(data.value)}
-                  disabled={guardando}
-                />
+                <SelectorHora value={horaFin} onChange={setHoraFin} disabled={guardando} />
               </Field>
             </div>
 
