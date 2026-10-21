@@ -91,12 +91,13 @@ describe("citaService", () => {
       mensaje: "Cita rechazada",
     });
 
-    const resultado = await rechazarCita(8);
+    const resultado = await rechazarCita(8, "Ese día tengo examen.");
 
     expect(apiClient.put).toHaveBeenCalledTimes(1);
 
     expect(apiClient.put).toHaveBeenCalledWith(
-      "/api/citas/8/rechazar"
+      "/api/citas/8/rechazar",
+      { motivo: "Ese día tengo examen." }
     );
 
     expect(resultado).toEqual({

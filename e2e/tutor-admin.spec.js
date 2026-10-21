@@ -23,8 +23,11 @@ test.describe('Tutor', () => {
     await expect(page.getByText('Tutoría aceptada', { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Rechazar solicitud de Carlos Méndez' }).click();
+    await page.getByLabel('Motivo (opcional)').fill('Ese día tengo examen.');
     await page.getByRole('button', { name: 'Rechazar solicitud', exact: true }).click();
     await expect(page.getByText('Solicitud rechazada', { exact: true })).toBeVisible();
+    const rechazo = recibidas.find((r) => r.metodo === 'PUT' && r.ruta === '/api/citas/22/rechazar');
+    expect(rechazo?.cuerpo).toEqual({ motivo: 'Ese día tengo examen.' });
 
     await expect(page.getByText('No tienes solicitudes pendientes')).toBeVisible();
     expect(recibidas.find((r) => r.ruta === '/api/citas/21/aceptar')?.cuerpo).toMatchObject({

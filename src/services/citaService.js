@@ -23,8 +23,8 @@ export const aceptarCita = (id, data) => {
   return apiClient.put(`/api/citas/${id}/aceptar`, data);
 };
 
-export const rechazarCita = (id) => {
-  return apiClient.put(`/api/citas/${id}/rechazar`);
+export const rechazarCita = (id, motivo = "") => {
+  return apiClient.put(`/api/citas/${id}/rechazar`, { motivo });
 };
 
 // US-4: Consultar las próximas tutorías del usuario autenticado

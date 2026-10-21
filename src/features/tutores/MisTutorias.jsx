@@ -9,9 +9,13 @@ import {
   DialogContent,
   DialogSurface,
   DialogTitle,
+  Field,
+  makeStyles,
   MessageBar,
   MessageBarBody,
   Spinner,
+  Textarea,
+  tokens,
 } from "@fluentui/react-components";
 import { Checkmark20Regular, TaskListSquareLtr24Regular } from "@fluentui/react-icons";
 import {
@@ -31,7 +35,16 @@ import {
   SessionRow,
 } from "../../components/ui/SessionList";
 
+const useStyles = makeStyles({
+  rechazo: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalL,
+  },
+});
+
 export default function MisTutorias() {
+  const styles = useStyles();
   const notificar = useNotificar();
   const [citas, setCitas] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -41,6 +54,7 @@ export default function MisTutorias() {
   const [guardando, setGuardando] = useState(false);
   const [rechazandoId, setRechazandoId] = useState(null);
   const [citaARechazar, setCitaARechazar] = useState(null);
+  const [motivoRechazo, setMotivoRechazo] = useState("");
 
   useEffect(() => {
     const cargarCitas = async () => {
@@ -102,6 +116,7 @@ export default function MisTutorias() {
 
   // Antes era window.confirm: ahora la confirmación vive en un diálogo propio.
   const handleRechazar = (cita) => {
+    setMotivoRechazo("");
     setCitaARechazar(cita);
   };
 
@@ -113,7 +128,7 @@ export default function MisTutorias() {
       setRechazandoId(cita.id);
       setError("");
 
-      await rechazarCita(cita.id);
+      await rechazarCita(cita.id, motivoRechazo.trim());
 
       removerCita(cita.id);
       notificar("Solicitud rechazada", {
@@ -215,11 +230,21 @@ export default function MisTutorias() {
         <DialogSurface>
           <DialogBody>
             <DialogTitle>¿Rechazar esta solicitud?</DialogTitle>
-            <DialogContent>
+            <DialogContent className={styles.rechazo}>
               <Body1>
                 {citaARechazar &&
-                  `${citaARechazar.estudianteNombre} pidió ${citaARechazar.materiaNombre}. La solicitud quedará marcada como rechazada.`}
+                  `${citaARechazar.estudianteNombre} pidió ${citaARechazar.materiaNombre}. Le avisaremos por correo que la solicitud fue rechazada.`}
               </Body1>
+              <Field label="Motivo (opcional)" hint="Se incluye en el correo al estudiante.">
+                <Textarea
+                  value={motivoRechazo}
+                  onChange={(_, data) => setMotivoRechazo(data.value)}
+                  maxLength={1000}
+                  rows={3}
+                  resize="vertical"
+                  disabled={rechazandoId !== null}
+                />
+              </Field>
             </DialogContent>
             <DialogActions>
               <Button
