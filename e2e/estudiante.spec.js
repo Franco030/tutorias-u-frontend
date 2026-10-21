@@ -1,0 +1,129 @@
+import { test, expect } from '@playwright/test';
+import { enDias, iniciarSesion, materias, simularApi, tutores, usuarios } from './helpers';
+
+const rutasEstudiante = {
+  '/api/citas/proximas': [],
+  '/api/citas/historial': [],
+  '/api/tutores/recomendados': tutores,
+  '/api/tutores': tutores,
+  '/api/materias': materias,
+  '/api/estudiantes/intereses': [1],
+};
+
+test.describe('Estudiante', () => {
+  test('el onboarding completado se conserva al recargar', async ({ page }) => {
+    await simularApi(page, {
+      ...rutasEstudiante,
+      'POST /api/auth/login': { ...usuarios.estudiante, onboardingCompleto: false },
+    });
+
+    await page.goto('/');
+    await page.getByRole('textbox', { name: 'Correo electrónico' }).fill('ana.ruiz@universidad.edu');
+    await page.locator('#password').fill('prueba123');
+    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+
+    await page.goto('/intereses');
+    await expect(page.getByRole('heading', { name: '¿Qué materias te interesan?' })).toBeVisible();
+    await page.getByRole('button', { name: 'Omitir por ahora' }).click();
+    await expect(page).toHaveURL('/');
+
+    // Antes el indicador se guardaba en otra clave y al recargar volvía el onboarding.
+    await page.reload();
+    await page.goto('/intereses');
+    await expect(page.getByRole('heading', { name: 'Mis intereses' })).toBeVisible();
+  });
+
+  test('una sesión expirada vuelve al acceso con un aviso', async ({ page }) => {
+    await iniciarSesion(page, usuarios.estudiante);
+    await simularApi(page, {
+      ...rutasEstudiante,
+      '/api/citas/proximas': { status: 401 },
+    });
+
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Inicia sesión' })).toBeVisible();
+    await expect(page.getByText('Tu sesión ha expirado')).toBeVisible();
+  });
+
+  test('busca desde la barra superior y filtra el catálogo', async ({ page }) => {
+    await iniciarSesion(page, usuarios.estudiante);
+    await simularApi(page, rutasEstudiante);
+
+    await page.goto('/');
+    const busqueda = page.getByRole('searchbox', { name: 'Buscar tutores o materias' });
+    await busqueda.fill('física');
+    await busqueda.press('Enter');
+
+    await expect(page).toHaveURL(/\/tutores\?q=f%C3%ADsica/);
+    await expect(page.getByRole('link', { name: /Lucía Campos/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Mateo Herrera/ })).toHaveCount(0);
+
+    await page.getByRole('searchbox', { name: 'Buscar por nombre o materia' }).fill('');
+    await page.getByRole('tab', { name: 'Tecnología' }).click();
+    await expect(page.getByRole('link', { name: /Diego Salinas/ })).toBeVisible();
+    await expect(page.locator('a[href^="/tutor/"]')).toHaveCount(1);
+  });
+
+  test('agenda una cita eligiendo día en el calendario', async ({ page }) => {
+    await iniciarSesion(page, usuarios.estudiante);
+    // El tutor atiende todos los días a las 23:00 UTC, siempre en el futuro.
+    const disponibilidad = [0, 1, 2, 3, 4, 5, 6].map((dia) => ({
+      diaSemana: dia,
+      horaInicio: '23:00',
+      horaFin: '23:59',
+    }));
+    const recibidas = await simularApi(page, {
+      ...rutasEstudiante,
+      '/api/tutores/11': tutores[0],
+      '/api/tutores/11/disponibilidad': disponibilidad,
+      '/api/citas/ocupadas': [],
+      'POST /api/citas/agendar': { id: 99, estado: 'Pendiente' },
+    });
+
+    await page.goto('/tutor/11');
+    await expect(page.getByRole('heading', { name: 'Mateo Herrera' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Horario semanal' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Agendar cita' }).click();
+    const dialogo = page.getByRole('dialog');
+    await dialogo.getByRole('combobox', { name: /Materia/ }).click();
+    await page.getByRole('option', { name: 'Cálculo' }).click();
+
+    // Primer día habilitado del calendario (mañana como muy tarde).
+    const manana = new Date(enDias(1));
+    await dialogo
+      .getByRole('gridcell')
+      .getByRole('button', { name: new RegExp(`^${manana.getDate()},`) })
+      .first()
+      .click();
+
+    await dialogo.getByRole('radio', { name: /23:00/ }).check();
+    await dialogo.getByRole('button', { name: 'Confirmar cita' }).click();
+
+    await expect(dialogo.getByText('Solicitud enviada')).toBeVisible();
+    const peticion = recibidas.find((r) => r.metodo === 'POST' && r.ruta === '/api/citas/agendar');
+    expect(peticion?.cuerpo).toMatchObject({ tutorId: 11, materiaId: 1 });
+  });
+
+  test('muestra "Unirse" en sesiones con enlace de reunión', async ({ page }) => {
+    await iniciarSesion(page, usuarios.estudiante);
+    await simularApi(page, {
+      ...rutasEstudiante,
+      '/api/citas/proximas': [
+        {
+          id: 1,
+          materia: 'Cálculo',
+          rolOpuestoNombre: 'Mateo Herrera',
+          fechaHoraInicio: enDias(1),
+          estado: 'Aceptada',
+          linkReunion: 'https://meet.example.com/abc',
+        },
+      ],
+    });
+
+    await page.goto('/mis-tutorias');
+    const unirse = page.getByRole('link', { name: 'Unirse a Cálculo con Mateo Herrera' });
+    await expect(unirse).toHaveAttribute('href', 'https://meet.example.com/abc');
+    await expect(unirse).toHaveAttribute('target', '_blank');
+  });
+});
