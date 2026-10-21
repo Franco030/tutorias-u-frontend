@@ -170,7 +170,11 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   `colorBrandForeground2`. Riel y panel tienen exactamente la misma
   geometría vertical (encabezados de sección de 32 px en ambos; en el riel,
   una línea centrada), así al abrir el menú nada cambia de posición. El
-  panel se revela con `clip-path` desde el ancho del riel.
+  panel se revela con `clip-path` desde el ancho del riel (patrón Enter/Exit
+  de Fluent 2): entrada 300 ms y salida 200 ms, ambas con
+  `curveDecelerateMin` — arrancan al instante y se asientan suave. Nunca
+  ease-in en una salida: se siente como si el clic no se hubiera
+  registrado. El cajón móvil usa la misma curva (`theme/navMotion.js`).
 - Tarjetas clicables · `liftOnHover`. Filas · chevron que avanza 3 px.
 - Sin animaciones de entrada por scroll ni carruseles automáticos.
 - `prefers-reduced-motion` desactiva todo movimiento (ver `index.css`), y el
