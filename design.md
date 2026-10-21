@@ -71,6 +71,11 @@ enmienda aquí, no con un estilo suelto en el componente.
   diálogos. En oscuro la altura se marca también con el fondo más claro.
 - Radio de tarjetas y superficies · `borderRadiusXLarge` (12 px).
 - Sin glassmorphism, gradientes de texto ni tarjetas dentro de tarjetas.
+- Hover sobre la base del shell (navegación, botones sutiles de la barra):
+  `veloHover` / `veloPresionado` (`theme/superficies.js`), un velo del
+  color de texto al 10 % / 14 %. `colorSubtleBackgroundHover` es #f5f5f5 en
+  claro, casi igual a la base (1.06:1), y no se nota; el velo da ≈1.2:1 en
+  claro y ≈1.3:1 en oscuro.
 
 ## Estructura de la app
 - Shell · barra superior de 48 px (marca, tema, menú de usuario) + riel de
