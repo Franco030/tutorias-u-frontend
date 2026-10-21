@@ -18,6 +18,7 @@ import { getApiBaseUrl } from "../../services/apiClient";
 import { DarkModeToggle } from "../DarkModeToggle";
 import { Avisos } from "../ui/notificaciones";
 import { BrandMark } from "./BrandMark";
+import { PanelLateralMotion } from "../../theme/navMotion";
 import { SideNav } from "./SideNav";
 import { UserMenu } from "./UserMenu";
 import { getActiveNavValue, getNavSections, getRol } from "./navigation";
@@ -80,11 +81,14 @@ const useStyles = makeStyles({
     width: RAIL_WIDTH,
     overflowX: "hidden",
     overflowY: "auto",
+    // Reaparece al terminar de cerrarse el panel, con la misma curva.
     transitionProperty: "opacity",
-    transitionDuration: tokens.durationFast,
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMin,
   },
   railHidden: {
     opacity: 0,
+    transitionDuration: tokens.durationFast,
   },
   // Panel expandido: capa acrílica sobre el contenido (modo LeftCompact de Windows).
   pane: {
@@ -102,17 +106,21 @@ const useStyles = makeStyles({
     // Acoplado a la ventana y encima de la esquina del lienzo: esquinas rectas.
     clipPath: "inset(0 -40px 0 0)",
     visibility: "visible",
+    // Entrada (Enter de Fluent): 300 ms, desaceleración suave; los íconos no
+    // se mueven y el panel se expande desde el riel, como NavigationView.
     transitionProperty: "clip-path, box-shadow, visibility",
-    transitionDuration: tokens.durationNormal,
-    transitionTimingFunction: tokens.curveDecelerateMax,
+    transitionDuration: tokens.durationSlow,
+    transitionTimingFunction: tokens.curveDecelerateMin,
   },
   // Cerrado se recorta al ancho del riel (que queda debajo) y se oculta.
   paneClosed: {
     clipPath: `inset(0 calc(100% - ${RAIL_WIDTH}) 0 0)`,
     boxShadow: "none",
     visibility: "hidden",
-    transitionDuration: tokens.durationFast,
-    transitionTimingFunction: tokens.curveAccelerateMid,
+    // Salida (Exit): misma curva suave, más corta (200 ms); empieza a moverse
+    // al instante, sin el retraso de un ease-in ni un salto brusco.
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMin,
   },
   // Capa de contenido: superficie sobre la base, con borde y sombra.
   canvas: {
@@ -286,6 +294,11 @@ export function AppShell({ children }) {
           onOpenChange={(_, data) => setMenuAbierto(data.open)}
           className={styles.drawer}
           aria-label="Navegación principal"
+          surfaceMotion={{
+            children: (_, { children, ...props }) => (
+              <PanelLateralMotion {...props}>{children}</PanelLateralMotion>
+            ),
+          }}
         >
           <DrawerHeader className={styles.drawerHeader}>
             <BrandMark />
