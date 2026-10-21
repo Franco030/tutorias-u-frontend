@@ -1,4 +1,5 @@
-import { Body1, makeStyles, mergeClasses, shorthands, Subtitle2, tokens } from "@fluentui/react-components";
+import { Body1, makeStyles, Subtitle2, tokens } from "@fluentui/react-components";
+import { TarjetaIlustrada } from "./TarjetaIlustrada";
 
 const useStyles = makeStyles({
   root: {
@@ -10,37 +11,6 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusXLarge,
     border: `${tokens.strokeWidthThin} dashed ${tokens.colorNeutralStroke1}`,
     backgroundColor: tokens.colorNeutralBackground1,
-  },
-  // Con ilustración: tarjeta sólida, imagen a sangre a la izquierda (arriba en móvil).
-  illustrated: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr)",
-    alignItems: "center",
-    gap: 0,
-    padding: 0,
-    overflow: "hidden",
-    ...shorthands.borderStyle("solid"),
-    ...shorthands.borderColor(tokens.colorNeutralStroke2),
-    boxShadow: tokens.shadow4,
-    "@media (min-width: 640px)": {
-      gridTemplateColumns: "240px minmax(0, 1fr)",
-    },
-  },
-  art: {
-    height: "150px",
-    alignSelf: "stretch",
-    backgroundColor: tokens.colorNeutralBackground2,
-    "@media (min-width: 640px)": {
-      height: "auto",
-      minHeight: "150px",
-    },
-  },
-  text: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: tokens.spacingVerticalS,
-    padding: `${tokens.spacingVerticalXL} ${tokens.spacingHorizontalXL}`,
   },
   icon: {
     color: tokens.colorNeutralForeground3,
@@ -57,13 +27,17 @@ const useStyles = makeStyles({
 });
 
 // Vacío en tres tiempos: qué falta, por qué importa, la siguiente acción.
-// Con `ilustracion` se muestra como tarjeta con imagen; si no, con un ícono.
+// Con `ilustracion` se muestra como TarjetaIlustrada; si no, con un ícono.
 export function EmptyState({ icon, ilustracion, title, description, action }) {
   const styles = useStyles();
 
-  const texto = (
-    <>
-      {!ilustracion && icon && (
+  if (ilustracion) {
+    return <TarjetaIlustrada ilustracion={ilustracion} title={title} description={description} action={action} />;
+  }
+
+  return (
+    <div className={styles.root}>
+      {icon && (
         <span className={styles.icon} aria-hidden="true">
           {icon}
         </span>
@@ -71,19 +45,8 @@ export function EmptyState({ icon, ilustracion, title, description, action }) {
       <Subtitle2 as="p">{title}</Subtitle2>
       {description && <Body1 className={styles.description}>{description}</Body1>}
       {action && <div className={styles.action}>{action}</div>}
-    </>
+    </div>
   );
-
-  if (ilustracion) {
-    return (
-      <div className={mergeClasses(styles.root, styles.illustrated)}>
-        <div className={styles.art}>{ilustracion}</div>
-        <div className={styles.text}>{texto}</div>
-      </div>
-    );
-  }
-
-  return <div className={styles.root}>{texto}</div>;
 }
 
 export default EmptyState;

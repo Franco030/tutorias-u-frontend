@@ -86,13 +86,15 @@ enmienda aquí, no con un estilo suelto en el componente.
   un `OverlayDrawer`. El shell se monta una sola vez (`ShellLayout` en `App.jsx`).
 - Contenido · alineado a la izquierda junto a la navegación (no centrado),
   ocupa todo el lienzo; margen lateral 16 / 32 / 48 px según el ancho. Los textos
-  largos se limitan a ~65 caracteres por línea. `Page narrow` (960 px) solo
-  para pantallas de un mensaje, como el estado de solicitud.
+  largos se limitan a ~65 caracteres por línea. Todas las pantallas ocupan
+  el lienzo, también las de un solo mensaje (estado de solicitud, perfil no
+  encontrado): encabezado de página + `TarjetaIlustrada` a todo lo ancho.
 - Flujos de primera vez (acceso, rol, intereses iniciales) y la verificación
   de correo van sin shell.
 - Tema · se cambia con el interruptor "Tema oscuro" del menú de usuario; fuera
-  de la app, solo en el acceso (interruptor abajo a la izquierda). No hay
-  botón suelto de tema en las páginas.
+  de la app, solo en el acceso (interruptor sin etiqueta, con tooltip, abajo
+  a la izquierda). No hay botón suelto de tema en las páginas. El acceso no
+  lleva textos sueltos sobre la foto: solo la tarjeta y ese interruptor.
 
 ## Componentes compartidos (`src/components`)
 - `shell/AppShell` · ventana con barra, navegación por rol (`shell/navigation.js`).
@@ -154,6 +156,13 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   disponibilidad van en `restrictedDates`.
 - Estados vacíos · `EmptyState` con `ilustracion` (Comunidad, Calendario,
   Revisión) en las pantallas principales; ícono simple en lugares secundarios.
+- Tarjetas ilustradas · siempre `TarjetaIlustrada` (la usa `EmptyState`):
+  imagen de 240 px a la izquierda, alto mínimo de 176 px, título `Subtitle2`,
+  descripción y la acción **debajo** del texto. Nada de variantes propias con
+  otro ancho de imagen o el botón al costado: dos tarjetas seguidas deben
+  verse iguales.
+- Ilustración en una banda más ancha que su proporción (p. ej. el encabezado
+  del estado de solicitud) · `ajuste="contener"`, nunca recortada.
 - Estados de cada control · reposo, hover, foco, presionado, deshabilitado,
   cargando (`Spinner` dentro del botón), error y éxito.
 - Íconos · solo `@fluentui/react-icons` (variante Regular, Filled en seleccionado).
@@ -163,8 +172,15 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   el ícono se centra con el par etiqueta + primera línea del valor, como en
   una SettingsCard de Windows; si el valor ocupa varias líneas, el ícono
   sigue a la altura de la etiqueta y no baja al centro del párrafo.
-- Barras de comandos de asistentes (onboarding) · a todo lo ancho bajo el
-  contenido y las ilustraciones, nunca encima de una tarjeta con sombra.
+- Acciones de un formulario o asistente (onboarding) · al final del
+  contenido y alineadas a la izquierda con él, sin barra aparte: la
+  primaria primero (Fluent 2: la primaria va "arriba o a la izquierda" de
+  las demás, una sola por vista) y las salidas secundarias como enlace
+  ("Omitir por ahora"), no como botón. Sin textos de ayuda sueltos junto a
+  los botones: el estado (p. ej. materias elegidas) lo muestra el propio
+  control.
+- Botones · sin flechas ni íconos decorativos de dirección; un botón lleva
+  ícono solo si aporta significado y sus pares en la misma vista lo llevan.
 
 ## Movimiento (`src/theme/motion.js`)
 - Duraciones y curvas de Fluent (`durationNormal`, `curveDecelerateMid`…).

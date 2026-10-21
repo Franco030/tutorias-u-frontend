@@ -1,44 +1,12 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Badge,
-  Body1,
-  Button,
-  makeStyles,
-  Title2,
-  tokens,
-} from "@fluentui/react-components";
+import { Badge, Button } from "@fluentui/react-components";
 import { useAuth } from "../../context/AuthContext";
-import { Page, Surface } from "../../components/ui/Page";
+import { Page, PageHeader } from "../../components/ui/Page";
+import { TarjetaIlustrada } from "../../components/ui/TarjetaIlustrada";
 import { IlustracionRevision } from "../../components/illustrations/Ilustraciones";
 
-const useStyles = makeStyles({
-  banner: {
-    height: "200px",
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
-  },
-  card: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: tokens.spacingVerticalL,
-    padding: tokens.spacingHorizontalXL,
-    "@media (min-width: 640px)": {
-      padding: tokens.spacingHorizontalXXXL,
-    },
-  },
-  title: {
-    margin: 0,
-  },
-  muted: {
-    color: tokens.colorNeutralForeground3,
-    maxWidth: "60ch",
-  },
-});
-
 export default function EstadoSolicitud() {
-  const styles = useStyles();
   const navigate = useNavigate();
   const { user, refrescarSesion } = useAuth();
 
@@ -78,24 +46,28 @@ export default function EstadoSolicitud() {
   }
 
   return (
-    <Page narrow>
-      <Surface flush>
-        <div className={styles.banner}>
+    <Page>
+      <PageHeader
+        title="Tu postulación como tutor"
+        description="El resultado de la revisión de tus credenciales y materias."
+      />
+      <TarjetaIlustrada
+        ilustracion={
           <IlustracionRevision estado={estado === "aprobado" || estado === "rechazado" ? estado : "pendiente"} />
-        </div>
-        <div className={styles.card}>
+        }
+        etiqueta={
           <Badge appearance="tint" color={tono.color} shape="rounded">
             {etiqueta}
           </Badge>
-          <Title2 as="h1" className={styles.title}>
-            {titulo}
-          </Title2>
-          <Body1 className={styles.muted}>{mensaje}</Body1>
+        }
+        title={titulo}
+        description={mensaje}
+        action={
           <Button appearance={estado === "aprobado" ? "primary" : "secondary"} onClick={() => navigate("/")}>
             Volver al inicio
           </Button>
-        </div>
-      </Surface>
+        }
+      />
     </Page>
   );
 }

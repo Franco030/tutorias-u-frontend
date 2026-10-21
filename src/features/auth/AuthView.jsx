@@ -62,17 +62,13 @@ const useStyles = makeStyles({
     left: 0,
     backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${tokens.colorBrandBackground} 30%, transparent), color-mix(in srgb, ${tokens.colorNeutralBackground3} 55%, transparent))`,
   },
-  // Abajo a la izquierda, sobre acrílico como la nota al pie: el único lugar,
-  // fuera del menú de usuario, donde se cambia el tema.
+  // Abajo a la izquierda, solo el interruptor: el único lugar, fuera del menú
+  // de usuario, donde se cambia el tema.
   themeToggle: {
     position: "absolute",
     bottom: tokens.spacingVerticalM,
     left: tokens.spacingHorizontalM,
     zIndex: 1,
-    paddingInlineEnd: tokens.spacingHorizontalS,
-    backgroundColor: `color-mix(in srgb, ${tokens.colorNeutralBackground1} 80%, transparent)`,
-    backdropFilter: "blur(20px)",
-    borderRadius: tokens.borderRadiusMedium,
   },
   surface: {
     position: "relative",
@@ -107,17 +103,6 @@ const useStyles = makeStyles({
     display: "grid",
     gridTemplateColumns: "minmax(0, 1fr)",
     gap: tokens.spacingVerticalS,
-  },
-  footnote: {
-    position: "relative",
-    marginTop: tokens.spacingVerticalL,
-    paddingBlock: tokens.spacingVerticalXS,
-    paddingInline: tokens.spacingHorizontalM,
-    borderRadius: tokens.borderRadiusMedium,
-    color: tokens.colorNeutralForeground2,
-    backgroundColor: `color-mix(in srgb, ${tokens.colorNeutralBackground1} 75%, transparent)`,
-    backdropFilter: "blur(20px)",
-    textAlign: "center",
   },
   roles: {
     display: "flex",
@@ -323,10 +308,6 @@ export function AuthView({ onComplete }) {
         <BrandMark />
         {isAuthenticated ? <SeleccionRol onComplete={onComplete} /> : <AccesoPanel />}
       </main>
-
-      <Caption1 className={styles.footnote}>
-        Plataforma de tutorías entre estudiantes universitarios.
-      </Caption1>
     </div>
   );
 }

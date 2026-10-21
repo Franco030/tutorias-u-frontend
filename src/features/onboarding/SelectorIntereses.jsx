@@ -4,6 +4,7 @@ import {
   Body1,
   Button,
   Caption1,
+  Link,
   makeStyles,
   MessageBar,
   MessageBarBody,
@@ -24,13 +25,12 @@ import { PageLoading } from "../../components/ui/Page";
 import { IlustracionAprender } from "../../components/illustrations/Ilustraciones";
 
 const useStyles = makeStyles({
-  // Ventana tipo asistente de Windows: contenido desplazable arriba (con la
-  // ilustración a la derecha) y una barra de comandos fija a todo lo ancho.
+  // Asistente de primera vez: el contenido (con sus acciones al final) se
+  // desplaza a la izquierda; la ilustración queda fija a la derecha.
   root: {
     height: "100dvh",
     display: "grid",
     gridTemplateColumns: "minmax(0, 1fr)",
-    gridTemplateRows: "minmax(0, 1fr) auto",
     backgroundColor: tokens.colorNeutralBackground2,
     "@media (min-width: 1100px)": {
       gridTemplateColumns: "minmax(0, 1fr) minmax(360px, 36%)",
@@ -43,8 +43,7 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
   },
-  // Panel ilustrado a la derecha (solo en pantallas anchas); termina sobre la
-  // barra de comandos, no detrás de ella.
+  // Panel ilustrado a la derecha (solo en pantallas anchas).
   aside: {
     display: "none",
     "@media (min-width: 1100px)": {
@@ -89,8 +88,8 @@ const useStyles = makeStyles({
     boxSizing: "border-box",
     flexGrow: 1,
     width: "100%",
-    maxWidth: "800px",
-    marginInline: "auto",
+    // Alineado a la izquierda con la marca y ocupando la columna (como el
+    // lienzo de la app); los textos largos ya limitan su ancho de línea.
     display: "flex",
     flexDirection: "column",
     gap: tokens.spacingVerticalXL,
@@ -127,39 +126,14 @@ const useStyles = makeStyles({
       padding: tokens.spacingHorizontalL,
     },
   },
-  // Ocupa ambas columnas; sus acciones se alinean con la columna del contenido.
-  footer: {
-    gridColumn: "1 / -1",
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr)",
-    backgroundColor: tokens.colorNeutralBackground1,
-    borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
-    "@media (min-width: 1100px)": {
-      gridTemplateColumns: "minmax(0, 1fr) minmax(360px, 36%)",
-    },
-  },
-  footerInner: {
-    width: "100%",
-    boxSizing: "border-box",
-    maxWidth: "800px",
-    marginInline: "auto",
+  // Acciones al pie del contenido, alineadas a la izquierda con él: la
+  // primaria primero (Fluent 2) y "Omitir" como enlace, sin peso de botón.
+  actions: {
     display: "flex",
-    flexDirection: "column-reverse",
-    gap: tokens.spacingVerticalS,
-    paddingBlock: tokens.spacingVerticalM,
-    paddingInline: tokens.spacingHorizontalL,
-    "@media (min-width: 640px)": {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "flex-end",
-      paddingInline: tokens.spacingHorizontalXXXL,
-    },
-  },
-  hint: {
-    color: tokens.colorNeutralForeground3,
-    "@media (min-width: 640px)": {
-      marginInlineEnd: "auto",
-    },
+    flexWrap: "wrap",
+    alignItems: "center",
+    columnGap: tokens.spacingHorizontalXL,
+    rowGap: tokens.spacingVerticalM,
   },
 });
 
@@ -279,6 +253,20 @@ export default function SelectorIntereses() {
                 disabled={guardando}
               />
             </div>
+
+            <div className={styles.actions}>
+              <Button
+                appearance="primary"
+                onClick={handleGuardar}
+                disabled={guardando || seleccionadas.length === 0}
+                icon={guardando ? <Spinner size="tiny" /> : undefined}
+              >
+                {guardando ? "Guardando…" : "Guardar y continuar"}
+              </Button>
+              <Link as="button" onClick={handleOmitir} disabled={guardando}>
+                Omitir por ahora
+              </Link>
+            </div>
           </main>
         )}
       </div>
@@ -296,29 +284,6 @@ export default function SelectorIntereses() {
           </div>
         </div>
       </aside>
-
-      {!cargandoMaterias && (
-        <div className={styles.footer}>
-          <div className={styles.footerInner}>
-            <Caption1 className={styles.hint}>
-              {seleccionadas.length === 0
-                ? "Elige al menos una materia para guardar."
-                : "Puedes agregar más después."}
-            </Caption1>
-            <Button appearance="subtle" onClick={handleOmitir} disabled={guardando}>
-              Omitir por ahora
-            </Button>
-            <Button
-              appearance="primary"
-              onClick={handleGuardar}
-              disabled={guardando || seleccionadas.length === 0}
-              icon={guardando ? <Spinner size="tiny" /> : undefined}
-            >
-              {guardando ? "Guardando…" : "Guardar y continuar"}
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

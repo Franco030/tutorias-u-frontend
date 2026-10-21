@@ -168,7 +168,7 @@ export default function PerfilTutor() {
 
   if (error || !tutor) {
     return (
-      <Page narrow>
+      <Page>
         <EmptyState
           icon={<PersonQuestionMark24Regular />}
           ilustracion={<IlustracionComunidad />}

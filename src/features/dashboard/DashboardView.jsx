@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Body1,
   Button,
   Caption1,
   Link,
@@ -16,7 +15,6 @@ import {
   tokens,
 } from "@fluentui/react-components";
 import {
-  ArrowRight16Regular,
   CalendarEmpty24Regular,
   LockClosed20Regular,
   PeopleSearch24Regular,
@@ -30,6 +28,7 @@ import TutorCard from "../../components/TutorCard";
 import { IlustracionCalendario, IlustracionComunidad, IlustracionRevision } from "../../components/illustrations/Ilustraciones";
 import { Page, PageHeader, PageSection } from "../../components/ui/Page";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { TarjetaIlustrada } from "../../components/ui/TarjetaIlustrada";
 import { EstadoBadge } from "../../components/ui/EstadoBadge";
 import { formatoSesion } from "../../lib/formato";
 import {
@@ -88,50 +87,6 @@ const useStyles = makeStyles({
   lockedIcon: {
     flexShrink: 0,
     marginTop: "2px",
-  },
-  // Tarjeta con foto a sangre a la izquierda (arriba en móvil).
-  teachCard: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr)",
-    overflow: "hidden",
-    backgroundColor: tokens.colorNeutralBackground1,
-    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
-    borderRadius: tokens.borderRadiusXLarge,
-    boxShadow: tokens.shadow4,
-    "@media (min-width: 640px)": {
-      gridTemplateColumns: "220px minmax(0, 1fr) auto",
-      alignItems: "center",
-    },
-  },
-  teachPhoto: {
-    height: "170px",
-    alignSelf: "stretch",
-    backgroundColor: tokens.colorNeutralBackground2,
-    "@media (min-width: 640px)": {
-      height: "auto",
-      minHeight: "140px",
-    },
-  },
-  teachAction: {
-    paddingInline: tokens.spacingHorizontalL,
-    paddingBottom: tokens.spacingVerticalL,
-    "@media (min-width: 640px)": {
-      paddingBottom: 0,
-      paddingInlineEnd: tokens.spacingHorizontalXL,
-    },
-  },
-  teachText: {
-    display: "flex",
-    flexDirection: "column",
-    gap: tokens.spacingVerticalXXS,
-    padding: tokens.spacingHorizontalL,
-    maxWidth: "60ch",
-  },
-  muted: {
-    color: tokens.colorNeutralForeground3,
-  },
-  nowrap: {
-    whiteSpace: "nowrap",
   },
 });
 
@@ -318,7 +273,6 @@ function TutoresRecomendados() {
 }
 
 function PanelEstudiante({ user }) {
-  const styles = useStyles();
   const navigate = useNavigate();
   const solicitudEnviada = tieneSolicitudTutor(user);
 
@@ -328,40 +282,30 @@ function PanelEstudiante({ user }) {
         title="Panel de control"
         description="Tus próximas sesiones y tutores para las materias que te interesan."
         actions={
-          <Button appearance="primary" icon={<PeopleSearch24Regular />}
-          ilustracion={<IlustracionComunidad />} onClick={() => navigate("/tutores")}>
+          <Button appearance="primary" icon={<PeopleSearch24Regular />} onClick={() => navigate("/tutores")}>
             Buscar tutores
           </Button>
         }
       />
       <ProximasSesiones />
       <TutoresRecomendados />
-      <div className={styles.teachCard}>
-        <div className={styles.teachPhoto}>
-          <IlustracionComunidad />
-        </div>
-        <div className={styles.teachText}>
-          <Text weight="semibold">
-            {solicitudEnviada ? "Tu postulación como tutor" : "¿Dominas alguna materia?"}
-          </Text>
-          <Body1 className={styles.muted}>
-            {solicitudEnviada
-              ? "Consulta en qué etapa está la revisión de tu solicitud."
-              : "Postúlate como tutor para dar tutorías a otros estudiantes de tu universidad."}
-          </Body1>
-        </div>
-        <div className={styles.teachAction}>
+      <TarjetaIlustrada
+        ilustracion={<IlustracionComunidad />}
+        title={solicitudEnviada ? "Tu postulación como tutor" : "¿Dominas alguna materia?"}
+        description={
+          solicitudEnviada
+            ? "Consulta en qué etapa está la revisión de tu solicitud."
+            : "Postúlate como tutor para dar tutorías a otros estudiantes de tu universidad."
+        }
+        action={
           <Button
             appearance="secondary"
-            icon={<ArrowRight16Regular />}
-            iconPosition="after"
-            className={styles.nowrap}
             onClick={() => navigate(solicitudEnviada ? "/estado-solicitud" : "/aplicar-tutor")}
           >
             {solicitudEnviada ? "Ver estado" : "Postularme"}
           </Button>
-        </div>
-      </div>
+        }
+      />
     </>
   );
 }

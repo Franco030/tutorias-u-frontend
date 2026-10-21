@@ -62,6 +62,12 @@ function Defs({ id }) {
         <stop offset="0" className={s.stopBg} stopOpacity="0.18" />
         <stop offset="1" className={s.stopBgEnd} stopOpacity="0" />
       </radialGradient>
+      {/* Para "contener": se apaga del todo antes del borde del marco, así no
+          queda un rectángulo visible contra el fondo del contenedor. */}
+      <radialGradient id={`${id}-bgc`} cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" className={s.stopBg} stopOpacity="0.18" />
+        <stop offset="1" className={s.stopBgEnd} stopOpacity="0" />
+      </radialGradient>
       <radialGradient id={`${id}-drop`} cx="0.5" cy="0.5" r="0.5">
         <stop offset="0" className={s.stopShade} stopOpacity="0.9" />
         <stop offset="1" className={s.stopShade} stopOpacity="0" />
@@ -132,7 +138,7 @@ function Base({ id, children, className, label, ajuste = "cubrir" }) {
       aria-hidden={label ? undefined : true}
     >
       <Defs id={id} />
-      <rect width="480" height="300" fill={`url(#${id}-bg)`} />
+      <rect width="480" height="300" fill={`url(#${id}-${ajuste === "contener" ? "bgc" : "bg"})`} />
       {children}
     </svg>
   );

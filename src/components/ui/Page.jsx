@@ -48,9 +48,6 @@ const useStyles = makeStyles({
     ...delayedFade,
   },
   visible: pageFade,
-  narrow: {
-    maxWidth: "960px",
-  },
   header: {
     display: "flex",
     flexDirection: "column",
@@ -178,7 +175,7 @@ export function FormActions({ children }) {
   return <div className={styles.footerActions}>{children}</div>;
 }
 
-export function Page({ children, narrow = false, className, cargando = false }) {
+export function Page({ children, className, cargando = false }) {
   const styles = useStyles();
   const [visible, setVisible] = useState(false);
   const pendientes = useRef(new Set());
@@ -228,7 +225,6 @@ export function Page({ children, narrow = false, className, cargando = false }) 
       <main
         className={mergeClasses(
           styles.page,
-          narrow && styles.narrow,
           visible ? styles.visible : styles.oculta,
           className
         )}

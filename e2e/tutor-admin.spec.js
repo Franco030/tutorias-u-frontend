@@ -96,7 +96,7 @@ test.describe('Administración', () => {
     });
 
     await page.goto('/estado-solicitud');
-    await expect(page.getByRole('heading', { name: 'Fuiste aprobado como tutor' })).toBeVisible();
+    await expect(page.getByText('Fuiste aprobado como tutor', { exact: true })).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem('tutoriasu_token'))).toBe('fake-jwt-nuevo');
   });
 });
