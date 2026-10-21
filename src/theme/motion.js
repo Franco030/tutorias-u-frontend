@@ -6,10 +6,6 @@ import { tokens } from "@fluentui/react-components";
  * desde src/index.css.
  */
 export const keyframes = {
-  fadeUp: {
-    from: { opacity: 0, transform: "translateY(8px)" },
-    to: { opacity: 1, transform: "none" },
-  },
   fadeIn: {
     from: { opacity: 0 },
     to: { opacity: 1 },
@@ -24,12 +20,20 @@ export const keyframes = {
   },
 };
 
-// Entrada de contenido: sube 8 px y aparece (página, tarjetas, filas).
-export const enterUp = {
-  animationName: keyframes.fadeUp,
-  animationDuration: tokens.durationSlow,
+// Cambio de página (navegación de nivel superior en Fluent 2): un fundido
+// rápido de todo el contenido, sin desplazar ni escalonar elementos.
+export const pageFade = {
+  animationName: keyframes.fadeIn,
+  animationDuration: tokens.durationNormal,
   animationTimingFunction: tokens.curveDecelerateMid,
   animationFillMode: "both",
+};
+
+// Indicador de carga diferido: solo aparece si la espera supera 300 ms, así
+// una carga rápida no muestra un destello de spinner antes del contenido.
+export const delayedFade = {
+  ...pageFade,
+  animationDelay: "300ms",
 };
 
 // Elevación de tarjeta clicable: sube 2 px y gana sombra; al presionar vuelve.
@@ -49,8 +53,3 @@ export const liftOnHover = {
     transitionDuration: tokens.durationFaster,
   },
 };
-
-// Retraso escalonado para listas (máximo 8 elementos animados).
-export const stagger = (index, step = 40) => ({
-  animationDelay: `${Math.min(index, 8) * step}ms`,
-});

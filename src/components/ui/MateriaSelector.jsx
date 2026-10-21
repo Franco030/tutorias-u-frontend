@@ -13,6 +13,7 @@ import {
 } from "@fluentui/react-components";
 import { Checkmark12Filled } from "@fluentui/react-icons";
 import { keyframes } from "../../theme/motion";
+import { useSeleccionInicial } from "../../hooks/useSeleccionInicial";
 
 const normalizarTexto = (texto = "") =>
   texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -157,6 +158,8 @@ const useStyles = makeStyles({
   },
   checkIcon: {
     display: "flex",
+  },
+  checkIconNuevo: {
     animationName: keyframes.scaleIn,
     animationDuration: tokens.durationNormal,
     animationTimingFunction: tokens.curveDecelerateMax,
@@ -176,6 +179,7 @@ export function MateriaSelector({ materias, seleccionadas, onToggle, disabled = 
   const styles = useStyles();
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState(TODAS);
+  const esNueva = useSeleccionInicial(seleccionadas);
 
   const categorias = useMemo(
     () => [...new Set(materias.map((materia) => materia.categoria || SIN_CATEGORIA))],
@@ -265,7 +269,7 @@ export function MateriaSelector({ materias, seleccionadas, onToggle, disabled = 
                       <span className={styles.tileName}>{materia.nombre}</span>
                       <span className={mergeClasses(styles.check, activa && styles.checkSelected)} aria-hidden="true">
                         {activa && (
-                          <span className={styles.checkIcon}>
+                          <span className={mergeClasses(styles.checkIcon, esNueva(materia.id) && styles.checkIconNuevo)}>
                             <Checkmark12Filled />
                           </span>
                         )}

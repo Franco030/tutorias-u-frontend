@@ -12,6 +12,7 @@ import {
 } from "@fluentui/react-components";
 import { Save20Regular } from "@fluentui/react-icons";
 import { keyframes } from "../../theme/motion";
+import { useSeleccionInicial } from "../../hooks/useSeleccionInicial";
 import { Surface } from "./Page";
 
 const useStyles = makeStyles({
@@ -50,7 +51,7 @@ const useStyles = makeStyles({
     maxHeight: "320px",
     overflowY: "auto",
   },
-  tag: {
+  tagNueva: {
     animationName: keyframes.scaleIn,
     animationDuration: tokens.durationNormal,
     animationTimingFunction: tokens.curveDecelerateMax,
@@ -86,6 +87,7 @@ export function SelectionPanel({
 }) {
   const styles = useStyles();
   const elegidas = materias.filter((materia) => seleccionadas.includes(materia.id));
+  const esNueva = useSeleccionInicial(seleccionadas);
 
   return (
     <Surface as="aside" className={styles.panel} aria-labelledby="titulo-seleccion">
@@ -119,7 +121,7 @@ export function SelectionPanel({
               size="small"
               appearance="brand"
               shape="rounded"
-              className={styles.tag}
+              className={esNueva(materia.id) ? styles.tagNueva : undefined}
               disabled={guardando}
             >
               {materia.nombre}

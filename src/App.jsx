@@ -8,18 +8,47 @@ import { lazy, Suspense, useEffect, useState } from "react";
 
 // Acceso y panel de inicio van en el paquete principal (primera pantalla);
 // el resto se carga por ruta para aligerar la carga inicial.
-const VerifyEmailPage = lazy(() => import("./features/auth/VerifyEmailPage"));
-const AprobacionTutores = lazy(() => import("./features/admin/AprobacionTutores"));
-const SelectorIntereses = lazy(() => import("./features/onboarding/SelectorIntereses"));
-const AplicacionTutor = lazy(() => import("./features/onboarding/AplicacionTutor"));
-const MisIntereses = lazy(() => import("./features/dashboard/MisIntereses"));
-const EstadoSolicitud = lazy(() => import("./features/onboarding/EstadoSolicitud"));
-const PerfilTutor = lazy(() => import("./features/tutores/PerfilTutor"));
-const CatalogoTutores = lazy(() => import("./features/tutores/CatalogoTutores"));
-const MisMateriasTutor = lazy(() => import("./features/tutores/MisMateriasTutor"));
-const ConfiguracionDisponibilidad = lazy(() => import("./features/tutores/ConfiguracionDisponibilidad"));
-const MisTutorias = lazy(() => import("./features/tutores/MisTutorias"));
-const ProximasTutorias = lazy(() => import("./features/tutores/ProximasTutorias"));
+const pantallas = {
+  VerifyEmailPage: () => import("./features/auth/VerifyEmailPage"),
+  AprobacionTutores: () => import("./features/admin/AprobacionTutores"),
+  SelectorIntereses: () => import("./features/onboarding/SelectorIntereses"),
+  AplicacionTutor: () => import("./features/onboarding/AplicacionTutor"),
+  MisIntereses: () => import("./features/dashboard/MisIntereses"),
+  EstadoSolicitud: () => import("./features/onboarding/EstadoSolicitud"),
+  PerfilTutor: () => import("./features/tutores/PerfilTutor"),
+  CatalogoTutores: () => import("./features/tutores/CatalogoTutores"),
+  MisMateriasTutor: () => import("./features/tutores/MisMateriasTutor"),
+  ConfiguracionDisponibilidad: () => import("./features/tutores/ConfiguracionDisponibilidad"),
+  MisTutorias: () => import("./features/tutores/MisTutorias"),
+  ProximasTutorias: () => import("./features/tutores/ProximasTutorias"),
+};
+
+const VerifyEmailPage = lazy(pantallas.VerifyEmailPage);
+const AprobacionTutores = lazy(pantallas.AprobacionTutores);
+const SelectorIntereses = lazy(pantallas.SelectorIntereses);
+const AplicacionTutor = lazy(pantallas.AplicacionTutor);
+const MisIntereses = lazy(pantallas.MisIntereses);
+const EstadoSolicitud = lazy(pantallas.EstadoSolicitud);
+const PerfilTutor = lazy(pantallas.PerfilTutor);
+const CatalogoTutores = lazy(pantallas.CatalogoTutores);
+const MisMateriasTutor = lazy(pantallas.MisMateriasTutor);
+const ConfiguracionDisponibilidad = lazy(pantallas.ConfiguracionDisponibilidad);
+const MisTutorias = lazy(pantallas.MisTutorias);
+const ProximasTutorias = lazy(pantallas.ProximasTutorias);
+
+// Con la app ya en reposo se descargan las demás pantallas en segundo plano:
+// al navegar no hay espera de código y solo se ve el fundido de la página.
+function usePrecargarPantallas() {
+  useEffect(() => {
+    const precargar = () => Object.values(pantallas).forEach((cargar) => cargar().catch(() => {}));
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(precargar, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(precargar, 2000);
+    return () => window.clearTimeout(id);
+  }, []);
+}
 
 import { DashboardView } from "./features/dashboard/DashboardView";
 
@@ -225,6 +254,8 @@ function ShellLayout() {
 }
 
 export function App() {
+  usePrecargarPantallas();
+
   return (
     <Suspense fallback={<PageLoading />}>
     <Routes>

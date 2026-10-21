@@ -1,5 +1,4 @@
 import { makeStyles, mergeClasses, tokens } from "@fluentui/react-components";
-import { keyframes } from "../../theme/motion";
 
 const useStyles = makeStyles({
   root: {
@@ -17,10 +16,6 @@ const useStyles = makeStyles({
     width: "100%",
     height: "100%",
     objectFit: "cover",
-    animationName: keyframes.fadeIn,
-    animationDuration: tokens.durationSlower,
-    animationTimingFunction: tokens.curveEasyEase,
-    animationFillMode: "both",
   },
   // Degradado inferior para poder poner texto encima con contraste.
   scrim: {
@@ -39,7 +34,8 @@ const useStyles = makeStyles({
 
 /*
  * Foto en contenedor: recorte con `object-fit: cover` respetando el punto
- * focal, esquinas de tarjeta y aparición suave. Sin texto encima salvo con
+ * focal y esquinas de tarjeta (aparece con el fundido de la página, sin uno
+ * propio). Sin texto encima salvo con
  * `scrim`. `decorativa` la oculta a lectores de pantalla.
  */
 export function Photo({

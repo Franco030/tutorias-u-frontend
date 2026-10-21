@@ -15,7 +15,6 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { getApiBaseUrl } from "../../services/apiClient";
-import { keyframes } from "../../theme/motion";
 import { DarkModeToggle } from "../DarkModeToggle";
 import { Avisos } from "../ui/notificaciones";
 import { BrandMark } from "./BrandMark";
@@ -133,10 +132,6 @@ const useStyles = makeStyles({
     minHeight: "100%",
     display: "flex",
     flexDirection: "column",
-    animationName: keyframes.fadeIn,
-    animationDuration: tokens.durationNormal,
-    animationTimingFunction: tokens.curveEasyEase,
-    animationFillMode: "both",
   },
   drawer: {
     width: "300px",

@@ -28,6 +28,7 @@ import MicrosoftLoginButton from "./MicrosoftLoginButton";
 import LocalAuthForm from "./LocalAuthForm";
 import { fotos } from "../../assets/fotos";
 import { Photo } from "../../components/ui/Photo";
+import { pageFade } from "../../theme/motion";
 
 const useStyles = makeStyles({
   // Patrón de inicio de sesión de Microsoft: foto a pantalla completa y una
@@ -83,10 +84,7 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusXLarge,
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     boxShadow: tokens.shadow64,
-    animationName: { from: { opacity: 0, transform: "translateY(12px) scale(0.98)" }, to: { opacity: 1, transform: "none" } },
-    animationDuration: tokens.durationSlower,
-    animationTimingFunction: tokens.curveDecelerateMax,
-    animationFillMode: "both",
+    ...pageFade,
     "@media (max-width: 479px)": {
       paddingInline: tokens.spacingHorizontalL,
     },

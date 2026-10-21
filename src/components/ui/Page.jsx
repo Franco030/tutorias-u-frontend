@@ -10,7 +10,7 @@ import {
   tokens,
 } from "@fluentui/react-components";
 import { ArrowLeft20Regular } from "@fluentui/react-icons";
-import { enterUp } from "../../theme/motion";
+import { delayedFade, pageFade } from "../../theme/motion";
 
 const useStyles = makeStyles({
   page: {
@@ -31,12 +31,8 @@ const useStyles = makeStyles({
     "@media (min-width: 1440px)": {
       paddingInline: "48px",
     },
-    // Entrada orquestada: cada bloque de la página sube con 50 ms de diferencia.
-    "& > *": enterUp,
-    "& > *:nth-child(2)": { animationDelay: "50ms" },
-    "& > *:nth-child(3)": { animationDelay: "100ms" },
-    "& > *:nth-child(4)": { animationDelay: "150ms" },
-    "& > *:nth-child(n+5)": { animationDelay: "200ms" },
+    // Una sola entrada por página: fundido del contenido completo.
+    ...pageFade,
   },
   narrow: {
     maxWidth: "960px",
@@ -122,6 +118,7 @@ const useStyles = makeStyles({
     alignItems: "center",
     justifyContent: "center",
     minHeight: "50dvh",
+    ...delayedFade,
   },
   footerActions: {
     display: "flex",
