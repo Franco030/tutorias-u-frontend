@@ -5,7 +5,7 @@ import { MessageBar, MessageBarBody } from "@fluentui/react-components";
 import { GoogleLogo, ProviderButton } from "./ProviderButton";
 
 export function GoogleLoginButton() {
-  const { loginWithGoogle, isLoading } = useAuth();
+  const { loginWithGoogle, isLoading, clearError } = useAuth();
   const [localError, setLocalError] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -26,6 +26,7 @@ export function GoogleLoginButton() {
         await loginWithGoogle(token);
       } catch (err) {
         console.error("[GoogleLoginButton] Error en login con backend:", err);
+        clearError();
         setLocalError(
           err?.message || "Error al autenticar con el servidor de TutoriasU.",
         );

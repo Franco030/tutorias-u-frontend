@@ -30,7 +30,7 @@ const useStyles = makeStyles({
 
 export function LocalAuthForm() {
   const styles = useStyles();
-  const { loginLocal, isLoading } = useAuth();
+  const { loginLocal, isLoading, clearError } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
 
   const [email, setEmail] = useState("");
@@ -61,6 +61,8 @@ export function LocalAuthForm() {
       }
     } catch (err) {
       console.error(err);
+      // El formulario muestra su propio mensaje; se limpia el error global para no duplicarlo.
+      clearError();
       setLocalError(
         isRegister
           ? "No se pudo crear la cuenta. Revisa los datos o prueba con otro correo."

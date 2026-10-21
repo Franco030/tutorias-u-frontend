@@ -7,6 +7,7 @@ import {
   makeStyles,
   MessageBar,
   shorthands,
+  MessageBarActions,
   MessageBarBody,
   Spinner,
   Subtitle2,
@@ -15,6 +16,7 @@ import {
 } from "@fluentui/react-components";
 import {
   ChevronRight20Regular,
+  Dismiss16Regular,
   HatGraduation24Regular,
   PeopleSearch24Regular,
 } from "@fluentui/react-icons";
@@ -197,6 +199,9 @@ const ROLES = [
 
 function AccesoPanel() {
   const styles = useStyles();
+  // Errores que no vienen de un formulario: sesión expirada (401) o el
+  // regreso de Microsoft con un error del servidor.
+  const { error, clearError } = useAuth();
 
   return (
     <>
@@ -206,6 +211,23 @@ function AccesoPanel() {
         </Title2>
         <Body1 className={styles.muted}>Con tu correo registrado o tu cuenta institucional.</Body1>
       </div>
+
+      {error && (
+        <MessageBar intent="warning" layout="multiline">
+          <MessageBarBody>{error}</MessageBarBody>
+          <MessageBarActions
+            containerAction={
+              <Button
+                appearance="transparent"
+                size="small"
+                aria-label="Descartar aviso"
+                icon={<Dismiss16Regular />}
+                onClick={clearError}
+              />
+            }
+          />
+        </MessageBar>
+      )}
 
       <LocalAuthForm />
 

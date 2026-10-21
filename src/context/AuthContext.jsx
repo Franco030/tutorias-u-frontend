@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useMsal } from '@azure/msal-react';
 import authService from '../features/auth/authService';
+import { AUTH_STORAGE_KEYS } from '../types/auth.types';
 
 export const AuthContext = createContext(null);
 
@@ -151,7 +152,9 @@ export function AuthProvider({ children }) {
     setUser((prevUser) => {
       if (!prevUser) return prevUser;
       const updatedUser = { ...prevUser, onboardingCompleto: true };
-      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+      // Misma clave que lee getStoredSession; antes se guardaba en 'auth_user'
+      // y el cambio se perdía al recargar.
+      localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(updatedUser));
       return updatedUser;
     });
   }, []);
@@ -160,7 +163,7 @@ export function AuthProvider({ children }) {
     setUser((prevUser) => {
       if (!prevUser) return prevUser;
       const updatedUser = { ...prevUser, ...nuevosDatos };
-      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+      localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(updatedUser));
       return updatedUser;
     });
   }, []);
