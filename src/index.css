@@ -1,67 +1,12 @@
-@import "tailwindcss";
+/*
+ * Estilos globales mínimos. Todo lo visual vive en Fluent UI (tema en
+ * src/theme/fluentTheme.js, estilos con makeStyles). Ver design.md.
+ */
 
-@custom-variant dark (&:where(.dark, .dark *));
-
-@theme {
-  --color-deep-space-blue-50: #edf3f8;
-  --color-deep-space-blue-100: #dbe6f0;
-  --color-deep-space-blue-200: #b7cde1;
-  --color-deep-space-blue-300: #92b5d3;
-  --color-deep-space-blue-400: #6e9cc4;
-  --color-deep-space-blue-500: #4a83b5;
-  --color-deep-space-blue-600: #3b6991;
-  --color-deep-space-blue-700: #2c4f6d;
-  --color-deep-space-blue-800: #1e3448;
-  --color-deep-space-blue-900: #0f1a24;
-  --color-deep-space-blue-950: #0a1219;
-
-  --color-granite-50: #f1f4f2;
-  --color-granite-100: #e3e8e5;
-  --color-granite-200: #c6d2cb;
-  --color-granite-300: #aabbb1;
-  --color-granite-400: #8ea497;
-  --color-granite-500: #718e7d;
-  --color-granite-600: #5b7164;
-  --color-granite-700: #44554b;
-  --color-granite-800: #2d3932;
-  --color-granite-900: #171c19;
-  --color-granite-950: #101412;
-
-  --color-sage-green-50: #f1f5ef;
-  --color-sage-green-100: #e4ebe0;
-  --color-sage-green-200: #c9d7c1;
-  --color-sage-green-300: #adc3a2;
-  --color-sage-green-400: #92af83;
-  --color-sage-green-500: #779c63;
-  --color-sage-green-600: #5f7c50;
-  --color-sage-green-700: #475d3c;
-  --color-sage-green-800: #303e28;
-  --color-sage-green-900: #181f14;
-  --color-sage-green-950: #11160e;
-
-  --color-tea-green-50: #f4f8ed;
-  --color-tea-green-100: #e9f1da;
-  --color-tea-green-200: #d4e3b5;
-  --color-tea-green-300: #bed590;
-  --color-tea-green-400: #a8c76b;
-  --color-tea-green-500: #93b946;
-  --color-tea-green-600: #759438;
-  --color-tea-green-700: #586f2a;
-  --color-tea-green-800: #3b4a1c;
-  --color-tea-green-900: #1d250e;
-  --color-tea-green-950: #151a0a;
-
-  --color-burgundy-50: #fbeaeb;
-  --color-burgundy-100: #f7d4d7;
-  --color-burgundy-200: #eeaab0;
-  --color-burgundy-300: #e67f88;
-  --color-burgundy-400: #dd5560;
-  --color-burgundy-500: #d52a38;
-  --color-burgundy-600: #aa222d;
-  --color-burgundy-700: #801922;
-  --color-burgundy-800: #551117;
-  --color-burgundy-900: #2b080b;
-  --color-burgundy-950: #1e0608;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 :root {
@@ -72,24 +17,56 @@
   color-scheme: dark;
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
-  min-height: 100vh;
-  font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ocultar barra de desplazamiento en todos los elementos (Minimalismo Premium) */
-::-webkit-scrollbar {
-  display: none;
-}
-* {
-  -ms-overflow-style: none; /* IE y Edge */
-  scrollbar-width: none; /* Firefox */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+dl,
+dd,
+figure,
+fieldset {
+  margin: 0;
 }
 
-::view-transition-old(root), ::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+/* Ver ThemeContext: sin transiciones mientras se aplica el nuevo tema. */
+.theme-switching,
+.theme-switching * {
+  transition: none !important;
+}
+
+/* Barras de desplazamiento finas al estilo Windows 11. */
+* {
+  scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,21 +1,51 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useNotificar } from "../../hooks/useNotificar";
+import {
+  Body1,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  Field,
+  makeStyles,
+  MessageBar,
+  MessageBarBody,
+  Spinner,
+  Textarea,
+  tokens,
+} from "@fluentui/react-components";
+import { Checkmark20Regular, TaskListSquareLtr24Regular } from "@fluentui/react-icons";
 import {
   aceptarCita,
   getCitasPendientes,
   rechazarCita,
 } from "../../services/citaService";
 import ConfirmarTutoriaModal from "./ConfirmarTutoriaModal";
+import { DangerButton } from "../../components/ui/DangerButton";
+import { IlustracionRevision } from "../../components/illustrations/Ilustraciones";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { Page, PageHeader } from "../../components/ui/Page";
+import { formatoSesion } from "../../lib/formato";
+import {
+  SessionList,
+  SessionListSkeleton,
+  SessionRow,
+} from "../../components/ui/SessionList";
 
-const formatearFecha = (fecha) => {
-  return new Intl.DateTimeFormat("es-MX", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(fecha));
-};
+const useStyles = makeStyles({
+  rechazo: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalL,
+  },
+});
 
 export default function MisTutorias() {
+  const styles = useStyles();
+  const notificar = useNotificar();
   const [citas, setCitas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -23,6 +53,8 @@ export default function MisTutorias() {
   const [citaSeleccionada, setCitaSeleccionada] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [rechazandoId, setRechazandoId] = useState(null);
+  const [citaARechazar, setCitaARechazar] = useState(null);
+  const [motivoRechazo, setMotivoRechazo] = useState("");
 
   useEffect(() => {
     const cargarCitas = async () => {
@@ -67,6 +99,9 @@ export default function MisTutorias() {
       await aceptarCita(citaSeleccionada.id, data);
 
       removerCita(citaSeleccionada.id);
+      notificar("Tutoría aceptada", {
+        cuerpo: `${citaSeleccionada.materiaNombre} con ${citaSeleccionada.estudianteNombre}. Ya aparece en Mis tutorías.`,
+      });
       setCitaSeleccionada(null);
     } catch (err) {
       console.error("Error al aceptar la cita:", err);
@@ -79,22 +114,27 @@ export default function MisTutorias() {
     }
   };
 
-  const handleRechazar = async (cita) => {
-    const confirmar = window.confirm(
-      `¿Deseas rechazar la solicitud de ${cita.estudianteNombre}?`
-    );
+  // Antes era window.confirm: ahora la confirmación vive en un diálogo propio.
+  const handleRechazar = (cita) => {
+    setMotivoRechazo("");
+    setCitaARechazar(cita);
+  };
 
-    if (!confirmar) {
-      return;
-    }
+  const confirmarRechazo = async () => {
+    const cita = citaARechazar;
+    if (!cita) return;
 
     try {
       setRechazandoId(cita.id);
       setError("");
 
-      await rechazarCita(cita.id);
+      await rechazarCita(cita.id, motivoRechazo.trim());
 
       removerCita(cita.id);
+      notificar("Solicitud rechazada", {
+        cuerpo: `${cita.materiaNombre} con ${cita.estudianteNombre}.`,
+        intent: "info",
+      });
     } catch (err) {
       console.error("Error al rechazar la cita:", err);
 
@@ -103,154 +143,71 @@ export default function MisTutorias() {
       );
     } finally {
       setRechazandoId(null);
+      setCitaARechazar(null);
     }
   };
 
-  if (cargando) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-granite-50 dark:bg-deep-space-blue-950">
-        <p className="text-sm text-granite-500 dark:text-deep-space-blue-300">
-          Cargando solicitudes...
-        </p>
-      </main>
-    );
-  }
-
   return (
     <>
-      <main className="min-h-screen bg-granite-50 px-4 py-10 dark:bg-deep-space-blue-950">
-        <div className="mx-auto max-w-5xl">
+      <Page cargando={cargando}>
+        <PageHeader
+          title="Solicitudes"
+          description="Tutorías que los estudiantes te pidieron. Acepta las que puedas atender o recházalas para liberar el horario."
+        />
 
-          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-deep-space-blue-500 dark:text-emerald-400">
-                Tutorías
-              </p>
+        {error && (
+          <MessageBar intent="error" layout="multiline">
+            <MessageBarBody>{error}</MessageBarBody>
+          </MessageBar>
+        )}
 
-              <h1 className="mt-2 text-3xl font-semibold text-granite-900 dark:text-white">
-                Solicitudes pendientes
-              </h1>
-
-              <p className="mt-2 text-sm text-granite-500 dark:text-deep-space-blue-300">
-                Revisa las solicitudes de estudiantes y decide cuáles puedes atender.
-              </p>
-            </div>
-
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-granite-600 dark:text-deep-space-blue-300 hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver al panel
-            </Link>
-          </div>
-
-          {error && (
-            <div
-              role="alert"
-              className="mb-6 rounded-xl border border-burgundy-200 bg-burgundy-50 px-4 py-3 text-sm text-burgundy-700"
-            >
-              {error}
-            </div>
-          )}
-
-          {citas.length === 0 ? (
-            <div className="rounded-2xl border border-granite-200 bg-white px-6 py-14 text-center dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40">
-              <h2 className="text-lg font-medium text-granite-900 dark:text-white">
-                No tienes solicitudes pendientes
-              </h2>
-
-              <p className="mt-2 text-sm text-granite-500 dark:text-deep-space-blue-300">
-                Cuando un estudiante solicite una tutoría, aparecerá aquí.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {citas.map((cita) => (
-                <article
+        {cargando ? (
+          <SessionListSkeleton rows={3} />
+        ) : citas.length === 0 ? (
+          <EmptyState
+            icon={<TaskListSquareLtr24Regular />}
+          ilustracion={<IlustracionRevision estado="aprobado" />}
+            title="No tienes solicitudes pendientes"
+            description="Cuando un estudiante solicite una tutoría, aparecerá aquí."
+          />
+        ) : (
+          <SessionList label="Solicitudes pendientes">
+            {citas.map((cita) => {
+              const fecha = new Date(cita.fechaHoraInicio);
+              const rechazando = rechazandoId === cita.id;
+              return (
+                <SessionRow
                   key={cita.id}
-                  className="rounded-2xl border border-granite-200 bg-white p-6 dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40"
-                >
-                  <div className="mb-5">
-                    <span className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-400/10 dark:text-amber-300">
-                      {cita.estado}
-                    </span>
-
-                    <h2 className="mt-4 text-xl font-semibold text-granite-900 dark:text-white">
-                      {cita.materiaNombre}
-                    </h2>
-
-                    <p className="mt-1 text-sm text-granite-500 dark:text-deep-space-blue-300">
-                      Solicitud de {cita.estudianteNombre}
-                    </p>
-                  </div>
-
-                  <div className="mb-6 rounded-xl bg-granite-50 p-4 dark:bg-deep-space-blue-950/50">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-granite-400 dark:text-deep-space-blue-400">
-                      Fecha y hora
-                    </p>
-
-                    <p className="mt-1 text-sm font-medium text-granite-800 dark:text-deep-space-blue-100">
-                      {formatearFecha(cita.fechaHoraInicio)}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={() => handleAceptar(cita)}
-                      disabled={rechazandoId === cita.id}
-                      className="
-                        flex-1
-                        rounded-full
-                        bg-deep-space-blue-600
-                        px-5
-                        py-2.5
-                        text-sm
-                        font-semibold
-                        text-white
-                        transition
-                        hover:bg-deep-space-blue-700
-                        disabled:opacity-50
-                        dark:bg-emerald-500
-                        dark:text-deep-space-blue-950
-                      "
-                    >
-                      Aceptar
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRechazar(cita)}
-                      disabled={rechazandoId === cita.id}
-                      className="
-                        flex-1
-                        rounded-full
-                        border
-                        border-burgundy-200
-                        px-5
-                        py-2.5
-                        text-sm
-                        font-semibold
-                        text-burgundy-600
-                        transition
-                        hover:bg-burgundy-50
-                        disabled:opacity-50
-                        dark:border-burgundy-800
-                        dark:text-burgundy-400
-                      "
-                    >
-                      {rechazandoId === cita.id
-                        ? "Rechazando..."
-                        : "Rechazar"}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+                  fecha={fecha}
+                  title={cita.materiaNombre}
+                  meta={`${formatoSesion.format(fecha)} · ${cita.estudianteNombre}`}
+                  actions={
+                    <>
+                      <DangerButton
+                        variant="outline"
+                        onClick={() => handleRechazar(cita)}
+                        disabled={rechazando}
+                        aria-label={`Rechazar solicitud de ${cita.estudianteNombre}`}
+                      >
+                        {rechazando ? "Rechazando…" : "Rechazar"}
+                      </DangerButton>
+                      <Button
+                        appearance="primary"
+                        icon={<Checkmark20Regular />}
+                        onClick={() => handleAceptar(cita)}
+                        disabled={rechazando}
+                        aria-label={`Aceptar solicitud de ${cita.estudianteNombre}`}
+                      >
+                        Aceptar
+                      </Button>
+                    </>
+                  }
+                />
+              );
+            })}
+          </SessionList>
+        )}
+      </Page>
 
       <ConfirmarTutoriaModal
         cita={citaSeleccionada}
@@ -263,6 +220,51 @@ export default function MisTutorias() {
         }}
         onConfirmar={handleConfirmarAceptacion}
       />
+
+      <Dialog
+        open={Boolean(citaARechazar)}
+        onOpenChange={(_, data) => {
+          if (!data.open && rechazandoId === null) setCitaARechazar(null);
+        }}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>¿Rechazar esta solicitud?</DialogTitle>
+            <DialogContent className={styles.rechazo}>
+              <Body1>
+                {citaARechazar &&
+                  `${citaARechazar.estudianteNombre} pidió ${citaARechazar.materiaNombre}. Le avisaremos por correo que la solicitud fue rechazada.`}
+              </Body1>
+              <Field label="Motivo (opcional)" hint="Se incluye en el correo al estudiante.">
+                <Textarea
+                  value={motivoRechazo}
+                  onChange={(_, data) => setMotivoRechazo(data.value)}
+                  maxLength={1000}
+                  rows={3}
+                  resize="vertical"
+                  disabled={rechazandoId !== null}
+                />
+              </Field>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                appearance="secondary"
+                onClick={() => setCitaARechazar(null)}
+                disabled={rechazandoId !== null}
+              >
+                Volver
+              </Button>
+              <DangerButton
+                onClick={confirmarRechazo}
+                disabled={rechazandoId !== null}
+                icon={rechazandoId !== null ? <Spinner size="tiny" /> : undefined}
+              >
+                {rechazandoId !== null ? "Rechazando…" : "Rechazar solicitud"}
+              </DangerButton>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
     </>
   );
 }

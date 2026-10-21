@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useState, useMemo } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react';
 import { AUTH_STORAGE_KEYS } from '../types/auth.types';
 
 export const ThemeContext = createContext(null);
@@ -15,14 +15,35 @@ export function ThemeProvider({ children }) {
 
   const isDark = theme === 'dark';
 
+  const temaInicial = useRef(theme);
+
   useLayoutEffect(() => {
     const root = document.documentElement;
+    // El cambio de tema es instantáneo: se suspenden las transiciones un
+    // momento. No hace falta al montar (el script de index.html ya aplicó el
+    // tema). Se quita con rAF o, si la pestaña está en segundo plano y rAF no
+    // corre, con un temporizador: si la clase se quedara puesta, la app
+    // entera perdería sus transiciones.
+    let limpiar;
+    if (theme !== temaInicial.current) {
+      temaInicial.current = null;
+      root.classList.add('theme-switching');
+      const quitar = () => root.classList.remove('theme-switching');
+      const frame = requestAnimationFrame(() => requestAnimationFrame(quitar));
+      const temporizador = setTimeout(quitar, 100);
+      limpiar = () => {
+        cancelAnimationFrame(frame);
+        clearTimeout(temporizador);
+        quitar();
+      };
+    }
     if (theme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
     localStorage.setItem(AUTH_STORAGE_KEYS.THEME, theme);
+    return limpiar;
   }, [theme]);
 
   useEffect(() => {

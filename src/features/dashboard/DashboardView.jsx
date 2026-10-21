@@ -1,135 +1,421 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Button,
+  Caption1,
+  Link,
+  makeStyles,
+  MessageBar,
+  MessageBarActions,
+  MessageBarBody,
+  MessageBarTitle,
+  Skeleton,
+  SkeletonItem,
+  Text,
+  tokens,
+} from "@fluentui/react-components";
+import {
+  CalendarEmpty24Regular,
+  LockClosed20Regular,
+  PeopleSearch24Regular,
+  TaskListSquareLtr24Regular,
+} from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
-import { Link } from "react-router-dom";
-import { Lock } from "lucide-react";
+import { useCargaDePagina } from "../../hooks/useCargaDePagina";
+import { getCitasPendientes, getProximasTutorias } from "../../services/citaService";
+import { getTutoresRecomendados } from "../../services/tutorService";
+import TutorCard from "../../components/TutorCard";
+import { IlustracionCalendario, IlustracionComunidad, IlustracionRevision } from "../../components/illustrations/Ilustraciones";
+import { Page, PageHeader, PageSection } from "../../components/ui/Page";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { TarjetaIlustrada } from "../../components/ui/TarjetaIlustrada";
+import { EstadoBadge } from "../../components/ui/EstadoBadge";
+import { formatoSesion } from "../../lib/formato";
+import {
+  SessionList,
+  SessionListSkeleton,
+  SessionRow,
+} from "../../components/ui/SessionList";
+import { esTutorAprobado, tieneSolicitudTutor } from "../../components/shell/navigation";
+
+const MAX_FILAS = 3;
+
+const useStyles = makeStyles({
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    margin: 0,
+    padding: 0,
+    listStyleType: "none",
+    backgroundColor: tokens.colorNeutralBackground1,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    borderRadius: tokens.borderRadiusXLarge,
+    boxShadow: tokens.shadow4,
+    overflow: "hidden",
+  },
+  badgeDesktop: {
+    display: "none",
+    "@media (min-width: 640px)": { display: "inline-flex" },
+  },
+  grid: {
+    display: "grid",
+    // auto-fill en lugar de media queries: Griffel no garantiza su orden.
+    gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
+    gap: tokens.spacingHorizontalL,
+  },
+  locked: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: tokens.spacingHorizontalM,
+    paddingBlock: tokens.spacingVerticalM,
+    paddingInline: tokens.spacingHorizontalL,
+    color: tokens.colorNeutralForegroundDisabled,
+    borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke3}`,
+    ":last-child": {
+      borderBottomStyle: "none",
+    },
+  },
+  lockedText: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXXS,
+  },
+  lockedTitle: {
+    color: tokens.colorNeutralForeground2,
+    fontWeight: tokens.fontWeightSemibold,
+  },
+  lockedIcon: {
+    flexShrink: 0,
+    marginTop: "2px",
+  },
+});
+
+
+function useCarga(cargar, activo = true) {
+  const [estado, setEstado] = useState({ datos: [], cargando: activo, error: "" });
+
+  useEffect(() => {
+    if (!activo) return undefined;
+    let vigente = true;
+
+    cargar()
+      .then((datos) => {
+        if (vigente) setEstado({ datos: Array.isArray(datos) ? datos : [], cargando: false, error: "" });
+      })
+      .catch((err) => {
+        console.error("Error al cargar el panel:", err);
+        if (vigente) setEstado({ datos: [], cargando: false, error: "No se pudo cargar esta sección. Revisa tu conexión y recarga la página." });
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [cargar, activo]);
+
+  useCargaDePagina(estado.cargando);
+  return estado;
+}
+
+function EnlaceSeccion({ to, children }) {
+  const navigate = useNavigate();
+  return (
+    <Link
+      href={to}
+      onClick={(event) => {
+        event.preventDefault();
+        navigate(to);
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function ProximasSesiones({ to = "/mis-tutorias" }) {
+  const styles = useStyles();
+  const { datos, cargando, error } = useCarga(getProximasTutorias);
+  const filas = datos.slice(0, MAX_FILAS);
+
+  return (
+    <PageSection
+      id="proximas"
+      title="Próximas sesiones"
+      actions={datos.length > 0 && <EnlaceSeccion to={to}>Ver todas</EnlaceSeccion>}
+    >
+      {cargando ? (
+        <SessionListSkeleton />
+      ) : error ? (
+        <MessageBar intent="error" layout="multiline">
+          <MessageBarBody>{error}</MessageBarBody>
+        </MessageBar>
+      ) : filas.length === 0 ? (
+        <EmptyState
+          icon={<CalendarEmpty24Regular />}
+          ilustracion={<IlustracionCalendario />}
+          title="No tienes sesiones programadas"
+          description="Cuando una tutoría sea aceptada aparecerá aquí con su fecha y enlace de reunión."
+        />
+      ) : (
+        <SessionList label="Próximas sesiones">
+          {filas.map((sesion) => {
+            const fecha = new Date(sesion.fechaHoraInicio);
+            return (
+              <SessionRow
+                key={sesion.id}
+                to={to}
+                fecha={fecha}
+                title={sesion.materia}
+                meta={`${formatoSesion.format(fecha)} · con ${sesion.rolOpuestoNombre}`}
+                end={
+                  <span className={styles.badgeDesktop}>
+                    <EstadoBadge estado={sesion.estado} />
+                  </span>
+                }
+              />
+            );
+          })}
+        </SessionList>
+      )}
+    </PageSection>
+  );
+}
+
+function SolicitudesPendientes() {
+  const styles = useStyles();
+  const { datos, cargando, error } = useCarga(getCitasPendientes);
+  const filas = datos.slice(0, MAX_FILAS);
+  const destino = "/tutor/mis-tutorias";
+
+  return (
+    <PageSection
+      id="pendientes"
+      title={datos.length > 0 ? `Solicitudes por responder (${datos.length})` : "Solicitudes por responder"}
+      actions={datos.length > 0 && <EnlaceSeccion to={destino}>Responder</EnlaceSeccion>}
+    >
+      {cargando ? (
+        <SessionListSkeleton />
+      ) : error ? (
+        <MessageBar intent="error" layout="multiline">
+          <MessageBarBody>{error}</MessageBarBody>
+        </MessageBar>
+      ) : filas.length === 0 ? (
+        <EmptyState
+          icon={<TaskListSquareLtr24Regular />}
+          ilustracion={<IlustracionRevision estado="aprobado" />}
+          title="No hay solicitudes pendientes"
+          description="Cuando un estudiante pida una tutoría contigo, podrás aceptarla o rechazarla desde aquí."
+        />
+      ) : (
+        <SessionList label="Solicitudes por responder">
+          {filas.map((cita) => {
+            const fecha = new Date(cita.fechaHoraInicio);
+            return (
+              <SessionRow
+                key={cita.id}
+                to={destino}
+                fecha={fecha}
+                title={cita.materiaNombre}
+                meta={`${formatoSesion.format(fecha)} · ${cita.estudianteNombre}`}
+                end={
+                  <span className={styles.badgeDesktop}>
+                    <EstadoBadge estado={cita.estado || "Pendiente"} />
+                  </span>
+                }
+              />
+            );
+          })}
+        </SessionList>
+      )}
+    </PageSection>
+  );
+}
+
+function TutoresRecomendados() {
+  const styles = useStyles();
+  const navigate = useNavigate();
+  const { datos, cargando, error } = useCarga(getTutoresRecomendados);
+
+  return (
+    <PageSection id="recomendados" title="Tutores afines a tus intereses">
+      {cargando ? (
+        <div className={styles.grid}>
+          {[0, 1, 2].map((n) => (
+            <Skeleton key={n} aria-label="Cargando tutores">
+              <SkeletonItem shape="rectangle" style={{ height: "128px" }} />
+            </Skeleton>
+          ))}
+        </div>
+      ) : error ? (
+        <MessageBar intent="error" layout="multiline">
+          <MessageBarBody>{error}</MessageBarBody>
+        </MessageBar>
+      ) : datos.length === 0 ? (
+        <EmptyState
+          icon={<PeopleSearch24Regular />}
+          ilustracion={<IlustracionComunidad />}
+          title="Aún no hay recomendaciones"
+          description="Las recomendaciones salen de las materias que marcas como interés. Agrega algunas o explora el catálogo completo."
+          action={
+            <Button appearance="secondary" onClick={() => navigate("/intereses")}>
+              Elegir materias
+            </Button>
+          }
+        />
+      ) : (
+        <div className={styles.grid}>
+          {datos.map((tutor) => (
+            <TutorCard key={tutor.id} tutor={tutor} to={`/tutor/${tutor.id}`} />
+          ))}
+        </div>
+      )}
+    </PageSection>
+  );
+}
+
+function PanelEstudiante({ user }) {
+  const navigate = useNavigate();
+  const solicitudEnviada = tieneSolicitudTutor(user);
+
+  return (
+    <>
+      <PageHeader
+        title="Panel de control"
+        description="Tus próximas sesiones y tutores para las materias que te interesan."
+        actions={
+          <Button appearance="primary" icon={<PeopleSearch24Regular />} onClick={() => navigate("/tutores")}>
+            Buscar tutores
+          </Button>
+        }
+      />
+      <ProximasSesiones />
+      <TutoresRecomendados />
+      <TarjetaIlustrada
+        ilustracion={<IlustracionComunidad />}
+        title={solicitudEnviada ? "Tu postulación como tutor" : "¿Dominas alguna materia?"}
+        description={
+          solicitudEnviada
+            ? "Consulta en qué etapa está la revisión de tu solicitud."
+            : "Postúlate como tutor para dar tutorías a otros estudiantes de tu universidad."
+        }
+        action={
+          <Button
+            appearance="secondary"
+            onClick={() => navigate(solicitudEnviada ? "/estado-solicitud" : "/aplicar-tutor")}
+          >
+            {solicitudEnviada ? "Ver estado" : "Postularme"}
+          </Button>
+        }
+      />
+    </>
+  );
+}
+
+const HERRAMIENTAS_TUTOR = [
+  { titulo: "Materias que imparto", descripcion: "Elegir las especialidades que enseñas." },
+  { titulo: "Disponibilidad", descripcion: "Publicar los horarios en los que recibes citas." },
+  { titulo: "Solicitudes", descripcion: "Aceptar o rechazar las tutorías que te piden." },
+];
+
+function PanelTutorPendiente({ user }) {
+  const styles = useStyles();
+  const navigate = useNavigate();
+  const solicitudEnviada = tieneSolicitudTutor(user);
+
+  return (
+    <>
+      <PageHeader
+        title="Panel de control"
+        description="Las herramientas de tutor se activan cuando la administración aprueba tu solicitud."
+      />
+      <MessageBar intent={solicitudEnviada ? "info" : "warning"} layout="multiline">
+        <MessageBarBody>
+          <MessageBarTitle>
+            {solicitudEnviada ? "Solicitud en revisión" : "Postulación sin enviar"}
+          </MessageBarTitle>
+          {solicitudEnviada
+            ? "Te avisaremos cuando la administración responda."
+            : "Envía tus materias, tu comprobante y el cuestionario para empezar."}
+        </MessageBarBody>
+        <MessageBarActions>
+          <Button onClick={() => navigate(solicitudEnviada ? "/estado-solicitud" : "/aplicar-tutor")}>
+            {solicitudEnviada ? "Ver estado" : "Completar postulación"}
+          </Button>
+        </MessageBarActions>
+      </MessageBar>
+
+      <PageSection id="bloqueadas" title="Disponible al ser aprobado">
+        <ul className={styles.list}>
+          {HERRAMIENTAS_TUTOR.map((herramienta) => (
+            <li
+              key={herramienta.titulo}
+              className={styles.locked}
+            >
+              <LockClosed20Regular className={styles.lockedIcon} aria-hidden="true" />
+              <span className={styles.lockedText}>
+                <Text className={styles.lockedTitle}>{herramienta.titulo}</Text>
+                <Caption1>{herramienta.descripcion}</Caption1>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </PageSection>
+
+      <ProximasSesiones />
+    </>
+  );
+}
+
+function PanelTutor() {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <PageHeader
+        title="Panel de control"
+        description="Solicitudes por responder y tus próximas sesiones."
+        actions={
+          <>
+            <Button appearance="secondary" onClick={() => navigate("/tutor/disponibilidad")}>
+              Disponibilidad
+            </Button>
+            <Button appearance="primary" onClick={() => navigate("/tutor/mis-tutorias")}>
+              Ver solicitudes
+            </Button>
+          </>
+        }
+      />
+      <SolicitudesPendientes />
+      <ProximasSesiones />
+    </>
+  );
+}
+
+function PanelAdministrador() {
+  const navigate = useNavigate();
+  return (
+    <PageHeader
+      title="Panel de control"
+      description="Revisa las solicitudes de estudiantes que quieren ser tutores."
+      actions={
+        <Button appearance="primary" onClick={() => navigate("/admin/aprobaciones")}>
+          Aprobación de tutores
+        </Button>
+      }
+    />
+  );
+}
 
 export function DashboardView({ selectedRole }) {
   const { user } = useAuth();
-  
   const activeRole = (selectedRole || user?.rol || "Estudiante").trim().toLowerCase();
-  
-  const getNavCards = () => {
-    switch (activeRole) {
-      case "administrador":
-        return [
-          {
-            title: "Aprobación de Tutores",
-            description: "Revisa y gestiona las solicitudes de estudiantes que desean ser tutores.",
-            href: "/admin/aprobaciones",
-          },
-        ];
-      case "tutor":
-        return [
-          {
-            title: "Mis Intereses",
-            description: "Actualiza las materias y temas en los que necesitas ayuda como estudiante.",
-            href: "/intereses",
-          },
-          (user?.estadoAprobacion?.trim().toLowerCase() === "aprobado") ? {
-            title: "Materias que Imparto",
-            description: "Configura las especialidades que enseñas como tutor.",
-            href: "/tutor/mis-materias",
-          } : {
-            title: "Materias que Imparto",
-            description: "Tu solicitud debe ser aprobada antes de configurar tus materias.",
-            href: "#",
-            disabled: true
-          },
-          (user?.estadoAprobacion?.trim().toLowerCase() === "aprobado") ? {
-            title: "Disponibilidad",
-            description: "Añade o retira los horarios en los que puedes recibir citas.",
-            href: "/tutor/disponibilidad",
-          } : {
-            title: "Disponibilidad",
-            description: "Tu solicitud debe ser aprobada antes de configurar tus horarios.",
-            href: "#",
-            disabled: true
-          },
-          (user?.estadoAprobacion?.trim().toLowerCase() === "aprobado") ? {
-            title: "Mis Tutorías",
-            description: "Acepta o rechaza solicitudes de tutoría pendientes.",
-            href: "/tutor/mis-tutorias",
-          } : {
-            title: "Mis Tutorías",
-            description: "Tu solicitud debe ser aprobada antes de gestionar tutorías.",
-            href: "#",
-            disabled: true
-          }
-        ];
-      case "estudiante":
-      default:
-        return [
-          {
-            title: "Mis Intereses",
-            description: "Selecciona las materias en las que te gustaría recibir tutorías.",
-            href: "/intereses",
-          },
-          {
-            title: "Buscar Tutores",
-            description: "Explora el catálogo de tutores disponibles y agenda una clase.",
-            href: "/tutores",
-          },
-          (user?.estadoAprobacion && user.estadoAprobacion.trim().toLowerCase() !== "ninguno") ? {
-            title: "Estado de Solicitud",
-            description: "Revisa cómo va el proceso de tu postulación para ser tutor.",
-            href: "/estado-solicitud",
-          } : {
-            title: "Conviértete en Tutor",
-            description: "Aplica para impartir tutorías y ayudar a otros estudiantes.",
-            href: "/aplicar-tutor",
-          }
-        ];
-    }
-  };
 
-  const navCards = getNavCards();
+  let contenido;
+  if (activeRole === "administrador") contenido = <PanelAdministrador />;
+  else if (activeRole === "tutor")
+    contenido = esTutorAprobado(user) ? <PanelTutor /> : <PanelTutorPendiente user={user} />;
+  else contenido = <PanelEstudiante user={user} />;
 
-  return (
-    <main className="w-full flex-1 flex flex-col items-center px-4 py-10">
-      <div className="max-w-5xl w-full space-y-8">
-        
-        <div>
-          <h1 className="text-2xl font-semibold text-granite-900 dark:text-white tracking-tight">
-            Panel de Control
-          </h1>
-          <p className="text-sm text-granite-500 dark:text-deep-space-blue-300 mt-1 capitalize">
-            Vista de {activeRole}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {navCards.map((card, idx) => (
-            card.href !== "#" && !card.disabled ? (
-              <Link
-                key={idx}
-                to={card.href}
-                className="group flex flex-col p-6 rounded-lg bg-white dark:bg-deep-space-blue-900/40 border border-granite-200 dark:border-deep-space-blue-800 hover:border-deep-space-blue-500 dark:hover:border-emerald-500 hover:shadow-sm transition-all duration-200"
-              >
-                <h3 className="text-base font-medium text-granite-900 dark:text-white mb-2 group-hover:text-deep-space-blue-600 dark:group-hover:text-emerald-400 transition-colors">
-                  {card.title}
-                </h3>
-                <p className="text-sm text-granite-600 dark:text-deep-space-blue-300 leading-relaxed">
-                  {card.description}
-                </p>
-              </Link>
-            ) : (
-              <div
-                key={idx}
-                className="flex flex-col p-6 rounded-lg bg-granite-50 dark:bg-deep-space-blue-950/40 border border-granite-200 dark:border-deep-space-blue-800 opacity-75 cursor-not-allowed"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-base font-medium text-granite-700 dark:text-granite-300">
-                    {card.title}
-                  </h3>
-                  <Lock className="w-4 h-4 text-granite-400 dark:text-deep-space-blue-500" />
-                </div>
-                <p className="text-sm text-granite-500 dark:text-deep-space-blue-400 leading-relaxed">
-                  {card.description}
-                </p>
-              </div>
-            )
-          ))}
-        </div>
-      </div>
-    </main>
-  );
+  return <Page>{contenido}</Page>;
 }
+
+export default DashboardView;

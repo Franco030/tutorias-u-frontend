@@ -1,0 +1,308 @@
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  Badge,
+  DrawerBody,
+  DrawerHeader,
+  Hamburger,
+  makeStyles,
+  mergeClasses,
+  OverlayDrawer,
+  SearchBox,
+  tokens,
+  Tooltip,
+} from "@fluentui/react-components";
+import { useAuth } from "../../context/AuthContext";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { getApiBaseUrl } from "../../services/apiClient";
+import { Avisos } from "../ui/notificaciones";
+import { BrandMark } from "./BrandMark";
+import { PanelLateralMotion } from "../../theme/navMotion";
+import { veloHover, veloPresionado } from "../../theme/superficies";
+import { SideNav } from "./SideNav";
+import { UserMenu } from "./UserMenu";
+import { getActiveNavValue, getNavSections, getRol } from "./navigation";
+
+const DESKTOP_QUERY = "(min-width: 1024px)";
+const RAIL_WIDTH = "56px";
+
+const useStyles = makeStyles({
+  // Capa base: material tipo Mica (neutro con un 5 % de la marca).
+  root: {
+    height: "100dvh",
+    display: "grid",
+    gridTemplateRows: "48px minmax(0, 1fr)",
+    backgroundColor: `color-mix(in srgb, ${tokens.colorBrandBackground} 5%, ${tokens.colorNeutralBackground3})`,
+  },
+  // El botón de menú (32 px) queda centrado sobre la columna de íconos del riel (56 px).
+  titleBar: {
+    // Botones sutiles de la barra (menú, tema, usuario) con el mismo velo
+    // que la navegación: el hover de Fluent no se distingue sobre la base.
+    "& .fui-Button:hover": { backgroundColor: veloHover },
+    "& .fui-Button:hover:active": { backgroundColor: veloPresionado },
+    display: "flex",
+    alignItems: "center",
+    gap: tokens.spacingHorizontalS,
+    paddingInlineStart: "12px",
+    paddingInlineEnd: tokens.spacingHorizontalS,
+    minWidth: 0,
+  },
+  brandLink: {
+    display: "inline-flex",
+    alignItems: "center",
+    borderRadius: tokens.borderRadiusMedium,
+    paddingInline: tokens.spacingHorizontalXS,
+    color: "inherit",
+    textDecorationLine: "none",
+    ":focus-visible": {
+      outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`,
+    },
+  },
+  envBadge: {
+    display: "none",
+    "@media (min-width: 640px)": {
+      display: "inline-flex",
+    },
+  },
+  spacer: { flexGrow: 1 },
+  // Búsqueda global (estudiantes): centrada en la barra, oculta en móvil.
+  search: {
+    display: "none",
+    "@media (min-width: 768px)": {
+      display: "flex",
+      width: "min(420px, 36vw)",
+      maxWidth: "none",
+    },
+  },
+  body: {
+    position: "relative",
+    display: "flex",
+    minHeight: 0,
+  },
+  // Hueco fijo del riel: nunca cambia de ancho, así el contenido no se mueve.
+  rail: {
+    flexShrink: 0,
+    width: RAIL_WIDTH,
+  },
+  // Un solo menú que es riel cerrado y panel abierto: al abrirse se vuelve una
+  // capa acrílica sobre el contenido (modo LeftCompact de Windows).
+  pane: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 2,
+    width: "280px",
+    overflowY: "auto",
+    backgroundColor: `color-mix(in srgb, ${tokens.colorNeutralBackground3} 82%, transparent)`,
+    backdropFilter: "blur(30px) saturate(125%)",
+    borderRight: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    boxShadow: tokens.shadow28,
+    // Acoplado a la ventana y encima de la esquina del lienzo: esquinas rectas.
+    clipPath: "inset(0 -40px 0 0)",
+    visibility: "visible",
+    // Entrada (Enter de Fluent): 300 ms, desaceleración suave; los íconos no
+    // se mueven y el panel se expande desde el riel, como NavigationView.
+    transitionProperty: "clip-path, box-shadow, background-color",
+    transitionDuration: tokens.durationSlow,
+    transitionTimingFunction: tokens.curveDecelerateMin,
+  },
+  // Cerrado se recorta al ancho del riel y se funde con la base (sin material).
+  paneClosed: {
+    clipPath: `inset(0 calc(100% - ${RAIL_WIDTH}) 0 0)`,
+    boxShadow: "none",
+    backgroundColor: "transparent",
+    // Salida (Exit): misma curva suave, más corta (200 ms); empieza a moverse
+    // al instante, sin el retraso de un ease-in ni un salto brusco.
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMin,
+  },
+  // Capa de contenido: superficie sobre la base, con borde y sombra.
+  canvas: {
+    position: "relative",
+    flexGrow: 1,
+    minWidth: 0,
+    overflowY: "auto",
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    boxShadow: tokens.shadow4,
+    "@media (min-width: 1024px)": {
+      borderLeft: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+      borderTopLeftRadius: tokens.borderRadiusXLarge,
+    },
+  },
+  page: {
+    minHeight: "100%",
+    display: "flex",
+    flexDirection: "column",
+  },
+  drawer: {
+    width: "300px",
+    maxWidth: "85vw",
+    backgroundColor: tokens.colorNeutralBackground2,
+  },
+  drawerHeader: {
+    paddingBlock: tokens.spacingVerticalM,
+  },
+  drawerBody: {
+    paddingInline: 0,
+  },
+});
+
+/*
+ * Ventana estilo app de Windows: barra de título de 48 px, riel de íconos fijo
+ * y, al abrir el menú, un panel acrílico sobre el contenido (escritorio) o un
+ * cajón superpuesto (móvil). El lienzo nunca cambia de ancho al abrir/cerrar.
+ * Se monta una vez (ShellLayout en App.jsx); al navegar solo entra la página.
+ */
+export function AppShell({ children }) {
+  const styles = useStyles();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  const isDesktop = useMediaQuery(DESKTOP_QUERY);
+
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const paneRef = useRef(null);
+  const hamburgerRef = useRef(null);
+
+  const isAzureProd = getApiBaseUrl().includes("azurewebsites.net");
+  const esEstudiante = getRol(user) === "estudiante";
+  const [busqueda, setBusqueda] = useState("");
+
+  const buscar = (texto) => {
+    const termino = texto.trim();
+    navigate(termino ? `/tutores?q=${encodeURIComponent(termino)}` : "/tutores");
+  };
+  const sections = getNavSections(user);
+  const selectedValue = getActiveNavValue(sections, pathname);
+
+  // Panel de escritorio: cierre ligero (clic fuera o Escape) y foco al abrir.
+  useEffect(() => {
+    if (!isDesktop || !menuAbierto) return undefined;
+
+    paneRef.current?.querySelector('[aria-current="page"], a')?.focus({ preventScroll: true });
+
+    const alPresionar = (event) => {
+      if (paneRef.current?.contains(event.target) || hamburgerRef.current?.contains(event.target)) return;
+      setMenuAbierto(false);
+    };
+    const alTeclear = (event) => {
+      if (event.key === "Escape") {
+        setMenuAbierto(false);
+        hamburgerRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("pointerdown", alPresionar);
+    document.addEventListener("keydown", alTeclear);
+    return () => {
+      document.removeEventListener("pointerdown", alPresionar);
+      document.removeEventListener("keydown", alTeclear);
+    };
+  }, [isDesktop, menuAbierto]);
+
+  return (
+    <div className={styles.root}>
+      <header className={styles.titleBar}>
+        <Tooltip content={menuAbierto ? "Cerrar navegación" : "Abrir navegación"} relationship="label">
+          <Hamburger
+            ref={hamburgerRef}
+            onClick={() => setMenuAbierto((valor) => !valor)}
+            aria-expanded={menuAbierto}
+          />
+        </Tooltip>
+
+        <a
+          href="/"
+          className={styles.brandLink}
+          onClick={(event) => {
+            event.preventDefault();
+            navigate("/");
+          }}
+        >
+          <BrandMark />
+        </a>
+
+        {!isAzureProd && (
+          <Badge appearance="tint" color="informative" size="small" className={styles.envBadge}>
+            Dev local
+          </Badge>
+        )}
+
+        <div className={styles.spacer} />
+
+        {esEstudiante && (
+          <SearchBox
+            className={styles.search}
+            placeholder="Buscar tutores o materias"
+            aria-label="Buscar tutores o materias"
+            value={busqueda}
+            onChange={(_, data) => setBusqueda(data.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                buscar(busqueda);
+                setBusqueda("");
+              }
+            }}
+          />
+        )}
+
+        <div className={styles.spacer} />
+
+        <UserMenu />
+      </header>
+
+      <div className={styles.body}>
+        {isDesktop && (
+          <>
+            <div className={styles.rail} aria-hidden="true" />
+            <div ref={paneRef} className={mergeClasses(styles.pane, !menuAbierto && styles.paneClosed)}>
+              <SideNav
+                sections={sections}
+                selectedValue={selectedValue}
+                compact={!menuAbierto}
+                onNavigate={() => setMenuAbierto(false)}
+              />
+            </div>
+          </>
+        )}
+
+        <div className={styles.canvas}>
+          <div key={pathname} className={styles.page}>
+            {children}
+          </div>
+        </div>
+      </div>
+
+      <Avisos />
+
+      {!isDesktop && (
+        <OverlayDrawer
+          open={menuAbierto}
+          onOpenChange={(_, data) => setMenuAbierto(data.open)}
+          className={styles.drawer}
+          aria-label="Navegación principal"
+          surfaceMotion={{
+            children: (_, { children, ...props }) => (
+              <PanelLateralMotion {...props}>{children}</PanelLateralMotion>
+            ),
+          }}
+        >
+          <DrawerHeader className={styles.drawerHeader}>
+            <BrandMark />
+          </DrawerHeader>
+          <DrawerBody className={styles.drawerBody}>
+            <SideNav
+              sections={sections}
+              selectedValue={selectedValue}
+              onNavigate={() => setMenuAbierto(false)}
+            />
+          </DrawerBody>
+        </OverlayDrawer>
+      )}
+    </div>
+  );
+}
+
+export default AppShell;

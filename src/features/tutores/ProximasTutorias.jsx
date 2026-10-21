@@ -1,19 +1,53 @@
-
 import { useEffect, useState } from "react";
-import { CalendarDays, Clock3, BookOpen } from "lucide-react";
+import { useNotificar } from "../../hooks/useNotificar";
+import {
+  Button,
+  makeStyles,
+  MessageBar,
+  MessageBarBody,
+  RatingDisplay,
+  Tab,
+  TabList,
+  tokens,
+} from "@fluentui/react-components";
+import { CalendarEmpty24Regular, History24Regular, Star20Regular, Video20Regular } from "@fluentui/react-icons";
+import { useAuth } from "../../context/AuthContext";
+import { getRol } from "../../components/shell/navigation";
 import {
   getHistorialTutorias,
   getProximasTutorias,
 } from "../../services/citaService";
 import TutoriaDetallesModal from "./TutoriaDetallesModal";
+import CalificarTutoriaModal from "./CalificarTutoriaModal";
+import { IlustracionCalendario } from "../../components/illustrations/Ilustraciones";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { EstadoBadge } from "../../components/ui/EstadoBadge";
+import { Page, PageHeader } from "../../components/ui/Page";
+import { formatoSesion } from "../../lib/formato";
+import {
+  SessionList,
+  SessionListSkeleton,
+  SessionRow,
+} from "../../components/ui/SessionList";
+
+const useStyles = makeStyles({
+  tabs: {
+    marginBlockEnd: `calc(${tokens.spacingVerticalXXL} * -0.5)`,
+  },
+});
 
 export default function ProximasTutorias() {
+  const notificar = useNotificar();
+  const styles = useStyles();
+  const { user } = useAuth();
+  const esEstudiante = getRol(user) === "estudiante";
   const [tutorias, setTutorias] = useState([]);
   const [historial, setHistorial] = useState([]);
   const [pestana, setPestana] = useState("proximas");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tutoriaSeleccionada, setTutoriaSeleccionada] = useState(null);
+  const [tutoriaPorCalificar, setTutoriaPorCalificar] = useState(null);
 
   useEffect(() => {
     const cargarTutorias = async () => {
@@ -45,21 +79,6 @@ export default function ProximasTutorias() {
     cargarTutorias();
   }, []);
 
-  const formatearFecha = (fecha) => {
-    return new Date(fecha).toLocaleDateString("es-MX", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  const formatearHora = (fecha) => {
-    return new Date(fecha).toLocaleTimeString("es-MX", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const abrirDetalles = (tutoria) => {
     setTutoriaSeleccionada(tutoria);
   };
@@ -69,6 +88,7 @@ export default function ProximasTutorias() {
   };
 
   const handleCancelled = (tutoria) => {
+    notificar("Tutoría cancelada", { cuerpo: tutoria.materia, intent: "info" });
     setTutorias((actuales) =>
       actuales.filter((actual) => actual.id !== tutoria.id)
     );
@@ -78,137 +98,139 @@ export default function ProximasTutorias() {
     ]);
   };
 
-  const listaActual = pestana === "proximas" ? tutorias : historial;
+  const handleCalificada = (tutoria, puntuacion) => {
+    notificar("Gracias por tu reseña", { cuerpo: `${tutoria.materia} con ${tutoria.rolOpuestoNombre}` });
+    setHistorial((actuales) =>
+      actuales.map((actual) => (actual.id === tutoria.id ? { ...actual, puntuacion } : actual))
+    );
+  };
+
+  const esProximas = pestana === "proximas";
+  const listaActual = esProximas ? tutorias : historial;
 
   return (
-    <main className="min-h-screen bg-granite-50 px-6 py-10 dark:bg-deep-space-blue-950">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-semibold text-granite-900 dark:text-white">
-            Mis Tutorías
-          </h1>
+    <Page cargando={loading}>
+      <PageHeader
+        title="Mis tutorías"
+        description="Tus próximas sesiones y el historial de las anteriores. Abre una para ver el enlace y las notas."
+      />
 
-          <p className="mt-2 text-granite-600 dark:text-deep-space-blue-300">
-            Consulta tus próximas sesiones y el historial de tutorías.
-          </p>
-        </div>
+      <TabList
+        className={styles.tabs}
+        selectedValue={pestana}
+        onTabSelect={(_, data) => setPestana(data.value)}
+        aria-label="Sesiones de tutoría"
+      >
+        <Tab value="proximas">Próximas sesiones{!loading && ` (${tutorias.length})`}</Tab>
+        <Tab value="historial">Historial</Tab>
+      </TabList>
 
-        <div
-          className="mb-6 flex w-fit rounded-lg border border-granite-200 bg-white p-1 dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40"
-          role="tablist"
-          aria-label="Sesiones de tutoría"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={pestana === "proximas"}
-            onClick={() => setPestana("proximas")}
-            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-              pestana === "proximas"
-                ? "bg-deep-space-blue-600 text-white dark:bg-emerald-500 dark:text-deep-space-blue-950"
-                : "text-granite-700 hover:bg-granite-100 dark:text-deep-space-blue-200 dark:hover:bg-deep-space-blue-800"
-            }`}
-          >
-            Próximas Sesiones
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={pestana === "historial"}
-            onClick={() => setPestana("historial")}
-            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-              pestana === "historial"
-                ? "bg-deep-space-blue-600 text-white dark:bg-emerald-500 dark:text-deep-space-blue-950"
-                : "text-granite-700 hover:bg-granite-100 dark:text-deep-space-blue-200 dark:hover:bg-deep-space-blue-800"
-            }`}
-          >
-            Historial de Sesiones
-          </button>
-        </div>
-
-        {loading && (
-          <div className="py-12 text-center text-granite-600 dark:text-deep-space-blue-300">
-            Cargando tutorías...
-          </div>
-        )}
-
-        {!loading && error && (
-          <div
-            role="alert"
-            className="rounded-lg border border-red-300 bg-red-50 p-5 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400"
-          >
-            {error}
-          </div>
-        )}
-
-        {!loading && !error && listaActual.length === 0 && (
-          <div className="rounded-lg border border-granite-200 bg-white p-10 text-center dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40">
-            <CalendarDays className="mx-auto mb-4 h-10 w-10 text-granite-400" />
-
-            <h2 className="text-lg font-medium text-granite-900 dark:text-white">
-              {pestana === "proximas"
-                ? "No tienes próximas tutorías"
-                : "Tu historial de tutorías está vacío"}
-            </h2>
-
-            <p className="mt-2 text-sm text-granite-600 dark:text-deep-space-blue-300">
-              {pestana === "proximas"
-                ? "Tus próximas sesiones aparecerán aquí."
-                : "Las sesiones pasadas, canceladas o rechazadas aparecerán aquí."}
-            </p>
-          </div>
-        )}
-
-        {!loading && !error && listaActual.length > 0 && (
-          <div className="space-y-4">
-            {listaActual.map((tutoria) => (
-              <div
+      {loading ? (
+        <SessionListSkeleton rows={3} />
+      ) : error ? (
+        <MessageBar intent="error" layout="multiline">
+          <MessageBarBody>{error}</MessageBarBody>
+        </MessageBar>
+      ) : listaActual.length === 0 ? (
+        <EmptyState
+          icon={esProximas ? <CalendarEmpty24Regular /> : <History24Regular />}
+          ilustracion={<IlustracionCalendario />}
+          title={esProximas ? "No tienes próximas tutorías" : "Tu historial está vacío"}
+          description={
+            esProximas
+              ? "Tus sesiones pendientes y aceptadas aparecerán aquí."
+              : "Las sesiones pasadas, canceladas o rechazadas aparecerán aquí."
+          }
+        />
+      ) : (
+        <SessionList label={esProximas ? "Próximas sesiones" : "Historial de sesiones"}>
+          {listaActual.map((tutoria) => {
+            const fecha = new Date(tutoria.fechaHoraInicio);
+            const meta = `${formatoSesion.format(fecha)} · con ${tutoria.rolOpuestoNombre}`;
+            // El estudiante califica cada sesión completada una sola vez.
+            const puedeCalificar =
+              !esProximas && esEstudiante && tutoria.estado === "Completada" && tutoria.puntuacion == null;
+            if (puedeCalificar) {
+              return (
+                <SessionRow
+                  key={tutoria.id}
+                  fecha={fecha}
+                  muted
+                  title={tutoria.materia}
+                  meta={meta}
+                  actions={
+                    <>
+                      <Button onClick={() => abrirDetalles(tutoria)}>Detalles</Button>
+                      <Button
+                        appearance="primary"
+                        icon={<Star20Regular />}
+                        onClick={() => setTutoriaPorCalificar(tutoria)}
+                        aria-label={`Calificar ${tutoria.materia} con ${tutoria.rolOpuestoNombre}`}
+                      >
+                        Calificar
+                      </Button>
+                    </>
+                  }
+                />
+              );
+            }
+            // Con enlace de reunión, la fila ofrece "Unirse" directo (sin abrir detalles).
+            const puedeUnirse =
+              esProximas && Boolean(tutoria.linkReunion) && (tutoria.estado || "Aceptada") === "Aceptada";
+            if (puedeUnirse) {
+              return (
+                <SessionRow
+                  key={tutoria.id}
+                  fecha={fecha}
+                  title={tutoria.materia}
+                  meta={meta}
+                  actions={
+                    <>
+                      <Button onClick={() => abrirDetalles(tutoria)}>Detalles</Button>
+                      <Button
+                        as="a"
+                        href={tutoria.linkReunion}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        appearance="primary"
+                        icon={<Video20Regular />}
+                        aria-label={`Unirse a ${tutoria.materia} con ${tutoria.rolOpuestoNombre}`}
+                      >
+                        Unirse
+                      </Button>
+                    </>
+                  }
+                />
+              );
+            }
+            return (
+              <SessionRow
                 key={tutoria.id}
-                className="rounded-lg border border-granite-200 bg-white p-6 shadow-sm dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40"
-              >
-                <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-                  <div className="space-y-3">
-                    <h2 className="text-xl font-semibold text-granite-900 dark:text-white">
-                      {tutoria.materia}
-                    </h2>
-
-                    <p className="text-sm text-granite-600 dark:text-deep-space-blue-200">
-                      Con: {tutoria.rolOpuestoNombre}
-                    </p>
-
-                    <span className="inline-flex rounded-full bg-granite-100 px-3 py-1 text-xs font-medium text-granite-700 dark:bg-deep-space-blue-800 dark:text-deep-space-blue-100">
-                      {tutoria.estado || "Aceptada"}
-                    </span>
-
-                    <div className="flex flex-wrap gap-4 text-sm text-granite-600 dark:text-deep-space-blue-300">
-                      <span className="flex items-center gap-2">
-                        <CalendarDays className="h-4 w-4" />
-                        {formatearFecha(tutoria.fechaHoraInicio)}
-                      </span>
-
-                      <span className="flex items-center gap-2">
-                        <Clock3 className="h-4 w-4" />
-                        {formatearHora(tutoria.fechaHoraInicio)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => abrirDetalles(tutoria)}
-                    className="cursor-pointer rounded-md bg-deep-space-blue-600 px-5 py-2.5 font-medium text-white transition-colors hover:bg-deep-space-blue-700 dark:bg-emerald-500 dark:text-deep-space-blue-950 dark:hover:bg-emerald-600"
-                  >
-                    <span className="flex items-center justify-center gap-2">
-                      <BookOpen className="h-4 w-4" />
-                      Ver detalles
-                    </span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                fecha={fecha}
+                muted={!esProximas}
+                title={tutoria.materia}
+                meta={meta}
+                end={
+                  <>
+                    {tutoria.puntuacion != null && (
+                      <RatingDisplay
+                        compact
+                        value={tutoria.puntuacion}
+                        size="small"
+                        color="marigold"
+                        aria-label={`Calificaste con ${tutoria.puntuacion} de 5`}
+                      />
+                    )}
+                    <EstadoBadge estado={tutoria.estado || "Aceptada"} />
+                  </>
+                }
+                onClick={() => abrirDetalles(tutoria)}
+                ariaLabel={`Ver detalles de ${tutoria.materia} con ${tutoria.rolOpuestoNombre}`}
+              />
+            );
+          })}
+        </SessionList>
+      )}
 
       <TutoriaDetallesModal
         isOpen={tutoriaSeleccionada !== null}
@@ -216,6 +238,12 @@ export default function ProximasTutorias() {
         tutoria={tutoriaSeleccionada}
         onCancelled={handleCancelled}
       />
-    </main>
+
+      <CalificarTutoriaModal
+        tutoria={tutoriaPorCalificar}
+        onClose={() => setTutoriaPorCalificar(null)}
+        onCalificada={handleCalificada}
+      />
+    </Page>
   );
 }

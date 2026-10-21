@@ -1,22 +1,60 @@
 
-import { Navigate, Routes, Route, useNavigate } from "react-router-dom";
-import VerifyEmailPage from "./features/auth/VerifyEmailPage";
-import AprobacionTutores from "./features/admin/AprobacionTutores";
+import { Navigate, Outlet, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-import { motion } from "framer-motion";
-import { Navbar } from "./components/Navbar";
+import { AppShell } from "./components/shell/AppShell";
+import { PageLoading } from "./components/ui/Page";
 import { AuthView } from "./features/auth/AuthView";
-import { useEffect, useState } from "react";
-import SelectorIntereses from "./features/onboarding/SelectorIntereses";
-import AplicacionTutor from "./features/onboarding/AplicacionTutor";
-import MisIntereses from "./features/dashboard/MisIntereses";
-import EstadoSolicitud from "./features/onboarding/EstadoSolicitud";
-import PerfilTutor from "./features/tutores/PerfilTutor";
-import CatalogoTutores from "./features/tutores/CatalogoTutores";
-import MisMateriasTutor from "./features/tutores/MisMateriasTutor";
-import ConfiguracionDisponibilidad from "./features/tutores/ConfiguracionDisponibilidad";
-import MisTutorias from "./features/tutores/MisTutorias";
-import ProximasTutorias from "./features/tutores/ProximasTutorias";
+import { Suspense, useEffect, useState } from "react";
+import { pantallaDiferida } from "./lib/pantallaDiferida";
+
+// Acceso y panel de inicio van en el paquete principal (primera pantalla);
+// el resto se carga por ruta para aligerar la carga inicial.
+const pantallas = {
+  VerifyEmailPage: () => import("./features/auth/VerifyEmailPage"),
+  AprobacionTutores: () => import("./features/admin/AprobacionTutores"),
+  SelectorIntereses: () => import("./features/onboarding/SelectorIntereses"),
+  AplicacionTutor: () => import("./features/onboarding/AplicacionTutor"),
+  MisIntereses: () => import("./features/dashboard/MisIntereses"),
+  EstadoSolicitud: () => import("./features/onboarding/EstadoSolicitud"),
+  PerfilTutor: () => import("./features/tutores/PerfilTutor"),
+  CatalogoTutores: () => import("./features/tutores/CatalogoTutores"),
+  MisMateriasTutor: () => import("./features/tutores/MisMateriasTutor"),
+  ConfiguracionDisponibilidad: () => import("./features/tutores/ConfiguracionDisponibilidad"),
+  MisTutorias: () => import("./features/tutores/MisTutorias"),
+  ProximasTutorias: () => import("./features/tutores/ProximasTutorias"),
+};
+
+const VerifyEmailPage = pantallaDiferida(pantallas.VerifyEmailPage);
+const AprobacionTutores = pantallaDiferida(pantallas.AprobacionTutores);
+const SelectorIntereses = pantallaDiferida(pantallas.SelectorIntereses);
+const AplicacionTutor = pantallaDiferida(pantallas.AplicacionTutor);
+const MisIntereses = pantallaDiferida(pantallas.MisIntereses);
+const EstadoSolicitud = pantallaDiferida(pantallas.EstadoSolicitud);
+const PerfilTutor = pantallaDiferida(pantallas.PerfilTutor);
+const CatalogoTutores = pantallaDiferida(pantallas.CatalogoTutores);
+const MisMateriasTutor = pantallaDiferida(pantallas.MisMateriasTutor);
+const ConfiguracionDisponibilidad = pantallaDiferida(pantallas.ConfiguracionDisponibilidad);
+const MisTutorias = pantallaDiferida(pantallas.MisTutorias);
+const ProximasTutorias = pantallaDiferida(pantallas.ProximasTutorias);
+
+// Con la app ya en reposo se descargan las demás pantallas en segundo plano:
+// al navegar no hay espera de código y solo se ve el fundido de la página.
+function usePrecargarPantallas() {
+  useEffect(() => {
+    const precargar = () =>
+      [
+        VerifyEmailPage, AprobacionTutores, SelectorIntereses, AplicacionTutor, MisIntereses,
+        EstadoSolicitud, PerfilTutor, CatalogoTutores, MisMateriasTutor,
+        ConfiguracionDisponibilidad, MisTutorias, ProximasTutorias,
+      ].forEach((pantalla) => pantalla.precargar().catch(() => {}));
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(precargar, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(precargar, 2000);
+    return () => window.clearTimeout(id);
+  }, []);
+}
 
 import { DashboardView } from "./features/dashboard/DashboardView";
 
@@ -85,27 +123,11 @@ function AppContent() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex flex-col bg-granite-50 dark:bg-deep-space-blue-950 text-granite-900 dark:text-white transition-colors duration-300 relative">
-      {isAuthenticated && hasSelectedRole ? (
-        <div className="grow relative flex flex-col">
-          <Navbar />
+  if (isAuthenticated && hasSelectedRole) {
+    return <DashboardView selectedRole={selectedRole} />;
+  }
 
-          <motion.div
-            key="dashboard"
-            className="flex-1 flex flex-col z-0"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <DashboardView selectedRole={selectedRole} />
-          </motion.div>
-        </div>
-      ) : (
-        <AuthView onComplete={handleRoleSelection} />
-      )}
-    </div>
-  );
+  return <AuthView onComplete={handleRoleSelection} />;
 }
 
 function AdminGuard() {
@@ -209,90 +231,124 @@ function ProximasTutoriasGuard({ children }) {
   return children;
 }
 
-export function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<AppContent />} />
+/*
+ * Layout persistente: el shell (barra + navegación) se monta una sola vez y
+ * solo cambia el contenido de la ruta. Acceso, selección de rol y el
+ * onboarding de intereses se muestran sin shell.
+ */
+function ShellLayout() {
+  const { isAuthenticated, user } = useAuth();
+  const { pathname } = useLocation();
 
+  const rol = user?.rol?.trim().toLowerCase();
+  const tieneRol = isAuthenticated && Boolean(rol) && rol !== "nuevo";
+  const enOnboarding =
+    pathname === "/intereses" && rol === "estudiante" && !user?.onboardingCompleto;
+
+  if (!tieneRol || enOnboarding) {
+    return <Outlet />;
+  }
+
+  return (
+    <AppShell>
+      {/* Suspense dentro del shell: la barra y la navegación no parpadean. */}
+      <Suspense fallback={<PageLoading />}>
+        <Outlet />
+      </Suspense>
+    </AppShell>
+  );
+}
+
+export function App() {
+  usePrecargarPantallas();
+
+  return (
+    <Suspense fallback={<PageLoading />}>
+    <Routes>
       <Route
         path="/verificar-correo"
         element={<VerifyEmailPage />}
       />
 
-      <Route
-        path="/admin/aprobaciones"
-        element={<AdminGuard />}
-      />
+      <Route element={<ShellLayout />}>
+        <Route path="/" element={<AppContent />} />
 
-      <Route
-        path="/intereses"
-        element={<StudentInterestsGuard />}
-      />
+        <Route
+          path="/admin/aprobaciones"
+          element={<AdminGuard />}
+        />
 
-      <Route
-        path="/aplicar-tutor"
-        element={<AplicacionTutorGuard />}
-      />
+        <Route
+          path="/intereses"
+          element={<StudentInterestsGuard />}
+        />
 
-      <Route
-        path="/estado-solicitud"
-        element={<EstadoSolicitud />}
-      />
+        <Route
+          path="/aplicar-tutor"
+          element={<AplicacionTutorGuard />}
+        />
 
-      <Route
-        path="/tutores"
-        element={
-          <StudentGuard>
-            <CatalogoTutores />
-          </StudentGuard>
-        }
-      />
+        <Route
+          path="/estado-solicitud"
+          element={<EstadoSolicitud />}
+        />
 
-      <Route
-        path="/tutor/:id"
-        element={
-          <StudentGuard>
-            <PerfilTutor />
-          </StudentGuard>
-        }
-      />
+        <Route
+          path="/tutores"
+          element={
+            <StudentGuard>
+              <CatalogoTutores />
+            </StudentGuard>
+          }
+        />
 
-      <Route
-        path="/tutor/mis-materias"
-        element={
-          <ApprovedTutorGuard>
-            <MisMateriasTutor />
-          </ApprovedTutorGuard>
-        }
-      />
+        <Route
+          path="/tutor/:id"
+          element={
+            <StudentGuard>
+              <PerfilTutor />
+            </StudentGuard>
+          }
+        />
 
-      <Route
-        path="/tutor/disponibilidad"
-        element={
-          <ApprovedTutorGuard>
-            <ConfiguracionDisponibilidad />
-          </ApprovedTutorGuard>
-        }
-      />
+        <Route
+          path="/tutor/mis-materias"
+          element={
+            <ApprovedTutorGuard>
+              <MisMateriasTutor />
+            </ApprovedTutorGuard>
+          }
+        />
 
-      <Route
-        path="/tutor/mis-tutorias"
-        element={
-          <ApprovedTutorGuard>
-            <MisTutorias />
-          </ApprovedTutorGuard>
-        }
-      />
+        <Route
+          path="/tutor/disponibilidad"
+          element={
+            <ApprovedTutorGuard>
+              <ConfiguracionDisponibilidad />
+            </ApprovedTutorGuard>
+          }
+        />
 
-      <Route
-        path="/mis-tutorias"
-        element={
-          <ProximasTutoriasGuard>
-            <ProximasTutorias />
-          </ProximasTutoriasGuard>
-        }
-      />
+        <Route
+          path="/tutor/mis-tutorias"
+          element={
+            <ApprovedTutorGuard>
+              <MisTutorias />
+            </ApprovedTutorGuard>
+          }
+        />
+
+        <Route
+          path="/mis-tutorias"
+          element={
+            <ProximasTutoriasGuard>
+              <ProximasTutorias />
+            </ProximasTutoriasGuard>
+          }
+        />
+      </Route>
     </Routes>
+    </Suspense>
   );
 }
 

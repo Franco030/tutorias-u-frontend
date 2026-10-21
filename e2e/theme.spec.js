@@ -1,40 +1,44 @@
 import { test, expect } from '@playwright/test';
+import { iniciarSesion, simularApi, usuarios } from './helpers';
 
-test.describe('Theme Persistence & Toggling', () => {
-  test('debe cambiar de tema al hacer clic en el botón y persistir tras recargar (F5)', async ({ page }) => {
-    // Ir a la página principal
+test.describe('Tema claro y oscuro', () => {
+  test('el acceso lo cambia desde el interruptor y persiste tras recargar (F5)', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (!sessionStorage.getItem('tema-sembrado')) {
+        localStorage.setItem('tutoriasu_theme', 'light');
+        sessionStorage.setItem('tema-sembrado', '1');
+      }
+    });
     await page.goto('/');
 
-    // Asegurarse de que el botón de tema existe y es visible
-    const themeToggle = page.getByRole('button', { name: 'Toggle theme' });
-    await expect(themeToggle).toBeVisible();
-
-    // Obtener la clase inicial del HTML (para saber en qué modo estamos por el SO)
     const html = page.locator('html');
-    const isInitiallyDark = await html.evaluate(node => node.classList.contains('dark'));
+    const interruptor = page.getByRole('switch', { name: 'Tema oscuro' });
+    await expect(interruptor).not.toBeChecked();
 
-    // Hacer clic en el botón para alternar el tema
-    await themeToggle.click();
+    await interruptor.click();
+    await expect(html).toHaveClass(/dark/);
+    await expect(interruptor).toBeChecked();
 
-    // Esperar a que la clase cambie en el HTML
-    if (isInitiallyDark) {
-      await expect(html).not.toHaveClass(/dark/);
-    } else {
-      await expect(html).toHaveClass(/dark/);
-    }
-
-    // Recargar la página simulando F5
     await page.reload();
+    await expect(html).toHaveClass(/dark/);
+    await expect(page.getByRole('switch', { name: 'Tema oscuro' })).toBeChecked();
+    expect(await page.evaluate(() => localStorage.getItem('tutoriasu_theme'))).toBe('dark');
+  });
 
-    // Verificar que el tema persistió y se aplicó correctamente tras recargar
-    if (isInitiallyDark) {
-      await expect(html).not.toHaveClass(/dark/);
-    } else {
-      await expect(html).toHaveClass(/dark/);
-    }
+  test('dentro de la app se cambia desde el menú de usuario', async ({ page }) => {
+    await iniciarSesion(page, usuarios.estudiante);
+    await simularApi(page, { '/api/citas/proximas': [], '/api/tutores/recomendados': [] });
+    await page.goto('/');
 
-    // Verificar que el valor en localStorage es correcto
-    const storedTheme = await page.evaluate(() => localStorage.getItem('tutoriasu_theme'));
-    expect(storedTheme).toBe(isInitiallyDark ? 'light' : 'dark');
+    // Ya no hay un botón suelto de tema en la barra.
+    await expect(page.getByRole('button', { name: /tema/i })).toHaveCount(0);
+
+    await page.getByTitle('Menú de usuario').click();
+    const opcion = page.getByRole('menuitemcheckbox', { name: 'Tema oscuro' });
+    await expect(opcion).not.toBeChecked();
+    await opcion.click();
+
+    await expect(page.locator('html')).toHaveClass(/dark/);
+    expect(await page.evaluate(() => localStorage.getItem('tutoriasu_theme'))).toBe('dark');
   });
 });

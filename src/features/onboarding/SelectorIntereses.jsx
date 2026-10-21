@@ -1,60 +1,153 @@
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search } from "lucide-react";
+import {
+  Body1,
+  Button,
+  Caption1,
+  Link,
+  makeStyles,
+  MessageBar,
+  MessageBarBody,
+  Spinner,
+  Subtitle1,
+  Title2,
+  tokens,
+} from "@fluentui/react-components";
 
 import {
   getMaterias,
   guardarIntereses,
 } from "../../services/materiaService";
-
-import imagen1 from "../../assets/onboarding/intereses-1.jpg";
-import imagen2 from "../../assets/onboarding/intereses-2.jpg";
-import imagen3 from "../../assets/onboarding/intereses-3.jpg";
-
-const imagenes = [
-  {
-    src: imagen1,
-    titulo: "Aprende a tu manera",
-    descripcion:
-      "Encuentra tutorías relacionadas con las materias que más te interesan.",
-  },
-  {
-    src: imagen2,
-    titulo: "Conecta con tus tutores",
-    descripcion:
-      "Descubre personas y recursos que pueden ayudarte a seguir aprendiendo.",
-  },
-  {
-    src: imagen3,
-    titulo: "Personaliza tu experiencia",
-    descripcion:
-      "Tus intereses nos ayudan a mostrarte contenido más relevante.",
-  },
-];
-
-const normalizarTexto = (texto = "") => {
-  return texto
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-};
-
 import { useAuth } from "../../context/AuthContext";
+import { BrandMark } from "../../components/shell/BrandMark";
+import { MateriaSelector } from "../../components/ui/MateriaSelector";
+import { PageLoading } from "../../components/ui/Page";
+import { IlustracionAprender } from "../../components/illustrations/Ilustraciones";
+
+const useStyles = makeStyles({
+  // Asistente de primera vez: el contenido (con sus acciones al final) se
+  // desplaza a la izquierda; la ilustración queda fija a la derecha.
+  root: {
+    height: "100dvh",
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr)",
+    backgroundColor: tokens.colorNeutralBackground2,
+    "@media (min-width: 1100px)": {
+      gridTemplateColumns: "minmax(0, 1fr) minmax(360px, 36%)",
+    },
+  },
+  column: {
+    minWidth: 0,
+    minHeight: 0,
+    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+  },
+  // Panel ilustrado a la derecha (solo en pantallas anchas).
+  aside: {
+    display: "none",
+    "@media (min-width: 1100px)": {
+      display: "block",
+      minHeight: 0,
+      boxSizing: "border-box",
+      padding: tokens.spacingHorizontalM,
+    },
+  },
+  photoWrap: {
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    backgroundColor: tokens.colorNeutralBackground1,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    borderRadius: tokens.borderRadiusXLarge,
+    boxShadow: tokens.shadow8,
+  },
+  illustration: {
+    flexGrow: 1,
+    minHeight: 0,
+  },
+  caption: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXS,
+    padding: tokens.spacingHorizontalXXL,
+    borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+  },
+  topBar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBlock: tokens.spacingVerticalM,
+    paddingInline: tokens.spacingHorizontalL,
+    "@media (min-width: 640px)": {
+      paddingInline: tokens.spacingHorizontalXXXL,
+    },
+  },
+  main: {
+    boxSizing: "border-box",
+    flexGrow: 1,
+    width: "100%",
+    // Alineado a la izquierda con la marca y ocupando la columna (como el
+    // lienzo de la app); los textos largos ya limitan su ancho de línea.
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXL,
+    paddingBlock: tokens.spacingVerticalXL,
+    paddingInline: tokens.spacingHorizontalL,
+    "@media (min-width: 640px)": {
+      paddingInline: tokens.spacingHorizontalXXXL,
+    },
+  },
+  heading: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalXS,
+  },
+  step: {
+    color: tokens.colorBrandForeground1,
+    fontWeight: tokens.fontWeightSemibold,
+  },
+  title: {
+    margin: 0,
+    overflowWrap: "anywhere",
+  },
+  muted: {
+    color: tokens.colorNeutralForeground3,
+    maxWidth: "60ch",
+  },
+  surface: {
+    padding: tokens.spacingHorizontalXL,
+    backgroundColor: tokens.colorNeutralBackground1,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    borderRadius: tokens.borderRadiusXLarge,
+    boxShadow: tokens.shadow2,
+    "@media (max-width: 479px)": {
+      padding: tokens.spacingHorizontalL,
+    },
+  },
+  // Acciones al pie del contenido, alineadas a la izquierda con él: la
+  // primaria primero (Fluent 2) y "Omitir" como enlace, sin peso de botón.
+  actions: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    columnGap: tokens.spacingHorizontalXL,
+    rowGap: tokens.spacingVerticalM,
+  },
+});
 
 export default function SelectorIntereses() {
+  const styles = useStyles();
   const navigate = useNavigate();
   const { markOnboardingAsComplete } = useAuth();
 
   const [materias, setMaterias] = useState([]);
   const [seleccionadas, setSeleccionadas] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
 
   const [cargandoMaterias, setCargandoMaterias] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
-
-  const [imagenActual, setImagenActual] = useState(0);
 
   useEffect(() => {
     const cargarMaterias = async () => {
@@ -79,29 +172,21 @@ export default function SelectorIntereses() {
     cargarMaterias();
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setImagenActual((actual) =>
-        actual === imagenes.length - 1 ? 0 : actual + 1
-      );
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const materiasFiltradas = materias.filter((materia) => {
-    const nombreNormalizado = normalizarTexto(materia.nombre);
-    const busquedaNormalizada = normalizarTexto(busqueda.trim());
-
-    return nombreNormalizado.includes(busquedaNormalizada);
-  });
-
   const toggleMateria = (id) => {
     setSeleccionadas((prev) =>
       prev.includes(id)
         ? prev.filter((materiaId) => materiaId !== id)
         : [...prev, id]
     );
+  };
+
+  // La navegación de React Router corre en una transición: marcar el
+  // onboarding en la misma transición evita montar "Mis intereses" un instante.
+  const finalizarOnboarding = () => {
+    startTransition(() => {
+      markOnboardingAsComplete();
+      navigate("/", { replace: true });
+    });
   };
 
   const handleGuardar = async () => {
@@ -114,9 +199,8 @@ export default function SelectorIntereses() {
       setError("");
 
       await guardarIntereses(seleccionadas);
-      
-      markOnboardingAsComplete();
-      navigate("/", { replace: true });
+
+      finalizarOnboarding();
     } catch (err) {
       console.error("Error al guardar intereses:", err);
 
@@ -130,295 +214,76 @@ export default function SelectorIntereses() {
   };
 
   const handleOmitir = () => {
-    markOnboardingAsComplete();
-    navigate("/", { replace: true });
+    finalizarOnboarding();
   };
 
-  if (cargandoMaterias) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-granite-50 dark:bg-deep-space-blue-950">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-deep-space-blue-200 border-t-deep-space-blue-600 dark:border-deep-space-blue-800 dark:border-t-emerald-400 animate-spin"></div>
-          <p className="text-deep-space-blue-600 dark:text-emerald-400 font-medium">Cargando materias...</p>
-        </div>
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-granite-50 dark:bg-deep-space-blue-950">
-      <div className="min-h-screen grid lg:grid-cols-2">
+    <div className={styles.root}>
+      <div className={styles.column}>
+        <div className={styles.topBar}>
+          <BrandMark />
+        </div>
 
-        {/* IZQUIERDA — Selección de materias */}
-        <section className="flex items-center justify-center px-6 py-12 sm:px-10 lg:px-16">
-          <div className="w-full max-w-xl">
-
-            <div className="mb-10">
-              <p className="text-xs font-semibold tracking-[0.2em] uppercase text-deep-space-blue-500 dark:text-emerald-400 mb-3">
-                Personaliza tu experiencia
-              </p>
-
-              <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-granite-900 dark:text-white">
+        {cargandoMaterias ? (
+          <PageLoading label="Cargando materias…" />
+        ) : (
+          <main className={styles.main}>
+            <div className={styles.heading}>
+              <Caption1 className={styles.step}>Último paso</Caption1>
+              <Title2 as="h1" className={styles.title}>
                 ¿Qué materias te interesan?
-              </h1>
-
-              <p className="mt-4 text-sm leading-relaxed text-granite-500 dark:text-deep-space-blue-300">
-                Selecciona las materias que te gustaría explorar.
-                Podrás modificar tus intereses más adelante.
-              </p>
+              </Title2>
+              <Body1 className={styles.muted}>
+                Con ellas te recomendamos tutores afines. Puedes cambiarlas cuando quieras desde
+                “Mis intereses”.
+              </Body1>
             </div>
 
-            {/* Buscador */}
-            <div className="relative mb-6">
-              <label
-                htmlFor="buscar-materia"
-                className="sr-only"
-              >
-                Buscar materia
-              </label>
+            {error && (
+              <MessageBar intent="error" layout="multiline">
+                <MessageBarBody>{error}</MessageBarBody>
+              </MessageBar>
+            )}
 
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-granite-400 dark:text-deep-space-blue-400" />
-              </div>
-
-              <input
-                id="buscar-materia"
-                type="text"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar materia..."
-                autoComplete="off"
-                className="
-                  w-full
-                  rounded-md
-                  border
-                  border-granite-200
-                  bg-white
-                  pl-11
-                  pr-4
-                  py-3
-                  text-sm
-                  text-granite-900
-                  outline-none
-                  transition-colors
-                  placeholder:text-granite-400
-                  focus:border-deep-space-blue-500
-                  dark:border-deep-space-blue-800
-                  dark:bg-deep-space-blue-900/40
-                  dark:text-white
-                  dark:placeholder:text-deep-space-blue-400
-                  dark:focus:border-emerald-500
-                "
+            <div className={styles.surface}>
+              <MateriaSelector
+                materias={materias}
+                seleccionadas={seleccionadas}
+                onToggle={toggleMateria}
+                disabled={guardando}
               />
             </div>
 
-            {/* Chips */}
-            {materiasFiltradas.length > 0 ? (
-              <div className="flex flex-wrap gap-2 mb-8">
-                {materiasFiltradas.map((materia) => {
-                  const estaSeleccionada =
-                    seleccionadas.includes(materia.id);
-
-                  return (
-                    <button
-                      key={materia.id}
-                      type="button"
-                      onClick={() => toggleMateria(materia.id)}
-                      aria-pressed={estaSeleccionada}
-                      className={`
-                        rounded-md
-                        border
-                        px-4
-                        py-2
-                        text-sm
-                        font-medium
-                        cursor-pointer
-                        transition-all
-                        duration-200
-                        ${
-                          estaSeleccionada
-                            ? `
-                              bg-deep-space-blue-600
-                              border-deep-space-blue-600
-                              text-white
-                              dark:bg-emerald-500
-                              dark:border-emerald-500
-                              dark:text-deep-space-blue-950
-                            `
-                            : `
-                              bg-white
-                              border-granite-200
-                              text-granite-700
-                              hover:border-deep-space-blue-400
-                              hover:bg-deep-space-blue-50
-                              dark:bg-deep-space-blue-900/40
-                              dark:border-deep-space-blue-800
-                              dark:text-deep-space-blue-200
-                              dark:hover:border-emerald-500
-                            `
-                        }
-                      `}
-                    >
-                      {materia.nombre}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="mb-8 rounded-md border border-granite-200 bg-white px-5 py-6 text-center dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40">
-                <p className="text-sm text-granite-500 dark:text-deep-space-blue-300">
-                  No se encontraron materias que coincidan con
-                  {" "}
-                  <span className="font-medium text-granite-700 dark:text-white">
-                    “{busqueda}”
-                  </span>
-                  .
-                </p>
-              </div>
-            )}
-
-            <p className="text-xs text-granite-400 dark:text-deep-space-blue-400 mb-6">
-              {seleccionadas.length === 0
-                ? "Aún no has seleccionado ninguna materia."
-                : `${seleccionadas.length} ${
-                    seleccionadas.length === 1
-                      ? "materia seleccionada"
-                      : "materias seleccionadas"
-                  }`}
-            </p>
-
-            {/* Error */}
-            {error && (
-              <div
-                role="alert"
-                className="mb-6 rounded-md border border-burgundy-200 bg-burgundy-50 px-4 py-3 text-sm text-burgundy-700"
-              >
-                {error}
-              </div>
-            )}
-
-            {/* Acciones */}
-            <div className="flex flex-col gap-3">
-
-              <button
-                type="button"
+            <div className={styles.actions}>
+              <Button
+                appearance="primary"
                 onClick={handleGuardar}
-                disabled={
-                  guardando || seleccionadas.length === 0
-                }
-                className="
-                  w-full
-                  rounded-md
-                  bg-deep-space-blue-600
-                  px-8
-                  py-3
-                  text-sm
-                  font-medium
-                  text-white
-                  cursor-pointer
-                  transition
-                  hover:bg-deep-space-blue-700
-                  disabled:cursor-not-allowed
-                  disabled:opacity-40
-                  dark:bg-emerald-500
-                  dark:text-deep-space-blue-950
-                "
+                disabled={guardando || seleccionadas.length === 0}
+                icon={guardando ? <Spinner size="tiny" /> : undefined}
               >
-                {guardando
-                  ? "Guardando..."
-                  : "Guardar y Continuar"}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleOmitir}
-                disabled={guardando}
-                className="
-                  w-full
-                  py-2
-                  text-sm
-                  font-medium
-                  text-granite-500
-                  hover:text-deep-space-blue-600
-                  dark:text-deep-space-blue-300
-                  dark:hover:text-emerald-400
-                  cursor-pointer
-                  transition-colors
-                  disabled:opacity-50
-                "
-              >
+                {guardando ? "Guardando…" : "Guardar y continuar"}
+              </Button>
+              <Link as="button" onClick={handleOmitir} disabled={guardando}>
                 Omitir por ahora
-              </button>
-
+              </Link>
             </div>
-          </div>
-        </section>
-
-        {/* DERECHA — Carrusel */}
-        <section className="hidden lg:block relative overflow-hidden bg-deep-space-blue-950">
-
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={imagenActual}
-              src={imagenes[imagenActual].src}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover"
-              initial={{ opacity: 0, scale: 1.03 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.7 }}
-            />
-          </AnimatePresence>
-
-          <div className="absolute inset-0 bg-gradient-to-t from-deep-space-blue-950/90 via-deep-space-blue-950/20 to-transparent" />
-
-          <div className="absolute bottom-0 left-0 right-0 p-12">
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={imagenActual}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <h2 className="text-3xl font-medium text-white mb-3">
-                  {imagenes[imagenActual].titulo}
-                </h2>
-
-                <p className="max-w-md text-sm leading-relaxed text-white/70">
-                  {imagenes[imagenActual].descripcion}
-                </p>
-              </motion.div>
-            </AnimatePresence>
-
-            <div className="flex items-center gap-2 mt-7">
-              {imagenes.map((_, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  aria-label={`Mostrar imagen ${index + 1}`}
-                  onClick={() => setImagenActual(index)}
-                  className={`
-                    h-1.5
-                    rounded-full
-                    cursor-pointer
-                    transition-all
-                    duration-300
-                    ${
-                      index === imagenActual
-                        ? "w-8 bg-white"
-                        : "w-1.5 bg-white/40 hover:bg-white/70"
-                    }
-                  `}
-                />
-              ))}
-            </div>
-
-          </div>
-        </section>
-
+          </main>
+        )}
       </div>
-    </main>
+
+      <aside className={styles.aside}>
+        <div className={styles.photoWrap}>
+          <div className={styles.illustration}>
+            <IlustracionAprender ajuste="contener" />
+          </div>
+          <div className={styles.caption}>
+            <Subtitle1 as="p">Aprende a tu ritmo</Subtitle1>
+            <Body1 as="p" className={styles.muted}>
+              Tus intereses deciden qué tutores ves primero en el inicio.
+            </Body1>
+          </div>
+        </div>
+      </aside>
+    </div>
   );
 }

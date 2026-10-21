@@ -5,9 +5,13 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { MsalProvider } from '@azure/msal-react';
 import { msalInstance } from './features/auth/msalConfig';
 import { ThemeProvider } from './context/ThemeContext';
+import { FluentThemeBridge } from './theme/FluentThemeBridge';
 import { AuthProvider } from './context/AuthContext';
 import App from './App.jsx';
+import { ignorarModificadorasSolas } from './lib/teclasModificadoras';
 import './index.css';
+
+ignorarModificadorasSolas();
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'TU_GOOGLE_CLIENT_ID';
 
@@ -23,11 +27,13 @@ async function initApp() {
       <GoogleOAuthProvider clientId={googleClientId}>
         <MsalProvider instance={msalInstance}>
           <ThemeProvider>
-            <AuthProvider>
-              <BrowserRouter>
-                <App />
-              </BrowserRouter>
-            </AuthProvider>
+            <FluentThemeBridge>
+              <AuthProvider>
+                <BrowserRouter>
+                  <App />
+                </BrowserRouter>
+              </AuthProvider>
+            </FluentThemeBridge>
           </ThemeProvider>
         </MsalProvider>
       </GoogleOAuthProvider>

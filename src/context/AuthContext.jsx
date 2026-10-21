@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useMsal } from '@azure/msal-react';
 import authService from '../features/auth/authService';
+import { AUTH_STORAGE_KEYS } from '../types/auth.types';
 
 export const AuthContext = createContext(null);
 
@@ -127,6 +128,30 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Trae del servidor el rol y el estado de aprobación actuales: cambian sin
+  // que el usuario vuelva a iniciar sesión (p. ej. cuando lo aprueban como
+  // tutor). Si falla se conserva la sesión; un 401 ya la cierra apiClient.
+  const refrescarSesion = useCallback(async () => {
+    try {
+      const authData = await authService.refrescarSesion();
+      if (!authData?.token) return;
+      const savedUser = authService.saveSession(authData);
+      setToken(authData.token);
+      setUser(savedUser);
+    } catch (err) {
+      console.warn('[AuthContext] No se pudo refrescar la sesión:', err?.message);
+    }
+  }, []);
+
+  // Al abrir la app con una sesión guardada, se actualiza una vez.
+  const sesionInicial = useRef(Boolean(token));
+  useEffect(() => {
+    if (sesionInicial.current) {
+      sesionInicial.current = false;
+      refrescarSesion();
+    }
+  }, [refrescarSesion]);
+
   const updateRole = useCallback(async (nuevoRol) => {
     setIsLoading(true);
     setError(null);
@@ -151,7 +176,9 @@ export function AuthProvider({ children }) {
     setUser((prevUser) => {
       if (!prevUser) return prevUser;
       const updatedUser = { ...prevUser, onboardingCompleto: true };
-      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+      // Misma clave que lee getStoredSession; antes se guardaba en 'auth_user'
+      // y el cambio se perdía al recargar.
+      localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(updatedUser));
       return updatedUser;
     });
   }, []);
@@ -160,7 +187,7 @@ export function AuthProvider({ children }) {
     setUser((prevUser) => {
       if (!prevUser) return prevUser;
       const updatedUser = { ...prevUser, ...nuevosDatos };
-      localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+      localStorage.setItem(AUTH_STORAGE_KEYS.USER, JSON.stringify(updatedUser));
       return updatedUser;
     });
   }, []);
@@ -180,8 +207,9 @@ export function AuthProvider({ children }) {
       clearError,
       markOnboardingAsComplete,
       updateLocalUser,
+      refrescarSesion,
     }),
-    [user, token, isAuthenticated, isLoading, error, loginWithGoogle, loginWithMicrosoft, loginLocal, updateRole, logout, clearError, markOnboardingAsComplete, updateLocalUser]
+    [user, token, isAuthenticated, isLoading, error, loginWithGoogle, loginWithMicrosoft, loginLocal, updateRole, logout, clearError, markOnboardingAsComplete, updateLocalUser, refrescarSesion]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

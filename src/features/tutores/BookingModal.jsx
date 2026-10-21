@@ -1,6 +1,32 @@
 import { useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import {
+  Body1,
+  Button,
+  Caption1,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  Dropdown,
+  Field,
+  makeStyles,
+  MessageBar,
+  MessageBarBody,
+  Option,
+  Radio,
+  RadioGroup,
+  Spinner,
+  Subtitle1,
+  tokens,
+} from "@fluentui/react-components";
+import { Calendar, DayOfWeek } from "@fluentui/react-calendar-compat";
+import { CheckmarkCircle48Regular, Dismiss24Regular } from "@fluentui/react-icons";
+import { calendarioEs } from "../../lib/calendarioEs";
+import { Diferido } from "../../components/ui/Page";
 import { agendarCita, getHorasOcupadas } from "../../services/citaService";
+import { ahoraEnPlataforma, crearFechaHora, esFuturo } from "../../lib/horaPlataforma";
 import { getMaterias } from "../../services/materiaService";
 import { getDisponibilidadTutor } from "../../services/tutorService";
 
@@ -25,7 +51,56 @@ const normalizarBloque = (bloque) => ({
 const fechaComoClave = (fecha) =>
   `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
 
-const crearFechaHoraUtc = (fecha, hora) => `${fecha}T${hora}:00.000Z`;
+
+const useStyles = makeStyles({
+  surface: {
+    width: "min(720px, calc(100vw - 32px))",
+    maxWidth: "none",
+  },
+  // Calendario y horarios lado a lado; apilados en pantallas angostas.
+  schedule: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr)",
+    gap: tokens.spacingHorizontalXL,
+    "@media (min-width: 680px)": {
+      gridTemplateColumns: "auto minmax(0, 1fr)",
+      alignItems: "start",
+    },
+  },
+  calendar: {
+    display: "inline-block",
+    padding: tokens.spacingHorizontalS,
+    borderRadius: tokens.borderRadiusMedium,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalL,
+  },
+  muted: {
+    color: tokens.colorNeutralForeground3,
+  },
+  slots: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
+    columnGap: tokens.spacingHorizontalS,
+  },
+  slotLabel: {
+    fontVariantNumeric: "tabular-nums",
+    whiteSpace: "nowrap",
+  },
+  success: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: tokens.spacingVerticalS,
+    paddingBlock: tokens.spacingVerticalM,
+  },
+  successIcon: {
+    color: tokens.colorPaletteGreenForeground1,
+  },
+});
 
 export default function BookingModal({
   isOpen,
@@ -138,7 +213,9 @@ export default function BookingModal({
   }, [isOpen, fecha, tutorId]);
 
   const opcionesFecha = useMemo(() => {
-    const hoy = new Date();
+    // El calendario arranca en el día actual de la plataforma, no del navegador.
+    const [anio, mes, diaHoy] = ahoraEnPlataforma().fecha.split("-").map(Number);
+    const hoy = new Date(anio, mes - 1, diaHoy);
     const opciones = [];
 
     for (let offset = 0; offset < FECHA_DIAS_FUTUROS; offset += 1) {
@@ -151,9 +228,8 @@ export default function BookingModal({
       const bloquesDelDia = disponibilidad.filter(
         (bloque) => bloque.diaSemana === dia.getDay()
       );
-      const tieneHorarioFuturo = bloquesDelDia.some(
-        (bloque) =>
-          new Date(crearFechaHoraUtc(clave, bloque.horaInicio)) > new Date()
+      const tieneHorarioFuturo = bloquesDelDia.some((bloque) =>
+        esFuturo(clave, bloque.horaInicio)
       );
 
       opciones.push({
@@ -171,13 +247,10 @@ export default function BookingModal({
 
   const bloquesDisponibles = useMemo(() => {
     if (!fecha) return [];
-    const ahora = new Date();
     const diaSemana = new Date(`${fecha}T12:00:00`).getDay();
 
     return disponibilidad.filter(
-      (bloque) =>
-        bloque.diaSemana === diaSemana &&
-        new Date(crearFechaHoraUtc(fecha, bloque.horaInicio)) > ahora
+      (bloque) => bloque.diaSemana === diaSemana && esFuturo(fecha, bloque.horaInicio)
     ).map((bloque) => ({
       ...bloque,
       ocupado: horariosOcupados.includes(bloque.horaInicio),
@@ -210,9 +283,9 @@ export default function BookingModal({
       return;
     }
 
-    const fechaHoraInicio = crearFechaHoraUtc(fecha, bloque.horaInicio);
-    const fechaHoraFin = crearFechaHoraUtc(fecha, bloque.horaFin);
-    if (new Date(fechaHoraInicio) <= new Date()) {
+    const fechaHoraInicio = crearFechaHora(fecha, bloque.horaInicio);
+    const fechaHoraFin = crearFechaHora(fecha, bloque.horaFin);
+    if (!esFuturo(fecha, bloque.horaInicio)) {
       setError("No puedes agendar una cita en una fecha u hora pasada.");
       return;
     }
@@ -242,188 +315,204 @@ export default function BookingModal({
     }
   };
 
-  if (!isOpen) return null;
+  const styles = useStyles();
+  const fechasDisponibles = opcionesFecha.filter((opcion) => !opcion.disabled);
+  // El calendario solo deja elegir días con horario: el resto va restringido.
+  const fechasRestringidas = opcionesFecha
+    .filter((opcion) => opcion.disabled)
+    .map((opcion) => new Date(`${opcion.value}T12:00:00`));
+  const limitesFecha = {
+    min: opcionesFecha.length ? new Date(`${opcionesFecha[0].value}T00:00:00`) : new Date(),
+    max: opcionesFecha.length
+      ? new Date(`${opcionesFecha[opcionesFecha.length - 1].value}T23:59:59`)
+      : new Date(),
+  };
+  const fechaSeleccionada = opcionesFecha.find((opcion) => opcion.value === fecha);
+  const materiaSeleccionada = materias.find((materia) => String(materia.id) === materiaId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="relative w-full max-w-lg rounded-lg border border-granite-200 bg-white p-6 shadow-xl dark:border-deep-space-blue-800 dark:bg-deep-space-blue-950">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={submitting}
-          className="absolute right-4 top-4 text-granite-500 transition-colors hover:text-granite-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-deep-space-blue-300 dark:hover:text-white"
-          aria-label="Cerrar"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        <h2 className="text-2xl font-semibold text-granite-900 dark:text-white">
-          Agendar cita
-        </h2>
-        <p className="mt-2 text-sm text-granite-600 dark:text-deep-space-blue-300">
-          Selecciona una materia y un horario habilitado por el tutor.
-        </p>
-
-        {mensajeExito ? (
-          <div className="mt-6 flex flex-col items-center space-y-4 text-center">
-            <div className="rounded-full bg-emerald-100 p-4 dark:bg-emerald-500/20">
-              <svg
-                className="h-10 w-10 text-emerald-600 dark:text-emerald-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-xl font-semibold text-granite-900 dark:text-white">
-              ¡Cita agendada!
-            </p>
-            <p className="text-sm text-granite-600 dark:text-deep-space-blue-300">
-              {mensajeExito}
-            </p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-6 w-full rounded-md bg-deep-space-blue-600 px-5 py-2.5 font-medium text-white transition-colors hover:bg-deep-space-blue-700 dark:bg-emerald-500 dark:text-deep-space-blue-950 dark:hover:bg-emerald-600"
+    <Dialog
+      open={isOpen}
+      onOpenChange={(_, data) => {
+        if (!data.open && !submitting) onClose();
+      }}
+    >
+      <DialogSurface className={styles.surface}>
+        <form onSubmit={handleSubmit}>
+          <DialogBody>
+            <DialogTitle
+              action={
+                <Button
+                  appearance="subtle"
+                  aria-label="Cerrar"
+                  icon={<Dismiss24Regular />}
+                  onClick={onClose}
+                  disabled={submitting}
+                />
+              }
             >
-              Cerrar
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
-            <div>
-              <label
-                htmlFor="materia"
-                className="mb-2 block text-sm font-medium text-granite-800 dark:text-white"
-              >
-                Materia
-              </label>
-              <select
-                id="materia"
-                value={materiaId}
-                onChange={(event) => setMateriaId(event.target.value)}
-                disabled={cargando || submitting}
-                className="w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 outline-none focus:border-deep-space-blue-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
-              >
-                <option value="">Selecciona una materia</option>
-                {materias.map((materia) => (
-                  <option key={materia.id} value={materia.id}>
-                    {materia.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
+              Agendar cita
+            </DialogTitle>
 
-            <div>
-              <label
-                htmlFor="fecha"
-                className="mb-2 block text-sm font-medium text-granite-800 dark:text-white"
-              >
-                Fecha
-              </label>
-              <select
-                id="fecha"
-                value={fecha}
-                onChange={(event) => {
-                  setFecha(event.target.value);
-                  setBloqueSeleccionado("");
-                  setHorariosOcupados([]);
-                  setErrorOcupados("");
-                  setCargandoOcupados(Boolean(event.target.value));
-                }}
-                disabled={cargando || submitting || disponibilidad.length === 0}
-                className="w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 outline-none focus:border-deep-space-blue-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
-              >
-                <option value="">Selecciona una fecha</option>
-                {opcionesFecha.map((opcion) => (
-                  <option
-                    key={opcion.value}
-                    value={opcion.value}
-                    disabled={opcion.disabled}
+            <DialogContent>
+              {mensajeExito ? (
+                <div className={styles.success} role="status">
+                  <CheckmarkCircle48Regular className={styles.successIcon} aria-hidden="true" />
+                  <Subtitle1>Solicitud enviada</Subtitle1>
+                  <Body1 className={styles.muted}>
+                    {mensajeExito} El tutor la revisará y la verás en “Mis tutorías”.
+                  </Body1>
+                </div>
+              ) : (
+                <div className={styles.form}>
+                  <Body1 className={styles.muted}>
+                    Elige la materia y uno de los horarios que el tutor tiene disponibles.
+                  </Body1>
+
+                  <Field label="Materia" required>
+                    <Dropdown
+                      id="materia"
+                      placeholder="Selecciona una materia"
+                      value={materiaSeleccionada?.nombre || ""}
+                      selectedOptions={materiaId ? [materiaId] : []}
+                      onOptionSelect={(_, data) => setMateriaId(data.optionValue || "")}
+                      disabled={cargando || submitting}
+                    >
+                      {materias.map((materia) => (
+                        <Option key={materia.id} value={String(materia.id)}>
+                          {materia.nombre}
+                        </Option>
+                      ))}
+                    </Dropdown>
+                  </Field>
+
+                  <div className={styles.schedule}>
+                    <Field
+                      label="Fecha"
+                      required
+                      hint={
+                        !cargando && disponibilidad.length > 0
+                          ? "Solo puedes elegir los días en que el tutor atiende."
+                          : undefined
+                      }
+                    >
+                      <div className={styles.calendar}>
+                        <Calendar
+                          strings={calendarioEs}
+                          firstDayOfWeek={DayOfWeek.Monday}
+                          showGoToToday={false}
+                          isMonthPickerVisible={false}
+                          highlightSelectedMonth
+                          minDate={limitesFecha.min}
+                          maxDate={limitesFecha.max}
+                          restrictedDates={fechasRestringidas}
+                          value={fecha ? new Date(`${fecha}T12:00:00`) : undefined}
+                          onSelectDate={(dia) => {
+                            const valor = dia ? fechaComoClave(dia) : "";
+                            setFecha(valor);
+                            setBloqueSeleccionado("");
+                            setHorariosOcupados([]);
+                            setErrorOcupados("");
+                            setCargandoOcupados(Boolean(valor));
+                          }}
+                        />
+                      </div>
+                    </Field>
+
+                    <Field
+                      label={fechaSeleccionada ? `Horario · ${fechaSeleccionada.label}` : "Horario"}
+                      required
+                      validationState={errorOcupados ? "error" : "none"}
+                      validationMessage={errorOcupados || undefined}
+                    >
+                      {!fecha ? (
+                        <Caption1 className={styles.muted}>
+                          {fechasDisponibles.length === 0 && !cargando
+                            ? "No hay días disponibles en los próximos 90 días."
+                            : "Elige un día en el calendario para ver sus horarios."}
+                        </Caption1>
+                      ) : cargandoOcupados ? (
+                        <Diferido>
+                          <Spinner size="tiny" label="Verificando compromisos del tutor…" labelPosition="after" />
+                        </Diferido>
+                      ) : bloquesDisponibles.length === 0 ? (
+                        <Caption1 className={styles.muted}>No quedan horarios este día.</Caption1>
+                      ) : (
+                        <RadioGroup
+                          value={bloqueSeleccionado}
+                          onChange={(_, data) => setBloqueSeleccionado(data.value)}
+                          disabled={submitting}
+                          className={styles.slots}
+                        >
+                          {bloquesDisponibles.map((bloque, indice) => (
+                            <Radio
+                              key={`${bloque.horaInicio}-${indice}`}
+                              value={String(indice)}
+                              disabled={bloque.ocupado}
+                              label={
+                                <span className={styles.slotLabel}>
+                                  {bloque.horaInicio} – {bloque.horaFin}
+                                  {bloque.ocupado ? " · ocupado" : ""}
+                                </span>
+                              }
+                            />
+                          ))}
+                        </RadioGroup>
+                      )}
+                    </Field>
+                  </div>
+
+                  {cargando && (
+                    <Diferido>
+                      <Spinner size="tiny" label="Cargando horarios…" labelPosition="after" />
+                    </Diferido>
+                  )}
+
+                  {!cargando && disponibilidad.length === 0 && !error && (
+                    <MessageBar intent="info" layout="multiline">
+                      <MessageBarBody>Este tutor aún no tiene horarios disponibles para reservar.</MessageBarBody>
+                    </MessageBar>
+                  )}
+
+                  {error && (
+                    <MessageBar intent="error" layout="multiline">
+                      <MessageBarBody>{error}</MessageBarBody>
+                    </MessageBar>
+                  )}
+                </div>
+              )}
+            </DialogContent>
+
+            <DialogActions>
+              {mensajeExito ? (
+                <Button appearance="primary" onClick={onClose}>
+                  Cerrar
+                </Button>
+              ) : (
+                <>
+                  <Button appearance="secondary" onClick={onClose} disabled={submitting}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    appearance="primary"
+                    disabled={
+                      cargando ||
+                      submitting ||
+                      cargandoOcupados ||
+                      Boolean(errorOcupados) ||
+                      disponibilidad.length === 0
+                    }
+                    icon={submitting ? <Spinner size="tiny" /> : undefined}
                   >
-                    {opcion.label}
-                    {opcion.disabled ? " (sin horarios)" : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="bloque"
-                className="mb-2 block text-sm font-medium text-granite-800 dark:text-white"
-              >
-                Horario disponible
-              </label>
-              <select
-                id="bloque"
-                value={bloqueSeleccionado}
-                onChange={(event) => setBloqueSeleccionado(event.target.value)}
-                disabled={cargando || submitting || !fecha}
-                className="w-full rounded-md border border-granite-300 bg-white px-3 py-2.5 text-granite-900 outline-none focus:border-deep-space-blue-500 dark:border-deep-space-blue-700 dark:bg-deep-space-blue-900 dark:text-white"
-              >
-                <option value="">Selecciona un bloque</option>
-                {bloquesDisponibles.map((bloque, indice) => (
-                  <option
-                    key={`${bloque.horaInicio}-${indice}`}
-                    value={indice}
-                    disabled={bloque.ocupado}
-                  >
-                    {bloque.horaInicio} – {bloque.horaFin}
-                    {bloque.ocupado ? " (ocupado)" : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {cargandoOcupados && fecha && (
-              <p role="status" className="text-sm text-granite-500 dark:text-deep-space-blue-300">
-                Verificando compromisos del tutor...
-              </p>
-            )}
-            {errorOcupados && (
-              <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
-                {errorOcupados}
-              </p>
-            )}
-            {cargando && (
-              <p role="status" className="text-sm text-granite-500 dark:text-deep-space-blue-300">
-                Cargando horarios...
-              </p>
-            )}
-            {!cargando && disponibilidad.length === 0 && (
-              <p className="text-sm text-granite-600 dark:text-deep-space-blue-300">
-                Este tutor aún no tiene horarios disponibles para reservar.
-              </p>
-            )}
-            {error && (
-              <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
-                {error}
-              </p>
-            )}
-
-            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={submitting}
-                className="rounded-md border border-granite-300 px-5 py-2.5 font-medium text-granite-700 transition-colors hover:bg-granite-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-deep-space-blue-700 dark:text-white dark:hover:bg-deep-space-blue-900"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={cargando || submitting || cargandoOcupados || Boolean(errorOcupados) || disponibilidad.length === 0}
-                className="rounded-md bg-deep-space-blue-600 px-5 py-2.5 font-medium text-white transition-colors hover:bg-deep-space-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-500 dark:text-deep-space-blue-950 dark:hover:bg-emerald-600"
-              >
-                {submitting ? "Agendando..." : "Confirmar cita"}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+                    {submitting ? "Agendando…" : "Confirmar cita"}
+                  </Button>
+                </>
+              )}
+            </DialogActions>
+          </DialogBody>
+        </form>
+      </DialogSurface>
+    </Dialog>
   );
 }

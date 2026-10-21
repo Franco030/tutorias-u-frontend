@@ -1,22 +1,120 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Search, ArrowLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+  Button,
+  Caption1,
+  Dropdown,
+  makeStyles,
+  MessageBar,
+  MessageBarBody,
+  Option,
+  SearchBox,
+  Skeleton,
+  SkeletonItem,
+  Tab,
+  TabList,
+  tokens,
+} from "@fluentui/react-components";
+import { PeopleSearch24Regular } from "@fluentui/react-icons";
 import { getTutores } from "../../services/tutorService";
+import { getMaterias } from "../../services/materiaService";
+import TutorCard from "../../components/TutorCard";
+import { IlustracionComunidad } from "../../components/illustrations/Ilustraciones";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { Page, PageHeader } from "../../components/ui/Page";
+import { normalizarTexto } from "../../lib/texto";
+
+const POR_PAGINA = 12;
+const TODAS = "__todas__";
+
+const ORDENES = {
+  calificacion: "Mejor calificados",
+  nombre: "Nombre (A–Z)",
+  materias: "Más materias",
+};
+
+const useStyles = makeStyles({
+  toolbar: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalM,
+  },
+  filters: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr)",
+    gap: tokens.spacingHorizontalM,
+    rowGap: tokens.spacingVerticalS,
+    alignItems: "center",
+    "@media (min-width: 768px)": {
+      gridTemplateColumns: "minmax(0, 360px) minmax(0, 220px) minmax(0, 200px) 1fr",
+    },
+  },
+  search: {
+    width: "100%",
+    maxWidth: "none",
+  },
+  dropdown: {
+    minWidth: 0,
+    width: "100%",
+  },
+  count: {
+    color: tokens.colorNeutralForeground3,
+    fontVariantNumeric: "tabular-nums",
+    "@media (min-width: 768px)": {
+      justifySelf: "end",
+    },
+  },
+  tabs: {
+    overflowX: "auto",
+    marginInline: `calc(${tokens.spacingHorizontalS} * -1)`,
+    scrollbarWidth: "none",
+  },
+  grid: {
+    display: "grid",
+    // auto-fill en lugar de media queries: Griffel no garantiza su orden.
+    gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
+    gap: tokens.spacingHorizontalL,
+  },
+  more: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: tokens.spacingVerticalS,
+  },
+});
 
 export default function CatalogoTutores() {
-  const navigate = useNavigate();
+  const styles = useStyles();
   const [tutores, setTutores] = useState([]);
+  const [catalogoMaterias, setCatalogoMaterias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [busqueda, setBusqueda] = useState("");
+  const [searchParams] = useSearchParams();
+  // La búsqueda de la barra superior llega como ?q=.
+  const consulta = searchParams.get("q") || "";
+  const [busqueda, setBusqueda] = useState(consulta);
+  const [consultaPrevia, setConsultaPrevia] = useState(consulta);
+  if (consulta !== consultaPrevia) {
+    setConsultaPrevia(consulta);
+    setBusqueda(consulta);
+  }
+  const [categoria, setCategoria] = useState(TODAS);
+  const [materia, setMateria] = useState("");
+  const [orden, setOrden] = useState("calificacion");
+  const [visibles, setVisibles] = useState(POR_PAGINA);
 
   useEffect(() => {
     const fetchTutores = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await getTutores();
-        setTutores(Array.isArray(data) ? data : (data?.content || [])); 
+        const [data, materias] = await Promise.all([
+          getTutores(),
+          // Las categorías son un extra: si fallan, el catálogo sigue funcionando.
+          getMaterias().catch(() => []),
+        ]);
+        setTutores(Array.isArray(data) ? data : (data?.content || []));
+        setCatalogoMaterias(Array.isArray(materias) ? materias : []);
       } catch (err) {
         console.error("Error al cargar tutores:", err);
         setError("No se pudo cargar la lista de tutores. Intenta nuevamente.");
@@ -28,126 +126,183 @@ export default function CatalogoTutores() {
     fetchTutores();
   }, []);
 
-  const normalizarTexto = (texto = "") => {
-    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  };
+  // Materia (normalizada) → categoría, a partir del catálogo de materias.
+  const categoriaDe = useMemo(() => {
+    const mapa = new Map();
+    catalogoMaterias.forEach((m) => mapa.set(normalizarTexto(m.nombre), m.categoria || "Otras"));
+    return mapa;
+  }, [catalogoMaterias]);
 
-  const tutoresFiltrados = tutores.filter((tutor) => {
+  const categorias = useMemo(
+    () => [...new Set(catalogoMaterias.map((m) => m.categoria).filter(Boolean))],
+    [catalogoMaterias]
+  );
+
+  // Solo se ofrecen materias que algún tutor imparte.
+  const materiasConTutor = useMemo(() => {
+    const nombres = new Set();
+    tutores.forEach((t) => (t.materias || []).forEach((m) => nombres.add(m)));
+    return [...nombres]
+      .filter((m) => categoria === TODAS || categoriaDe.get(normalizarTexto(m)) === categoria)
+      .sort((a, b) => a.localeCompare(b, "es"));
+  }, [tutores, categoria, categoriaDe]);
+
+  const tutoresFiltrados = useMemo(() => {
     const term = normalizarTexto(busqueda);
-    const nombreCoincide = normalizarTexto(tutor.nombre).includes(term);
-    const materiasCoincide = tutor.materias?.some(m => normalizarTexto(m).includes(term));
-    return nombreCoincide || materiasCoincide;
-  });
+    const lista = tutores.filter((tutor) => {
+      const materias = tutor.materias || [];
+      const coincideTexto =
+        normalizarTexto(tutor.nombre).includes(term) ||
+        materias.some((m) => normalizarTexto(m).includes(term));
+      const coincideCategoria =
+        categoria === TODAS || materias.some((m) => categoriaDe.get(normalizarTexto(m)) === categoria);
+      const coincideMateria = !materia || materias.includes(materia);
+      return coincideTexto && coincideCategoria && coincideMateria;
+    });
 
-  const getInitial = (name) => {
-    return name ? name.charAt(0).toUpperCase() : "?";
-  };
+    const calificacion = (t) => Number(t.calificacionPromedio) || 0;
+    return [...lista].sort((a, b) => {
+      if (orden === "nombre") return a.nombre.localeCompare(b.nombre, "es");
+      if (orden === "materias") return (b.materias?.length || 0) - (a.materias?.length || 0);
+      return calificacion(b) - calificacion(a) || a.nombre.localeCompare(b.nombre, "es");
+    });
+  }, [tutores, busqueda, categoria, materia, orden, categoriaDe]);
+
+  const reiniciarPaginas = () => setVisibles(POR_PAGINA);
+  const hayFiltros = Boolean(busqueda || materia || categoria !== TODAS);
 
   return (
-    <main className="min-h-screen bg-granite-50 dark:bg-deep-space-blue-950 py-10 px-6">
-      <div className="max-w-5xl mx-auto space-y-8">
-        
-        {/* Header */}
-        <div className="flex items-center gap-4 border-b border-granite-200 dark:border-deep-space-blue-800 pb-6">
-          <button
-            onClick={() => navigate("/")}
-            className="p-2 rounded-md hover:bg-granite-200 dark:hover:bg-deep-space-blue-800 transition-colors text-granite-600 dark:text-deep-space-blue-300"
-            aria-label="Volver al panel"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-semibold text-granite-900 dark:text-white tracking-tight">
-              Catálogo de Tutores
-            </h1>
-            <p className="text-sm text-granite-500 dark:text-deep-space-blue-300 mt-1">
-              Encuentra al tutor ideal para las materias en las que necesitas apoyo.
-            </p>
-          </div>
-        </div>
+    <Page cargando={loading}>
+      <PageHeader
+        title="Buscar tutores"
+        description="Encuentra a quien domina la materia en la que necesitas apoyo y agenda una sesión."
+      />
 
-        {/* Buscador */}
-        <div className="relative max-w-xl">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-granite-400 dark:text-deep-space-blue-400" />
-          </div>
-          <input
-            type="text"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre o materia..."
-            className="w-full rounded-md border border-granite-200 bg-white pl-11 pr-4 py-3 text-sm text-granite-900 outline-none transition-colors placeholder:text-granite-400 focus:border-deep-space-blue-500 dark:border-deep-space-blue-800 dark:bg-deep-space-blue-900/40 dark:text-white dark:placeholder:text-deep-space-blue-400 dark:focus:border-emerald-500"
-          />
-        </div>
-
-        {/* Contenido */}
-        {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center space-y-4">
-             <div className="w-10 h-10 border-4 border-deep-space-blue-200 border-t-deep-space-blue-600 dark:border-deep-space-blue-800 dark:border-t-emerald-400 animate-spin"></div>
-             <p className="text-granite-500 dark:text-deep-space-blue-300">Cargando tutores...</p>
-          </div>
-        ) : error ? (
-          <div className="rounded-md border border-red-500/40 bg-red-500/10 p-6 text-center text-red-600 dark:text-red-400">
-            {error}
-          </div>
-        ) : tutoresFiltrados.length === 0 ? (
-          <div className="p-12 text-center bg-white dark:bg-deep-space-blue-900/20 border border-granite-200 dark:border-deep-space-blue-800 rounded-lg">
-            <p className="text-granite-500 dark:text-deep-space-blue-300 text-lg">
-              No se encontraron tutores con tu búsqueda "{busqueda}"
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tutoresFiltrados.map((tutor) => (
-              <button
-                key={tutor.id}
-                onClick={() => navigate(`/tutor/${tutor.id}`)}
-                className="flex flex-col text-left bg-white dark:bg-deep-space-blue-900/40 border border-granite-200 dark:border-deep-space-blue-800 hover:border-deep-space-blue-500 dark:hover:border-emerald-500 hover:shadow-sm transition-all rounded-lg p-6 overflow-hidden group"
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  {tutor.fotoUrl ? (
-                    <img
-                      src={tutor.fotoUrl}
-                      alt={tutor.nombre}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-granite-50 dark:border-deep-space-blue-800"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full border-2 border-granite-50 dark:border-deep-space-blue-800 bg-deep-space-blue-50 dark:bg-deep-space-blue-800/50 flex items-center justify-center text-xl font-medium text-deep-space-blue-600 dark:text-emerald-400">
-                      {getInitial(tutor.nombre)}
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="text-base font-medium text-granite-900 dark:text-white line-clamp-1 group-hover:text-deep-space-blue-600 dark:group-hover:text-emerald-400 transition-colors">
-                      {tutor.nombre}
-                    </h3>
-                  </div>
-                </div>
-
-                <div className="mt-2 flex-1 w-full">
-                  <h4 className="text-xs font-medium text-granite-500 dark:text-deep-space-blue-400 uppercase tracking-wider mb-3 border-b border-granite-100 dark:border-deep-space-blue-800/50 pb-2">
-                    Especialidades
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {tutor.materias?.slice(0, 3).map((materia, i) => (
-                      <span
-                        key={i}
-                        className="px-3 py-1 bg-granite-50 dark:bg-deep-space-blue-900/50 text-granite-700 dark:text-deep-space-blue-200 text-xs rounded-md border border-granite-200 dark:border-deep-space-blue-800"
-                      >
-                        {materia}
-                      </span>
-                    ))}
-                    {tutor.materias?.length > 3 && (
-                      <span className="px-3 py-1 bg-granite-50 dark:bg-deep-space-blue-900/50 text-granite-500 dark:text-deep-space-blue-400 text-xs rounded-md border border-granite-200 dark:border-deep-space-blue-800">
-                        +{tutor.materias.length - 3} más
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            ))}
+      <div className={styles.toolbar}>
+        {categorias.length > 1 && (
+          <div className={styles.tabs}>
+            <TabList
+              selectedValue={categoria}
+              onTabSelect={(_, data) => {
+                setCategoria(data.value);
+                setMateria("");
+                reiniciarPaginas();
+              }}
+              aria-label="Filtrar por categoría"
+            >
+              <Tab value={TODAS}>Todas</Tab>
+              {categorias.map((cat) => (
+                <Tab key={cat} value={cat}>
+                  {cat}
+                </Tab>
+              ))}
+            </TabList>
           </div>
         )}
+
+        <div className={styles.filters}>
+          <SearchBox
+            className={styles.search}
+            placeholder="Nombre o materia"
+            aria-label="Buscar por nombre o materia"
+            value={busqueda}
+            onChange={(_, data) => {
+              setBusqueda(data.value);
+              reiniciarPaginas();
+            }}
+          />
+          <Dropdown
+            className={styles.dropdown}
+            aria-label="Filtrar por materia"
+            value={materia || "Todas las materias"}
+            selectedOptions={[materia]}
+            onOptionSelect={(_, data) => {
+              setMateria(data.optionValue || "");
+              reiniciarPaginas();
+            }}
+          >
+            <Option value="">Todas las materias</Option>
+            {materiasConTutor.map((m) => (
+              <Option key={m} value={m}>
+                {m}
+              </Option>
+            ))}
+          </Dropdown>
+          <Dropdown
+            className={styles.dropdown}
+            aria-label="Ordenar tutores"
+            value={ORDENES[orden]}
+            selectedOptions={[orden]}
+            onOptionSelect={(_, data) => setOrden(data.optionValue || "calificacion")}
+          >
+            {Object.entries(ORDENES).map(([valor, texto]) => (
+              <Option key={valor} value={valor}>
+                {texto}
+              </Option>
+            ))}
+          </Dropdown>
+          {!loading && !error && (
+            <Caption1 className={styles.count} role="status">
+              {tutoresFiltrados.length === 1 ? "1 tutor" : `${tutoresFiltrados.length} tutores`}
+            </Caption1>
+          )}
+        </div>
       </div>
-    </main>
+
+      {loading ? (
+        <div className={styles.grid}>
+          {[0, 1, 2, 3, 4, 5].map((n) => (
+            <Skeleton key={n} aria-label="Cargando tutores">
+              <SkeletonItem shape="rectangle" style={{ height: "128px" }} />
+            </Skeleton>
+          ))}
+        </div>
+      ) : error ? (
+        <MessageBar intent="error" layout="multiline">
+          <MessageBarBody>{error}</MessageBarBody>
+        </MessageBar>
+      ) : tutoresFiltrados.length === 0 ? (
+        <EmptyState
+          icon={<PeopleSearch24Regular />}
+          ilustracion={<IlustracionComunidad />}
+          title={hayFiltros ? "Ningún tutor coincide con los filtros" : "Aún no hay tutores disponibles"}
+          description={
+            hayFiltros
+              ? "Prueba con otra materia, otra categoría o una palabra distinta."
+              : "Los tutores aparecen aquí cuando la administración aprueba su solicitud."
+          }
+          action={
+            hayFiltros && (
+              <Button
+                onClick={() => {
+                  setBusqueda("");
+                  setMateria("");
+                  setCategoria(TODAS);
+                  reiniciarPaginas();
+                }}
+              >
+                Quitar filtros
+              </Button>
+            )
+          }
+        />
+      ) : (
+        <>
+          <div className={styles.grid}>
+            {tutoresFiltrados.slice(0, visibles).map((tutor) => (
+              <TutorCard key={tutor.id} tutor={tutor} to={`/tutor/${tutor.id}`} />
+            ))}
+          </div>
+          {tutoresFiltrados.length > visibles && (
+            <div className={styles.more}>
+              <Caption1 className={styles.count}>
+                Mostrando {visibles} de {tutoresFiltrados.length}
+              </Caption1>
+              <Button onClick={() => setVisibles((n) => n + POR_PAGINA)}>Mostrar más</Button>
+            </div>
+          )}
+        </>
+      )}
+    </Page>
   );
 }
