@@ -19,9 +19,11 @@ import { CalendarAdd20Regular, PersonQuestionMark24Regular, Star16Filled } from 
 import { getDisponibilidadTutor, getTutorById } from "../../services/tutorService";
 import { HorarioSemanal } from "../../components/ui/HorarioSemanal";
 import BookingModal from "./BookingModal";
+import ResenasTutor from "./ResenasTutor";
 import { IlustracionComunidad } from "../../components/illustrations/Ilustraciones";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Page, PageLoading, PageSection, Surface } from "../../components/ui/Page";
+import { opiniones } from "../../lib/formato";
 
 const useStyles = makeStyles({
   breadcrumb: {
@@ -184,6 +186,7 @@ export default function PerfilTutor() {
 
   const rating = Number(tutor.calificacionPromedio);
   const hasRating = Number.isFinite(rating) && rating > 0;
+  const totalResenas = Number(tutor.totalResenas) || 0;
 
   return (
     <>
@@ -214,7 +217,9 @@ export default function PerfilTutor() {
               </Title2>
               <Caption1 className={styles.rating}>
                 {hasRating && <Star16Filled className={styles.star} aria-hidden="true" />}
-                {hasRating ? `${rating.toFixed(1)} de 5` : "Aún sin calificaciones"}
+                {hasRating
+                  ? `${rating.toFixed(1)} de 5${totalResenas > 0 ? ` · ${opiniones(totalResenas)}` : ""}`
+                  : "Aún sin calificaciones"}
               </Caption1>
             </div>
             <Button
@@ -258,6 +263,9 @@ export default function PerfilTutor() {
             </Surface>
           </PageSection>
         </div>
+
+        {/* `key`: al cambiar de tutor se reinicia la carga. */}
+        <ResenasTutor key={id} tutorId={id} />
       </Page>
 
       <BookingModal

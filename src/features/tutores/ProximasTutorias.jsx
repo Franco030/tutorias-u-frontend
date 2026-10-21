@@ -5,16 +5,20 @@ import {
   makeStyles,
   MessageBar,
   MessageBarBody,
+  RatingDisplay,
   Tab,
   TabList,
   tokens,
 } from "@fluentui/react-components";
-import { CalendarEmpty24Regular, History24Regular, Video20Regular } from "@fluentui/react-icons";
+import { CalendarEmpty24Regular, History24Regular, Star20Regular, Video20Regular } from "@fluentui/react-icons";
+import { useAuth } from "../../context/AuthContext";
+import { getRol } from "../../components/shell/navigation";
 import {
   getHistorialTutorias,
   getProximasTutorias,
 } from "../../services/citaService";
 import TutoriaDetallesModal from "./TutoriaDetallesModal";
+import CalificarTutoriaModal from "./CalificarTutoriaModal";
 import { IlustracionCalendario } from "../../components/illustrations/Ilustraciones";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { EstadoBadge } from "../../components/ui/EstadoBadge";
@@ -35,12 +39,15 @@ const useStyles = makeStyles({
 export default function ProximasTutorias() {
   const notificar = useNotificar();
   const styles = useStyles();
+  const { user } = useAuth();
+  const esEstudiante = getRol(user) === "estudiante";
   const [tutorias, setTutorias] = useState([]);
   const [historial, setHistorial] = useState([]);
   const [pestana, setPestana] = useState("proximas");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tutoriaSeleccionada, setTutoriaSeleccionada] = useState(null);
+  const [tutoriaPorCalificar, setTutoriaPorCalificar] = useState(null);
 
   useEffect(() => {
     const cargarTutorias = async () => {
@@ -91,6 +98,13 @@ export default function ProximasTutorias() {
     ]);
   };
 
+  const handleCalificada = (tutoria, puntuacion) => {
+    notificar("Gracias por tu reseña", { cuerpo: `${tutoria.materia} con ${tutoria.rolOpuestoNombre}` });
+    setHistorial((actuales) =>
+      actuales.map((actual) => (actual.id === tutoria.id ? { ...actual, puntuacion } : actual))
+    );
+  };
+
   const esProximas = pestana === "proximas";
   const listaActual = esProximas ? tutorias : historial;
 
@@ -132,6 +146,34 @@ export default function ProximasTutorias() {
         <SessionList label={esProximas ? "Próximas sesiones" : "Historial de sesiones"}>
           {listaActual.map((tutoria) => {
             const fecha = new Date(tutoria.fechaHoraInicio);
+            const meta = `${formatoSesion.format(fecha)} · con ${tutoria.rolOpuestoNombre}`;
+            // El estudiante califica cada sesión completada una sola vez.
+            const puedeCalificar =
+              !esProximas && esEstudiante && tutoria.estado === "Completada" && tutoria.puntuacion == null;
+            if (puedeCalificar) {
+              return (
+                <SessionRow
+                  key={tutoria.id}
+                  fecha={fecha}
+                  muted
+                  title={tutoria.materia}
+                  meta={meta}
+                  actions={
+                    <>
+                      <Button onClick={() => abrirDetalles(tutoria)}>Detalles</Button>
+                      <Button
+                        appearance="primary"
+                        icon={<Star20Regular />}
+                        onClick={() => setTutoriaPorCalificar(tutoria)}
+                        aria-label={`Calificar ${tutoria.materia} con ${tutoria.rolOpuestoNombre}`}
+                      >
+                        Calificar
+                      </Button>
+                    </>
+                  }
+                />
+              );
+            }
             // Con enlace de reunión, la fila ofrece "Unirse" directo (sin abrir detalles).
             const puedeUnirse =
               esProximas && Boolean(tutoria.linkReunion) && (tutoria.estado || "Aceptada") === "Aceptada";
@@ -141,7 +183,7 @@ export default function ProximasTutorias() {
                   key={tutoria.id}
                   fecha={fecha}
                   title={tutoria.materia}
-                  meta={`${formatoSesion.format(fecha)} · con ${tutoria.rolOpuestoNombre}`}
+                  meta={meta}
                   actions={
                     <>
                       <Button onClick={() => abrirDetalles(tutoria)}>Detalles</Button>
@@ -167,8 +209,21 @@ export default function ProximasTutorias() {
                 fecha={fecha}
                 muted={!esProximas}
                 title={tutoria.materia}
-                meta={`${formatoSesion.format(fecha)} · con ${tutoria.rolOpuestoNombre}`}
-                end={<EstadoBadge estado={tutoria.estado || "Aceptada"} />}
+                meta={meta}
+                end={
+                  <>
+                    {tutoria.puntuacion != null && (
+                      <RatingDisplay
+                        compact
+                        value={tutoria.puntuacion}
+                        size="small"
+                        color="marigold"
+                        aria-label={`Calificaste con ${tutoria.puntuacion} de 5`}
+                      />
+                    )}
+                    <EstadoBadge estado={tutoria.estado || "Aceptada"} />
+                  </>
+                }
                 onClick={() => abrirDetalles(tutoria)}
                 ariaLabel={`Ver detalles de ${tutoria.materia} con ${tutoria.rolOpuestoNombre}`}
               />
@@ -182,6 +237,12 @@ export default function ProximasTutorias() {
         onClose={cerrarDetalles}
         tutoria={tutoriaSeleccionada}
         onCancelled={handleCancelled}
+      />
+
+      <CalificarTutoriaModal
+        tutoria={tutoriaPorCalificar}
+        onClose={() => setTutoriaPorCalificar(null)}
+        onCalificada={handleCalificada}
       />
     </Page>
   );

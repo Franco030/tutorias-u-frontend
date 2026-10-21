@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { enDias, iniciarSesion, materias, simularApi, tutores, usuarios } from './helpers';
+import {
+  enDias,
+  historialPorCalificar,
+  iniciarSesion,
+  materias,
+  rutasPerfilTutor,
+  simularApi,
+  tutores,
+  usuarios,
+} from './helpers';
 
 const rutasEstudiante = {
   '/api/citas/proximas': [],
@@ -125,5 +134,47 @@ test.describe('Estudiante', () => {
     const unirse = page.getByRole('link', { name: 'Unirse a Cálculo con Mateo Herrera' });
     await expect(unirse).toHaveAttribute('href', 'https://meet.example.com/abc');
     await expect(unirse).toHaveAttribute('target', '_blank');
+  });
+
+  test('califica una tutoría completada desde el historial', async ({ page }) => {
+    await iniciarSesion(page, usuarios.estudiante);
+    const recibidas = await simularApi(page, {
+      ...rutasEstudiante,
+      '/api/citas/historial': historialPorCalificar,
+      'POST /api/resenas': { resena: { id: 1 }, calificacionPromedio: 4.5 },
+    });
+
+    await page.goto('/mis-tutorias');
+    await page.getByRole('tab', { name: 'Historial' }).click();
+    // La sesión ya calificada no ofrece calificar otra vez.
+    await expect(page.getByRole('button', { name: /Calificar Álgebra/ })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Calificar Cálculo con Mateo Herrera' }).click();
+
+    const dialogo = page.getByRole('dialog', { name: 'Calificar tutoría' });
+    const enviar = dialogo.getByRole('button', { name: 'Enviar reseña' });
+    await expect(enviar).toBeDisabled();
+    await dialogo.getByRole('radio', { name: '5 de 5 estrellas' }).check();
+    await dialogo.getByLabel('Comentario (opcional)').fill('Explica con mucha paciencia.');
+    await enviar.click();
+
+    await expect(dialogo).toBeHidden();
+    await expect(page.getByText('Gracias por tu reseña', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Calificar Cálculo/ })).toHaveCount(0);
+    const peticion = recibidas.find((r) => r.metodo === 'POST' && r.ruta === '/api/resenas');
+    expect(peticion?.cuerpo).toEqual({ citaId: 5, puntuacion: 5, comentario: 'Explica con mucha paciencia.' });
+  });
+
+  test('el perfil del tutor muestra promedio, total y reseñas', async ({ page }) => {
+    await iniciarSesion(page, usuarios.estudiante);
+    await simularApi(page, { ...rutasEstudiante, ...rutasPerfilTutor });
+
+    await page.goto('/tutor/11');
+    await expect(page.getByText('4.7 de 5 · 3 opiniones')).toBeVisible();
+    const resenas = page.getByRole('region', { name: 'Reseñas de estudiantes' });
+    await expect(resenas.getByText('4.7', { exact: true })).toBeVisible();
+    await expect(resenas.getByText('5 estrellas: 2 opiniones')).toBeAttached();
+    await expect(resenas.getByText('Excelente tutor.')).toBeVisible();
+    await expect(resenas.getByText('Sofía Paz')).toBeVisible();
+    await expect(resenas.getByRole('button', { name: 'Mostrar más reseñas' })).toHaveCount(0);
   });
 });

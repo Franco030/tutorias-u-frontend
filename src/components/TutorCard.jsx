@@ -9,6 +9,7 @@ import {
 } from "@fluentui/react-components";
 import { Star16Filled, Star16Regular } from "@fluentui/react-icons";
 import { liftOnHover } from "../theme/motion";
+import { opiniones } from "../lib/formato";
 
 const MAX_MATERIAS = 3;
 
@@ -78,6 +79,7 @@ export default function TutorCard({ tutor, to, onClick }) {
   const styles = useStyles();
   const rating = Number(tutor.calificacionPromedio);
   const hasRating = Number.isFinite(rating) && rating > 0;
+  const totalResenas = Number(tutor.totalResenas) || 0;
   const materias = tutor.materias || [];
   const restantes = materias.length - MAX_MATERIAS;
 
@@ -99,7 +101,9 @@ export default function TutorCard({ tutor, to, onClick }) {
               ) : (
                 <Star16Regular aria-hidden="true" />
               )}
-              {hasRating ? `${rating.toFixed(1)} de 5` : "Sin calificación"}
+              {hasRating
+                ? `${rating.toFixed(1)} de 5${totalResenas > 0 ? ` · ${opiniones(totalResenas)}` : ""}`
+                : "Sin calificación"}
             </Caption1>
           )}
         </div>

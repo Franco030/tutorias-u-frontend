@@ -1,6 +1,14 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { iniciarSesion, materias, simularApi, tutores, usuarios } from './helpers';
+import {
+  historialPorCalificar,
+  iniciarSesion,
+  materias,
+  rutasPerfilTutor,
+  simularApi,
+  tutores,
+  usuarios,
+} from './helpers';
 
 // Revisión automática (axe, WCAG 2.1 A/AA): no se aceptan fallas graves ni críticas.
 async function revisar(page) {
@@ -24,6 +32,7 @@ const rutas = {
   '/api/tutores': tutores,
   '/api/materias': materias,
   '/api/estudiantes/intereses': [1],
+  ...rutasPerfilTutor,
 };
 
 for (const tema of ['light', 'dark']) {
@@ -39,6 +48,7 @@ for (const tema of ['light', 'dark']) {
       ['panel de inicio', '/', 'Panel de control'],
       ['catálogo', '/tutores', 'Buscar tutores'],
       ['mis intereses', '/intereses', 'Mis intereses'],
+      ['perfil de tutor con reseñas', '/tutor/11', 'Mateo Herrera'],
     ]) {
       test(nombre, async ({ page }) => {
         await iniciarSesion(page, usuarios.estudiante, { tema });
@@ -50,5 +60,16 @@ for (const tema of ['light', 'dark']) {
         await revisar(page);
       });
     }
+
+    test('calificar una tutoría', async ({ page }) => {
+      await iniciarSesion(page, usuarios.estudiante, { tema });
+      await simularApi(page, { ...rutas, '/api/citas/historial': historialPorCalificar });
+      await page.goto('/mis-tutorias');
+      await page.getByRole('tab', { name: 'Historial' }).click();
+      await page.getByRole('button', { name: 'Calificar Cálculo con Mateo Herrera' }).click();
+      await page.getByRole('dialog', { name: 'Calificar tutoría' }).getByRole('radio', { name: '4 de 5 estrellas' }).check();
+      await page.waitForTimeout(600);
+      await revisar(page);
+    });
   });
 }

@@ -47,6 +47,51 @@ export const tutores = [
   { id: 13, nombre: 'Diego Salinas', calificacionPromedio: 4.2, materias: ['Programación'] },
 ];
 
+// Tres reseñas (5, 4 y 5): promedio 4.67, como en el criterio de aceptación.
+export const resenasTutor = {
+  items: [
+    { id: 3, puntuacion: 5, comentario: 'Excelente tutor.', fechaCreacion: enDias(-1), estudianteNombre: 'Luis Mora' },
+    { id: 2, puntuacion: 4, comentario: null, fechaCreacion: enDias(-3), estudianteNombre: 'Ana Ruiz' },
+    { id: 1, puntuacion: 5, comentario: 'Muy claro.', fechaCreacion: enDias(-5), estudianteNombre: 'Sofía Paz' },
+  ],
+  pagina: 1,
+  tamanoPagina: 5,
+  total: 3,
+  promedio: 4.67,
+  desglose: [
+    { puntuacion: 5, cantidad: 2 },
+    { puntuacion: 4, cantidad: 1 },
+    { puntuacion: 3, cantidad: 0 },
+    { puntuacion: 2, cantidad: 0 },
+    { puntuacion: 1, cantidad: 0 },
+  ],
+};
+
+export const rutasPerfilTutor = {
+  '/api/tutores/11': { ...tutores[0], calificacionPromedio: 4.67, totalResenas: 3 },
+  '/api/tutores/11/disponibilidad': [],
+  '/api/tutores/11/resenas': resenasTutor,
+};
+
+export const historialPorCalificar = [
+  {
+    id: 5,
+    materia: 'Cálculo',
+    rolOpuestoNombre: 'Mateo Herrera',
+    fechaHoraInicio: enDias(-2),
+    estado: 'Completada',
+    puntuacion: null,
+  },
+  {
+    id: 4,
+    materia: 'Álgebra',
+    rolOpuestoNombre: 'Mateo Herrera',
+    fechaHoraInicio: enDias(-9),
+    estado: 'Completada',
+    puntuacion: 4,
+  },
+];
+
 // Abre la app con una sesión ya guardada (sin pasar por el formulario).
 export async function iniciarSesion(page, usuario, { tema = 'light' } = {}) {
   await page.addInitScript(
