@@ -152,6 +152,9 @@ const preguntasExamen = [
   },
 ];
 
+const TAMANO_MAXIMO_ARCHIVO = 5 * 1024 * 1024;
+const TIPOS_ARCHIVO = /\.(pdf|png|jpe?g|webp)$/i;
+
 export default function AplicacionTutor() {
   const styles = useStyles();
   const navigate = useNavigate();
@@ -161,6 +164,23 @@ export default function AplicacionTutor() {
   const [materias, setMaterias] = useState([]);
   const [materiasSeleccionadas, setMateriasSeleccionadas] = useState([]);
   const [archivo, setArchivo] = useState(null);
+  const [errorArchivo, setErrorArchivo] = useState("");
+
+  // Mismas reglas que el backend (ValidadorArchivos): PDF o imagen de hasta 5 MB.
+  const elegirArchivo = (elegido) => {
+    if (elegido && elegido.size > TAMANO_MAXIMO_ARCHIVO) {
+      setArchivo(null);
+      setErrorArchivo("El archivo supera los 5 MB. Elige uno más ligero.");
+      return;
+    }
+    if (elegido && !TIPOS_ARCHIVO.test(elegido.name)) {
+      setArchivo(null);
+      setErrorArchivo("Solo se aceptan archivos PDF, PNG, JPG o WEBP.");
+      return;
+    }
+    setErrorArchivo("");
+    setArchivo(elegido);
+  };
   const [respuestasExamen, setRespuestasExamen] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -311,7 +331,7 @@ export default function AplicacionTutor() {
                   {archivo ? archivo.name : "Ningún archivo seleccionado"}
                 </Text>
                 <Caption1 className={styles.muted}>
-                  {archivo ? `${(archivo.size / 1024 / 1024).toFixed(1)} MB` : "PDF, JPG o PNG"}
+                  {archivo ? `${(archivo.size / 1024 / 1024).toFixed(1)} MB` : "PDF, PNG, JPG o WEBP"}
                 </Caption1>
               </div>
               <Button
@@ -325,13 +345,18 @@ export default function AplicacionTutor() {
                 ref={inputArchivo}
                 id="file-upload"
                 type="file"
-                accept=".pdf,image/*"
-                onChange={(e) => setArchivo(e.target.files[0] || null)}
+                accept=".pdf,.png,.jpg,.jpeg,.webp"
+                onChange={(e) => elegirArchivo(e.target.files[0] || null)}
                 className={styles.hiddenInput}
                 tabIndex={-1}
                 aria-hidden="true"
               />
             </div>
+            {errorArchivo && (
+              <MessageBar intent="error" layout="multiline">
+                <MessageBarBody>{errorArchivo}</MessageBarBody>
+              </MessageBar>
+            )}
           </Surface>
 
           <Surface as="section" id="cuestionario" tabIndex={-1} aria-labelledby="titulo-cuestionario" className={styles.section}>
