@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useMsal } from '@azure/msal-react';
 import authService from '../features/auth/authService';
 import { AUTH_STORAGE_KEYS } from '../types/auth.types';
@@ -128,6 +128,30 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Trae del servidor el rol y el estado de aprobación actuales: cambian sin
+  // que el usuario vuelva a iniciar sesión (p. ej. cuando lo aprueban como
+  // tutor). Si falla se conserva la sesión; un 401 ya la cierra apiClient.
+  const refrescarSesion = useCallback(async () => {
+    try {
+      const authData = await authService.refrescarSesion();
+      if (!authData?.token) return;
+      const savedUser = authService.saveSession(authData);
+      setToken(authData.token);
+      setUser(savedUser);
+    } catch (err) {
+      console.warn('[AuthContext] No se pudo refrescar la sesión:', err?.message);
+    }
+  }, []);
+
+  // Al abrir la app con una sesión guardada, se actualiza una vez.
+  const sesionInicial = useRef(Boolean(token));
+  useEffect(() => {
+    if (sesionInicial.current) {
+      sesionInicial.current = false;
+      refrescarSesion();
+    }
+  }, [refrescarSesion]);
+
   const updateRole = useCallback(async (nuevoRol) => {
     setIsLoading(true);
     setError(null);
@@ -183,8 +207,9 @@ export function AuthProvider({ children }) {
       clearError,
       markOnboardingAsComplete,
       updateLocalUser,
+      refrescarSesion,
     }),
-    [user, token, isAuthenticated, isLoading, error, loginWithGoogle, loginWithMicrosoft, loginLocal, updateRole, logout, clearError, markOnboardingAsComplete, updateLocalUser]
+    [user, token, isAuthenticated, isLoading, error, loginWithGoogle, loginWithMicrosoft, loginLocal, updateRole, logout, clearError, markOnboardingAsComplete, updateLocalUser, refrescarSesion]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

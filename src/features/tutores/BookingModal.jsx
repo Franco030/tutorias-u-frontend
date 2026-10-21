@@ -26,6 +26,7 @@ import { CheckmarkCircle48Regular, Dismiss24Regular } from "@fluentui/react-icon
 import { calendarioEs } from "../../lib/calendarioEs";
 import { Diferido } from "../../components/ui/Page";
 import { agendarCita, getHorasOcupadas } from "../../services/citaService";
+import { ahoraEnPlataforma, crearFechaHora, esFuturo } from "../../lib/horaPlataforma";
 import { getMaterias } from "../../services/materiaService";
 import { getDisponibilidadTutor } from "../../services/tutorService";
 
@@ -50,7 +51,6 @@ const normalizarBloque = (bloque) => ({
 const fechaComoClave = (fecha) =>
   `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
 
-const crearFechaHoraUtc = (fecha, hora) => `${fecha}T${hora}:00.000Z`;
 
 const useStyles = makeStyles({
   surface: {
@@ -213,7 +213,9 @@ export default function BookingModal({
   }, [isOpen, fecha, tutorId]);
 
   const opcionesFecha = useMemo(() => {
-    const hoy = new Date();
+    // El calendario arranca en el día actual de la plataforma, no del navegador.
+    const [anio, mes, diaHoy] = ahoraEnPlataforma().fecha.split("-").map(Number);
+    const hoy = new Date(anio, mes - 1, diaHoy);
     const opciones = [];
 
     for (let offset = 0; offset < FECHA_DIAS_FUTUROS; offset += 1) {
@@ -226,9 +228,8 @@ export default function BookingModal({
       const bloquesDelDia = disponibilidad.filter(
         (bloque) => bloque.diaSemana === dia.getDay()
       );
-      const tieneHorarioFuturo = bloquesDelDia.some(
-        (bloque) =>
-          new Date(crearFechaHoraUtc(clave, bloque.horaInicio)) > new Date()
+      const tieneHorarioFuturo = bloquesDelDia.some((bloque) =>
+        esFuturo(clave, bloque.horaInicio)
       );
 
       opciones.push({
@@ -246,13 +247,10 @@ export default function BookingModal({
 
   const bloquesDisponibles = useMemo(() => {
     if (!fecha) return [];
-    const ahora = new Date();
     const diaSemana = new Date(`${fecha}T12:00:00`).getDay();
 
     return disponibilidad.filter(
-      (bloque) =>
-        bloque.diaSemana === diaSemana &&
-        new Date(crearFechaHoraUtc(fecha, bloque.horaInicio)) > ahora
+      (bloque) => bloque.diaSemana === diaSemana && esFuturo(fecha, bloque.horaInicio)
     ).map((bloque) => ({
       ...bloque,
       ocupado: horariosOcupados.includes(bloque.horaInicio),
@@ -285,9 +283,9 @@ export default function BookingModal({
       return;
     }
 
-    const fechaHoraInicio = crearFechaHoraUtc(fecha, bloque.horaInicio);
-    const fechaHoraFin = crearFechaHoraUtc(fecha, bloque.horaFin);
-    if (new Date(fechaHoraInicio) <= new Date()) {
+    const fechaHoraInicio = crearFechaHora(fecha, bloque.horaInicio);
+    const fechaHoraFin = crearFechaHora(fecha, bloque.horaFin);
+    if (!esFuturo(fecha, bloque.horaInicio)) {
       setError("No puedes agendar una cita en una fecha u hora pasada.");
       return;
     }

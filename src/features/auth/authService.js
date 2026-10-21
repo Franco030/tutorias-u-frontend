@@ -50,6 +50,11 @@ export const authService = {
     return apiClient.post('/api/auth/asignar-rol', { nuevoRol });
   },
 
+  // Token y datos actuales del usuario (rol y estado de aprobación al día).
+  async refrescarSesion() {
+    return apiClient.get('/api/auth/sesion');
+  },
+
   saveSession(authData) {
     if (!authData || !authData.token) return;
 

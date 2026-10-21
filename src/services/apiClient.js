@@ -64,7 +64,8 @@ export async function apiClient(endpoint, options = {}) {
 
     let data;
     const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
+    // Incluye application/problem+json (errores ProblemDetails del backend).
+    if (/[/+]json\b/.test(contentType)) {
       try {
         data = await response.json();
       } catch {
@@ -78,7 +79,12 @@ export async function apiClient(endpoint, options = {}) {
       let errorMessage = `Error en la petición: ${response.status} ${response.statusText}`;
 
       if (data && typeof data === 'object') {
-        errorMessage = data.message || data.error || data.title || data.mensaje || data.Error || errorMessage;
+        // ProblemDetails: para validaciones se muestra el primer error de campo.
+        const primerErrorCampo = data.errors && typeof data.errors === 'object'
+          ? Object.values(data.errors).flat().find((msg) => typeof msg === 'string' && msg.trim())
+          : null;
+        errorMessage = primerErrorCampo || data.title || data.detail
+          || data.message || data.mensaje || data.error || data.Error || errorMessage;
       } else if (typeof data === 'string' && data.trim().length > 0) {
         errorMessage = data;
       }

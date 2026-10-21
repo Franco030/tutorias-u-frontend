@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Badge,
@@ -39,7 +40,12 @@ const useStyles = makeStyles({
 export default function EstadoSolicitud() {
   const styles = useStyles();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refrescarSesion } = useAuth();
+
+  // La resolución del administrador llega sin volver a iniciar sesión.
+  useEffect(() => {
+    refrescarSesion();
+  }, [refrescarSesion]);
 
   // Normalizar el estado
   const estado = user?.estadoAprobacion?.trim().toLowerCase() || "pendiente";

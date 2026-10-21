@@ -25,6 +25,8 @@ export default defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
+    // Misma zona que la plataforma: las pruebas no dependen de la del equipo o del CI.
+    timezoneId: 'America/Mexico_City',
   },
 
   projects: [

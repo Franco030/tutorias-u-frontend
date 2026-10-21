@@ -131,11 +131,18 @@ export async function simularApi(page, rutas) {
     // `in` y no `??`: una ruta simulada puede responder `null` (204 sin cuerpo).
     const respuesta =
       clave in rutas ? rutas[clave] : metodo === 'GET' && url.pathname in rutas ? rutas[url.pathname] : undefined;
+    // Los errores imitan al backend: ProblemDetails (application/problem+json).
+    const problema = (status, cuerpoProblema) =>
+      route.fulfill({
+        status,
+        contentType: 'application/problem+json',
+        body: JSON.stringify(cuerpoProblema ?? { title: `Error ${status}`, status }),
+      });
     if (respuesta === undefined) {
-      return route.fulfill({ status: 404, json: { mensaje: `Sin simular: ${clave}` } });
+      return problema(404, { title: `Sin simular: ${clave}`, status: 404 });
     }
     if (respuesta?.status) {
-      return route.fulfill({ status: respuesta.status, json: respuesta.json ?? {} });
+      return problema(respuesta.status, respuesta.json);
     }
     const json = typeof respuesta === 'function' ? respuesta(request) : respuesta;
     return json === null ? route.fulfill({ status: 204 }) : route.fulfill({ json });
