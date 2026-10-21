@@ -137,8 +137,15 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   `validationMessage`. Nunca placeholder como etiqueta.
 - Selección de materias · `ToggleButton` o `Checkbox`, nunca chips hechos a mano.
 - Diálogos · `Dialog` de Fluent (foco, Escape y backdrop resueltos).
-- Mensajes · `MessageBar` para errores y avisos de la página. Éxito silencioso
-  cuando el resultado ya se ve.
+- Mensajes · `MessageBar` para errores y avisos de la página. Tras una acción
+  cuyo resultado no se ve en la misma vista (aceptar, rechazar, guardar,
+  cancelar) se lanza un aviso con `useNotificar` (`hooks/useNotificar.jsx`,
+  abajo a la derecha, 4 s). Éxito silencioso cuando el resultado ya se ve.
+- Fechas · `Calendar` de `@fluentui/react-calendar-compat` con
+  `lib/calendarioEs.js` (español, semana desde el lunes); los días sin
+  disponibilidad van en `restrictedDates`.
+- Estados vacíos · `EmptyState` con `ilustracion` (Comunidad, Calendario,
+  Revisión) en las pantallas principales; ícono simple en lugares secundarios.
 - Estados de cada control · reposo, hover, foco, presionado, deshabilitado,
   cargando (`Spinner` dentro del botón), error y éxito.
 - Íconos · solo `@fluentui/react-icons` (variante Regular, Filled en seleccionado).
@@ -164,6 +171,13 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 - Verificar a 320, 375, 414, 768 y 1280 px. Sin scroll horizontal.
 - Ninguna etiqueta de botón o enlace de navegación en dos líneas.
 - Área táctil mínima 44 px en móvil (`pointer: coarse`).
+
+## Accesibilidad
+- `e2e/accesibilidad.spec.js` pasa axe (WCAG 2.1 A/AA) en claro y oscuro;
+  no se aceptan fallas graves ni críticas.
+- Si un elemento tiene texto visible, su nombre accesible sale de ese texto:
+  nada de `aria-label` distinto a lo que se ve (falla
+  `label-content-name-mismatch`). `aria-label` solo en botones de ícono.
 
 ## Texto
 - Español, voz activa, específico. Errores: qué pasó y qué hacer.
