@@ -177,4 +177,24 @@ test.describe('Estudiante', () => {
     await expect(resenas.getByText('Sofía Paz')).toBeVisible();
     await expect(resenas.getByRole('button', { name: 'Mostrar más reseñas' })).toHaveCount(0);
   });
+
+  test('una tecla modificadora sola no muestra el anillo de foco', async ({ page }) => {
+    await iniciarSesion(page, usuarios.estudiante);
+    await simularApi(page, {
+      ...rutasEstudiante,
+      '/api/citas/proximas': [
+        { id: 1, materia: 'Cálculo', rolOpuestoNombre: 'Mateo Herrera', fechaHoraInicio: enDias(1), estado: 'Pendiente' },
+      ],
+    });
+
+    await page.goto('/mis-tutorias');
+    await page.getByRole('button', { name: 'Ver detalles de Cálculo con Mateo Herrera' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    for (const tecla of ['Meta', 'Alt', 'Control', 'Shift']) await page.keyboard.press(tecla);
+    await expect(page.locator('[data-fui-focus-visible]')).toHaveCount(0);
+
+    await page.keyboard.press('Tab');
+    await expect(page.locator('[data-fui-focus-visible]')).toHaveCount(1);
+  });
 });

@@ -14,10 +14,6 @@ export const keyframes = {
     from: { opacity: 0, transform: "scale(0.6)" },
     to: { opacity: 1, transform: "scale(1)" },
   },
-  spinIn: {
-    from: { opacity: 0, transform: "rotate(-90deg) scale(0.6)" },
-    to: { opacity: 1, transform: "none" },
-  },
 };
 
 // Cambio de página (navegación de nivel superior en Fluent 2): un fundido

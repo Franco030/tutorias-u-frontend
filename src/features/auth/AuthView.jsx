@@ -21,7 +21,7 @@ import {
   PeopleSearch24Regular,
 } from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
-import DarkModeToggle from "../../components/DarkModeToggle";
+import { InterruptorTema } from "../../components/InterruptorTema";
 import { BrandMark } from "../../components/shell/BrandMark";
 import GoogleLoginButton from "./GoogleLoginButton";
 import MicrosoftLoginButton from "./MicrosoftLoginButton";
@@ -62,11 +62,14 @@ const useStyles = makeStyles({
     left: 0,
     backgroundImage: `linear-gradient(135deg, color-mix(in srgb, ${tokens.colorBrandBackground} 30%, transparent), color-mix(in srgb, ${tokens.colorNeutralBackground3} 55%, transparent))`,
   },
+  // Abajo a la izquierda, sobre acrílico como la nota al pie: el único lugar,
+  // fuera del menú de usuario, donde se cambia el tema.
   themeToggle: {
     position: "absolute",
-    top: tokens.spacingVerticalM,
-    right: tokens.spacingHorizontalM,
+    bottom: tokens.spacingVerticalM,
+    left: tokens.spacingHorizontalM,
     zIndex: 1,
+    paddingInlineEnd: tokens.spacingHorizontalS,
     backgroundColor: `color-mix(in srgb, ${tokens.colorNeutralBackground1} 80%, transparent)`,
     backdropFilter: "blur(20px)",
     borderRadius: tokens.borderRadiusMedium,
@@ -314,7 +317,7 @@ export function AuthView({ onComplete }) {
         <div className={styles.veil} />
       </div>
 
-      <DarkModeToggle className={styles.themeToggle} />
+      <InterruptorTema className={styles.themeToggle} />
 
       <main className={styles.surface}>
         <BrandMark />

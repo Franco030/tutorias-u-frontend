@@ -78,7 +78,7 @@ enmienda aquí, no con un estilo suelto en el componente.
   claro y ≈1.3:1 en oscuro.
 
 ## Estructura de la app
-- Shell · barra superior de 48 px (marca, tema, menú de usuario) + riel de
+- Shell · barra superior de 48 px (marca, búsqueda, menú de usuario) + riel de
   íconos fijo de 56 px desde 1024 px. El menú (hamburguesa, alineada con la
   columna de íconos) abre un panel acrílico de 280 px **sobre** el contenido
   (modo LeftCompact de Windows): el contenido nunca cambia de ancho ni se
@@ -90,6 +90,9 @@ enmienda aquí, no con un estilo suelto en el componente.
   para pantallas de un mensaje, como el estado de solicitud.
 - Flujos de primera vez (acceso, rol, intereses iniciales) y la verificación
   de correo van sin shell.
+- Tema · se cambia con el interruptor "Tema oscuro" del menú de usuario; fuera
+  de la app, solo en el acceso (interruptor abajo a la izquierda). No hay
+  botón suelto de tema en las páginas.
 
 ## Componentes compartidos (`src/components`)
 - `shell/AppShell` · ventana con barra, navegación por rol (`shell/navigation.js`).
@@ -154,6 +157,14 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 - Estados de cada control · reposo, hover, foco, presionado, deshabilitado,
   cargando (`Spinner` dentro del botón), error y éxito.
 - Íconos · solo `@fluentui/react-icons` (variante Regular, Filled en seleccionado).
+  El tamaño del ícono importado coincide con su caja (20 px en navegación y
+  listas): uno de 24 px en una caja de 20 se desborda y queda descentrado.
+- Ícono con etiqueta y valor (listas de datos, p. ej. detalles de tutoría) ·
+  el ícono se centra con el par etiqueta + primera línea del valor, como en
+  una SettingsCard de Windows; si el valor ocupa varias líneas, el ícono
+  sigue a la altura de la etiqueta y no baja al centro del párrafo.
+- Barras de comandos de asistentes (onboarding) · a todo lo ancho bajo el
+  contenido y las ilustraciones, nunca encima de una tarjeta con sombra.
 
 ## Movimiento (`src/theme/motion.js`)
 - Duraciones y curvas de Fluent (`durationNormal`, `curveDecelerateMid`…).
@@ -176,12 +187,15 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 - Navegación · cuatro escuadras de marca (10 px por brazo, 2 px, esquinas
   rectas) enmarcan el elemento activo y se deslizan a la nueva opción
   (`curveDecelerateMax`); el activo lleva texto e ícono Filled en
-  `colorBrandForeground2`. Riel y panel tienen exactamente la misma
-  geometría vertical (encabezados de sección de 32 px en ambos; en el riel,
-  una línea centrada), así al abrir el menú nada cambia de posición. El
-  panel se revela con `clip-path` desde el ancho del riel (patrón Enter/Exit
-  de Fluent 2): entrada 300 ms y salida 200 ms, ambas con
-  `curveDecelerateMin` — arrancan al instante y se asientan suave. Nunca
+  `colorBrandForeground2`. Riel y panel son **el mismo menú** en dos estados
+  (compacto y abierto) con exactamente la misma geometría vertical
+  (encabezados de sección de 32 px; en compacto, una línea centrada), así al
+  abrir nada cambia de posición y nada se cambia de golpe: las etiquetas y
+  los títulos se desvanecen (al cerrar, antes del recorte) y las mismas
+  cuatro escuadras acompañan el ancho del elemento. El panel se revela con
+  `clip-path` desde el ancho del riel (patrón Enter/Exit de Fluent 2):
+  entrada 300 ms y salida 200 ms, ambas con `curveDecelerateMin` — arrancan
+  al instante y se asientan suave. Nunca
   ease-in en una salida: se siente como si el clic no se hubiera
   registrado. El cajón móvil usa la misma curva (`theme/navMotion.js`).
 - Tarjetas clicables · `liftOnHover`. Filas · chevron que avanza 3 px.
@@ -200,6 +214,9 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 - Si un elemento tiene texto visible, su nombre accesible sale de ese texto:
   nada de `aria-label` distinto a lo que se ve (falla
   `label-content-name-mismatch`). `aria-label` solo en botones de ícono.
+- Anillo de foco · aparece al navegar con teclado (Tab, flechas…), no al
+  pulsar una tecla modificadora sola (Windows, Alt, Ctrl, Shift):
+  `lib/teclasModificadoras.js` las detiene antes de keyborg.
 
 ## Texto
 - Español, voz activa, específico. Errores: qué pasó y qué hacer.

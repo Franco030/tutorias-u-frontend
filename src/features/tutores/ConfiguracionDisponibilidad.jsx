@@ -37,6 +37,15 @@ const DIAS_SEMANA = [
 
 // Orden de la semana laboral (lunes primero); los índices siguen el backend (0 = domingo).
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
+const ENTRE_SEMANA = [1, 2, 3, 4, 5];
+
+// "lunes", "lunes y martes", "lunes, martes y jueves" (en orden de la semana).
+const listaDias = (dias) => {
+  const nombres = ORDEN_DIAS.filter((dia) => dias.includes(dia)).map((dia) => DIAS_SEMANA[dia].toLowerCase());
+  return nombres.length <= 1
+    ? nombres.join("")
+    : `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
+};
 
 const FORMATO_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -80,6 +89,11 @@ const useStyles = makeStyles({
     "@media (pointer: coarse)": {
       minHeight: "44px",
     },
+  },
+  presets: {
+    display: "flex",
+    gap: tokens.spacingHorizontalXS,
+    marginTop: tokens.spacingVerticalXS,
   },
   times: {
     display: "grid",
@@ -142,13 +156,14 @@ export default function ConfiguracionDisponibilidad() {
   const styles = useStyles();
   const { user } = useAuth();
   const [bloques, setBloques] = useState([]);
-  const [diaSemana, setDiaSemana] = useState("1");
+  const [diasSeleccionados, setDiasSeleccionados] = useState([1]);
   const [horaInicio, setHoraInicio] = useState("09:00");
   const [horaFin, setHoraFin] = useState("10:00");
   const [cargando, setCargando] = useState(true);
   const [cargaCompleta, setCargaCompleta] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
+  const [aviso, setAviso] = useState("");
   const [cambiosSinGuardar, setCambiosSinGuardar] = useState(false);
 
   useEffect(() => {
@@ -184,8 +199,22 @@ export default function ConfiguracionDisponibilidad() {
     };
   }, [user?.id]);
 
+  const alternarDia = (dia) => {
+    setDiasSeleccionados((actuales) =>
+      actuales.includes(dia) ? actuales.filter((d) => d !== dia) : [...actuales, dia]
+    );
+  };
+
+  // El mismo rango se añade a todos los días elegidos; los días donde se
+  // cruza con otro bloque se omiten y se avisa cuáles fueron.
   const agregarBloque = () => {
     setError("");
+    setAviso("");
+
+    if (diasSeleccionados.length === 0) {
+      setError("Elige al menos un día.");
+      return;
+    }
 
     if (!FORMATO_HORA.test(horaInicio) || !FORMATO_HORA.test(horaFin)) {
       setError("Ingresa una hora de inicio y fin válidas.");
@@ -197,21 +226,35 @@ export default function ConfiguracionDisponibilidad() {
       return;
     }
 
-    const dia = Number(diaSemana);
-    const seCruza = bloques.some(
-      (bloque) =>
-        bloque.diaSemana === dia &&
-        horaInicio < bloque.horaFin &&
-        horaFin > bloque.horaInicio
-    );
+    const seCruza = (dia) =>
+      bloques.some(
+        (bloque) =>
+          bloque.diaSemana === dia &&
+          horaInicio < bloque.horaFin &&
+          horaFin > bloque.horaInicio
+      );
+    const conCruce = diasSeleccionados.filter(seCruza);
+    const libres = diasSeleccionados.filter((dia) => !seCruza(dia));
 
-    if (seCruza) {
-      setError("Este bloque se cruza con otro horario del mismo día.");
+    if (libres.length === 0) {
+      setError(
+        diasSeleccionados.length === 1
+          ? "Este bloque se cruza con otro horario del mismo día."
+          : `El bloque se cruza con otro horario el ${listaDias(conCruce)}.`
+      );
       return;
     }
 
+    if (conCruce.length > 0) {
+      setAviso(
+        conCruce.length === 1
+          ? `Se añadió al ${listaDias(libres)}. El ${listaDias(conCruce)} se omitió porque se cruza con otro horario.`
+          : `Se añadió al ${listaDias(libres)}. El ${listaDias(conCruce)} se omitieron porque se cruzan con otro horario.`
+      );
+    }
+
     setBloques((actuales) =>
-      [...actuales, { diaSemana: dia, horaInicio, horaFin }].sort(
+      [...actuales, ...libres.map((dia) => ({ diaSemana: dia, horaInicio, horaFin }))].sort(
         (a, b) =>
           a.diaSemana - b.diaSemana ||
           a.horaInicio.localeCompare(b.horaInicio)
@@ -275,6 +318,12 @@ export default function ConfiguracionDisponibilidad() {
         </MessageBar>
       )}
 
+      {aviso && (
+        <MessageBar intent="warning" layout="multiline">
+          <MessageBarBody>{aviso}</MessageBarBody>
+        </MessageBar>
+      )}
+
 
       <div className={styles.layout}>
         <Surface as="section" aria-labelledby="titulo-nuevo-bloque">
@@ -284,18 +333,18 @@ export default function ConfiguracionDisponibilidad() {
                 Añadir un bloque
               </Subtitle2>
               <Caption1 as="p" className={styles.muted}>
-                Elige el día y el rango de horas.
+                Elige uno o varios días y el rango de horas.
               </Caption1>
             </div>
 
-            <Field label="Día">
-              <div className={styles.days} role="group" aria-label="Día de la semana">
+            <Field label="Días">
+              <div className={styles.days} role="group" aria-label="Días de la semana">
                 {ORDEN_DIAS.map((index) => (
                   <Tooltip key={index} content={DIAS_SEMANA[index]} relationship="label">
                     <ToggleButton
-                      checked={diaSemana === String(index)}
-                      appearance={diaSemana === String(index) ? "primary" : "secondary"}
-                      onClick={() => setDiaSemana(String(index))}
+                      checked={diasSeleccionados.includes(index)}
+                      appearance={diasSeleccionados.includes(index) ? "primary" : "secondary"}
+                      onClick={() => alternarDia(index)}
                       disabled={guardando}
                       className={styles.day}
                     >
@@ -303,6 +352,24 @@ export default function ConfiguracionDisponibilidad() {
                     </ToggleButton>
                   </Tooltip>
                 ))}
+              </div>
+              <div className={styles.presets}>
+                <Button
+                  size="small"
+                  appearance="subtle"
+                  onClick={() => setDiasSeleccionados(ENTRE_SEMANA)}
+                  disabled={guardando}
+                >
+                  Lun a vie
+                </Button>
+                <Button
+                  size="small"
+                  appearance="subtle"
+                  onClick={() => setDiasSeleccionados([])}
+                  disabled={guardando || diasSeleccionados.length === 0}
+                >
+                  Limpiar
+                </Button>
               </div>
             </Field>
 
@@ -325,8 +392,16 @@ export default function ConfiguracionDisponibilidad() {
               </Field>
             </div>
 
-            <Button icon={<Add20Regular />} onClick={agregarBloque} disabled={guardando}>
-              Añadir al {DIAS_SEMANA[Number(diaSemana)].toLowerCase()}
+            <Button
+              icon={<Add20Regular />}
+              onClick={agregarBloque}
+              disabled={guardando || diasSeleccionados.length === 0}
+            >
+              {diasSeleccionados.length === 0
+                ? "Elige al menos un día"
+                : diasSeleccionados.length === 1
+                  ? `Añadir al ${listaDias(diasSeleccionados)}`
+                  : `Añadir a ${diasSeleccionados.length} días`}
             </Button>
           </div>
         </Surface>

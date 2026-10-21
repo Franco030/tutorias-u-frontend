@@ -5,6 +5,9 @@ import { veloHover, veloPresionado } from "../../theme/superficies";
 
 const ITEM_HEIGHT = 40;
 const SECTION_HEADER_HEIGHT = 32;
+// Relleno lateral del menú (spacingHorizontalS): en compacto el elemento mide
+// lo mismo que su alto, un cuadrado de 40 px dentro del riel de 56 px.
+const NAV_PADDING = 8;
 
 const useStyles = makeStyles({
   root: {
@@ -13,7 +16,7 @@ const useStyles = makeStyles({
     flexDirection: "column",
     gap: tokens.spacingVerticalXXS,
     paddingBlock: tokens.spacingVerticalS,
-    paddingInline: tokens.spacingHorizontalS,
+    paddingInline: `${NAV_PADDING}px`,
   },
   // Encabezado de sección con la misma altura en riel y panel: así, al abrir
   // el menú, ningún elemento cambia de posición vertical.
@@ -28,21 +31,34 @@ const useStyles = makeStyles({
     whiteSpace: "nowrap",
     overflow: "hidden",
   },
-  // En el riel el título se sustituye por una línea centrada en ese mismo alto.
+  // En el riel el título cede su lugar a una línea centrada en ese mismo alto;
+  // ambos están siempre montados y se cruzan con un fundido.
+  sectionTitle: {
+    transitionProperty: "opacity",
+    transitionDuration: tokens.durationNormal,
+    transitionDelay: tokens.durationUltraFast,
+    transitionTimingFunction: tokens.curveDecelerateMid,
+  },
   sectionRule: {
     position: "absolute",
-    left: tokens.spacingHorizontalS,
-    right: tokens.spacingHorizontalS,
+    left: `${NAV_PADDING}px`,
+    width: "24px",
     top: "50%",
     height: "1px",
     backgroundColor: tokens.colorNeutralStroke2,
+    opacity: 0,
+    transitionProperty: "opacity",
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMid,
   },
   item: {
+    boxSizing: "border-box",
     position: "relative",
     zIndex: 1,
     display: "flex",
     alignItems: "center",
     gap: tokens.spacingHorizontalM,
+    width: "100%",
     height: `${ITEM_HEIGHT}px`,
     paddingInline: "10px",
     // Casi recto para acompañar las escuadras del indicador.
@@ -53,9 +69,10 @@ const useStyles = makeStyles({
     overflow: "hidden",
     fontSize: tokens.fontSizeBase300,
     lineHeight: tokens.lineHeightBase300,
-    transitionProperty: "background-color, color",
-    transitionDuration: tokens.durationFaster,
-    transitionTimingFunction: tokens.curveEasyEase,
+    // El ancho acompaña la apertura del panel (300 ms, misma curva).
+    transitionProperty: "background-color, color, width",
+    transitionDuration: `${tokens.durationFaster}, ${tokens.durationFaster}, ${tokens.durationSlow}`,
+    transitionTimingFunction: `${tokens.curveEasyEase}, ${tokens.curveEasyEase}, ${tokens.curveDecelerateMin}`,
     "@media (hover: hover)": {
       ":hover": {
         backgroundColor: veloHover,
@@ -69,6 +86,11 @@ const useStyles = makeStyles({
       outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`,
       outlineOffset: "-2px",
     },
+  },
+  // Compacto: cuadrado bajo el ícono; se cierra con la salida del panel (200 ms).
+  itemCompact: {
+    width: `${ITEM_HEIGHT}px`,
+    transitionDuration: `${tokens.durationFaster}, ${tokens.durationFaster}, ${tokens.durationNormal}`,
   },
   // El activo se marca con las escuadras (indicador) y el texto/ícono en azul.
   selected: {
@@ -86,32 +108,41 @@ const useStyles = makeStyles({
   },
   icon: {
     display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     flexShrink: 0,
     fontSize: "20px",
     width: "20px",
     height: "20px",
-    transitionProperty: "transform",
-    transitionDuration: tokens.durationFast,
-    transitionTimingFunction: tokens.curveDecelerateMid,
   },
   iconSelected: {
     color: tokens.colorBrandForeground2,
   },
+  // Al abrir, las etiquetas aparecen un instante después de que el panel
+  // empieza a crecer; al cerrar se desvanecen enseguida, antes del recorte.
   label: {
     overflow: "hidden",
     textOverflow: "ellipsis",
     transitionProperty: "opacity, transform",
     transitionDuration: tokens.durationNormal,
+    transitionDelay: tokens.durationUltraFast,
     transitionTimingFunction: tokens.curveDecelerateMid,
   },
-  hidden: {
+  oculto: {
     opacity: 0,
     transform: "translateX(-4px)",
     pointerEvents: "none",
+    transitionDuration: tokens.durationFaster,
+    transitionDelay: "0s",
+  },
+  visible: {
+    opacity: 1,
   },
   // Indicador de selección: cuatro escuadras de marca en las esquinas del
   // elemento activo (10 px por brazo, 2 px de grosor), sin relleno. Se dibujan
-  // con 8 degradados planos; las esquinas son rectas a propósito.
+  // con 8 degradados planos; las esquinas son rectas a propósito. Son siempre
+  // las mismas cuatro: al cambiar de página se deslizan y al abrir o cerrar el
+  // menú las de la derecha se desplazan junto con el ancho del elemento.
   indicator: {
     position: "absolute",
     top: 0,
@@ -126,22 +157,44 @@ const useStyles = makeStyles({
   },
   indicatorMoving: {
     transitionProperty: "transform, width, opacity",
-    transitionDuration: tokens.durationSlow,
-    transitionTimingFunction: tokens.curveDecelerateMax,
+    transitionDuration: `${tokens.durationSlow}, ${tokens.durationSlow}, ${tokens.durationSlow}`,
+    transitionTimingFunction: `${tokens.curveDecelerateMax}, ${tokens.curveDecelerateMin}, ${tokens.curveDecelerateMax}`,
+  },
+  indicatorMovingCompact: {
+    transitionDuration: `${tokens.durationSlow}, ${tokens.durationNormal}, ${tokens.durationSlow}`,
   },
 });
 
+// Tooltip solo en modo compacto. Siempre montado para que el elemento no se
+// vuelva a crear al abrir o cerrar el menú (y así sus transiciones corran).
+function NavTooltip({ label, compact, children }) {
+  const [abierto, setAbierto] = useState(false);
+  return (
+    <Tooltip
+      content={label}
+      relationship="description"
+      positioning="after"
+      withArrow
+      visible={compact && abierto}
+      onVisibleChange={(_, data) => setAbierto(data.visible)}
+    >
+      {children}
+    </Tooltip>
+  );
+}
+
 /*
  * Navegación al estilo NavigationView de Windows: cuatro escuadras de marca
- * enmarcan el elemento activo y se deslizan al cambiar de página, modo compacto (solo íconos con tooltip) y
- * transición de etiquetas. El elemento activo usa el ícono Filled en azul.
+ * enmarcan el elemento activo y se deslizan al cambiar de página. El mismo
+ * menú sirve de riel compacto (solo íconos, con tooltip) y de panel abierto;
+ * al cambiar de modo, las etiquetas y los títulos se desvanecen en vez de
+ * aparecer o desaparecer de golpe. El elemento activo usa el ícono Filled en azul.
  */
 export function SideNav({ sections, selectedValue, compact = false, onNavigate }) {
   const styles = useStyles();
   const navigate = useNavigate();
-  const rootRef = useRef(null);
   const itemRefs = useRef(new Map());
-  const [indicator, setIndicator] = useState({ x: 0, y: 0, width: 0, visible: false, animate: false });
+  const [indicator, setIndicator] = useState({ x: 0, y: 0, visible: false, animate: false });
 
   useLayoutEffect(() => {
     const medir = () => {
@@ -153,7 +206,6 @@ export function SideNav({ sections, selectedValue, compact = false, onNavigate }
       setIndicator((prev) => ({
         x: item.offsetLeft,
         y: item.offsetTop,
-        width: item.offsetWidth,
         visible: true,
         animate: prev.visible,
       }));
@@ -161,7 +213,7 @@ export function SideNav({ sections, selectedValue, compact = false, onNavigate }
     medir();
     window.addEventListener("resize", medir);
     return () => window.removeEventListener("resize", medir);
-  }, [selectedValue, compact, sections]);
+  }, [selectedValue, sections]);
 
   const handleClick = (event, to) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.button === 1) return;
@@ -171,13 +223,18 @@ export function SideNav({ sections, selectedValue, compact = false, onNavigate }
   };
 
   return (
-    <nav ref={rootRef} className={styles.root} aria-label="Navegación principal">
+    <nav className={styles.root} aria-label="Navegación principal">
       <span
         aria-hidden="true"
-        className={mergeClasses(styles.indicator, indicator.animate && styles.indicatorMoving)}
+        className={mergeClasses(
+          styles.indicator,
+          indicator.animate && styles.indicatorMoving,
+          indicator.animate && compact && styles.indicatorMovingCompact
+        )}
         style={{
           transform: `translate(${indicator.x}px, ${indicator.y}px)`,
-          width: `${indicator.width}px`,
+          // Ancho del elemento: cuadrado en compacto, todo el panel al abrir.
+          width: compact ? `${ITEM_HEIGHT}px` : `calc(100% - ${NAV_PADDING * 2}px)`,
           opacity: indicator.visible ? 1 : 0,
         }}
       />
@@ -185,40 +242,46 @@ export function SideNav({ sections, selectedValue, compact = false, onNavigate }
         <div key={section.title || index} role="group" aria-label={section.title}>
           {index > 0 && (
             <div className={styles.sectionHeader} role={compact || !section.title ? "separator" : undefined}>
-              {section.title && !compact ? (
-                <Caption1 as="span">{section.title}</Caption1>
-              ) : (
-                <span className={styles.sectionRule} aria-hidden="true" />
+              {section.title && (
+                <Caption1
+                  as="span"
+                  className={mergeClasses(styles.sectionTitle, compact ? styles.oculto : styles.visible)}
+                  aria-hidden={compact || undefined}
+                >
+                  {section.title}
+                </Caption1>
               )}
+              <span
+                className={styles.sectionRule}
+                style={{ opacity: compact || !section.title ? 1 : 0 }}
+                aria-hidden="true"
+              />
             </div>
           )}
           {section.items.map(({ to, label, icon: Icon }) => {
             const activo = to === selectedValue;
-            const enlace = (
-              <a
-                href={to}
-                ref={(el) => {
-                  if (el) itemRefs.current.set(to, el);
-                  else itemRefs.current.delete(to);
-                }}
-                className={mergeClasses(styles.item, activo && styles.selected)}
-                aria-current={activo ? "page" : undefined}
-                aria-label={compact ? label : undefined}
-                onClick={(event) => handleClick(event, to)}
-              >
-                <span className={mergeClasses(styles.icon, activo && styles.iconSelected)} aria-hidden="true">
-                  <Icon filled={activo} />
-                </span>
-                <span className={mergeClasses(styles.label, compact && styles.hidden)}>{label}</span>
-              </a>
-            );
-
-            return compact ? (
-              <Tooltip key={to} content={label} relationship="description" positioning="after" withArrow>
-                {enlace}
-              </Tooltip>
-            ) : (
-              <div key={to}>{enlace}</div>
+            return (
+              <div key={to}>
+                <NavTooltip label={label} compact={compact}>
+                  <a
+                    href={to}
+                    ref={(el) => {
+                      if (el) itemRefs.current.set(to, el);
+                      else itemRefs.current.delete(to);
+                    }}
+                    className={mergeClasses(styles.item, compact && styles.itemCompact, activo && styles.selected)}
+                    aria-current={activo ? "page" : undefined}
+                    onClick={(event) => handleClick(event, to)}
+                  >
+                    <span className={mergeClasses(styles.icon, activo && styles.iconSelected)} aria-hidden="true">
+                      <Icon filled={activo} />
+                    </span>
+                    <span className={mergeClasses(styles.label, compact ? styles.oculto : styles.visible)}>
+                      {label}
+                    </span>
+                  </a>
+                </NavTooltip>
+              </div>
             );
           })}
         </div>

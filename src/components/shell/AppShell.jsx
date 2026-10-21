@@ -15,7 +15,6 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { getApiBaseUrl } from "../../services/apiClient";
-import { DarkModeToggle } from "../DarkModeToggle";
 import { Avisos } from "../ui/notificaciones";
 import { BrandMark } from "./BrandMark";
 import { PanelLateralMotion } from "../../theme/navMotion";
@@ -80,22 +79,13 @@ const useStyles = makeStyles({
     display: "flex",
     minHeight: 0,
   },
-  // Riel compacto fijo: nunca cambia de ancho, así el contenido no se mueve.
+  // Hueco fijo del riel: nunca cambia de ancho, así el contenido no se mueve.
   rail: {
     flexShrink: 0,
     width: RAIL_WIDTH,
-    overflowX: "hidden",
-    overflowY: "auto",
-    // Reaparece al terminar de cerrarse el panel, con la misma curva.
-    transitionProperty: "opacity",
-    transitionDuration: tokens.durationNormal,
-    transitionTimingFunction: tokens.curveDecelerateMin,
   },
-  railHidden: {
-    opacity: 0,
-    transitionDuration: tokens.durationFast,
-  },
-  // Panel expandido: capa acrílica sobre el contenido (modo LeftCompact de Windows).
+  // Un solo menú que es riel cerrado y panel abierto: al abrirse se vuelve una
+  // capa acrílica sobre el contenido (modo LeftCompact de Windows).
   pane: {
     position: "absolute",
     top: 0,
@@ -113,15 +103,15 @@ const useStyles = makeStyles({
     visibility: "visible",
     // Entrada (Enter de Fluent): 300 ms, desaceleración suave; los íconos no
     // se mueven y el panel se expande desde el riel, como NavigationView.
-    transitionProperty: "clip-path, box-shadow, visibility",
+    transitionProperty: "clip-path, box-shadow, background-color",
     transitionDuration: tokens.durationSlow,
     transitionTimingFunction: tokens.curveDecelerateMin,
   },
-  // Cerrado se recorta al ancho del riel (que queda debajo) y se oculta.
+  // Cerrado se recorta al ancho del riel y se funde con la base (sin material).
   paneClosed: {
     clipPath: `inset(0 calc(100% - ${RAIL_WIDTH}) 0 0)`,
     boxShadow: "none",
-    visibility: "hidden",
+    backgroundColor: "transparent",
     // Salida (Exit): misma curva suave, más corta (200 ms); empieza a moverse
     // al instante, sin el retraso de un ease-in ni un salto brusco.
     transitionDuration: tokens.durationNormal,
@@ -260,24 +250,18 @@ export function AppShell({ children }) {
 
         <div className={styles.spacer} />
 
-        <DarkModeToggle />
         <UserMenu />
       </header>
 
       <div className={styles.body}>
         {isDesktop && (
           <>
-            <aside className={mergeClasses(styles.rail, menuAbierto && styles.railHidden)} aria-hidden={menuAbierto || undefined}>
-              <SideNav sections={sections} selectedValue={selectedValue} compact />
-            </aside>
-            <div
-              ref={paneRef}
-              className={mergeClasses(styles.pane, !menuAbierto && styles.paneClosed)}
-              inert={!menuAbierto}
-            >
+            <div className={styles.rail} aria-hidden="true" />
+            <div ref={paneRef} className={mergeClasses(styles.pane, !menuAbierto && styles.paneClosed)}>
               <SideNav
                 sections={sections}
                 selectedValue={selectedValue}
+                compact={!menuAbierto}
                 onNavigate={() => setMenuAbierto(false)}
               />
             </div>

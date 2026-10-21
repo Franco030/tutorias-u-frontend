@@ -49,11 +49,17 @@ const useStyles = makeStyles({
     columnGap: tokens.spacingHorizontalM,
     alignItems: "start",
   },
+  // Centrado con el par etiqueta + primera línea del valor (como el ícono de
+  // una SettingsCard de Windows); en notas largas no baja al centro del párrafo.
   icon: {
+    display: "flex",
+    alignItems: "center",
+    height: `calc(${tokens.lineHeightBase200} + ${tokens.lineHeightBase300})`,
     color: tokens.colorNeutralForeground3,
-    marginTop: "2px",
   },
+  // Bloque de 16 px de alto exactos (Text es inline por defecto).
   term: {
+    display: "block",
     color: tokens.colorNeutralForeground3,
   },
   value: {

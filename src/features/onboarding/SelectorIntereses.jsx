@@ -18,17 +18,19 @@ import {
   guardarIntereses,
 } from "../../services/materiaService";
 import { useAuth } from "../../context/AuthContext";
-import DarkModeToggle from "../../components/DarkModeToggle";
 import { BrandMark } from "../../components/shell/BrandMark";
 import { MateriaSelector } from "../../components/ui/MateriaSelector";
 import { PageLoading } from "../../components/ui/Page";
 import { IlustracionAprender } from "../../components/illustrations/Ilustraciones";
 
 const useStyles = makeStyles({
+  // Ventana tipo asistente de Windows: contenido desplazable arriba (con la
+  // ilustración a la derecha) y una barra de comandos fija a todo lo ancho.
   root: {
-    flexGrow: 1,
+    height: "100dvh",
     display: "grid",
     gridTemplateColumns: "minmax(0, 1fr)",
+    gridTemplateRows: "minmax(0, 1fr) auto",
     backgroundColor: tokens.colorNeutralBackground2,
     "@media (min-width: 1100px)": {
       gridTemplateColumns: "minmax(0, 1fr) minmax(360px, 36%)",
@@ -36,18 +38,18 @@ const useStyles = makeStyles({
   },
   column: {
     minWidth: 0,
-    minHeight: "100dvh",
+    minHeight: 0,
+    overflowY: "auto",
     display: "flex",
     flexDirection: "column",
   },
-  // Panel fotográfico fijo a la derecha (solo en pantallas anchas).
+  // Panel ilustrado a la derecha (solo en pantallas anchas); termina sobre la
+  // barra de comandos, no detrás de ella.
   aside: {
     display: "none",
     "@media (min-width: 1100px)": {
       display: "block",
-      position: "sticky",
-      top: 0,
-      height: "100dvh",
+      minHeight: 0,
       boxSizing: "border-box",
       padding: tokens.spacingHorizontalM,
     },
@@ -60,7 +62,7 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground1,
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusXLarge,
-    boxShadow: tokens.shadow16,
+    boxShadow: tokens.shadow8,
   },
   illustration: {
     flexGrow: 1,
@@ -125,13 +127,19 @@ const useStyles = makeStyles({
       padding: tokens.spacingHorizontalL,
     },
   },
+  // Ocupa ambas columnas; sus acciones se alinean con la columna del contenido.
   footer: {
-    position: "sticky",
-    bottom: 0,
+    gridColumn: "1 / -1",
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr)",
     backgroundColor: tokens.colorNeutralBackground1,
     borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    "@media (min-width: 1100px)": {
+      gridTemplateColumns: "minmax(0, 1fr) minmax(360px, 36%)",
+    },
   },
   footerInner: {
+    width: "100%",
     boxSizing: "border-box",
     maxWidth: "800px",
     marginInline: "auto",
@@ -240,62 +248,38 @@ export default function SelectorIntereses() {
       <div className={styles.column}>
         <div className={styles.topBar}>
           <BrandMark />
-          <DarkModeToggle />
         </div>
 
         {cargandoMaterias ? (
           <PageLoading label="Cargando materias…" />
         ) : (
-          <>
-            <main className={styles.main}>
-              <div className={styles.heading}>
-                <Caption1 className={styles.step}>Último paso</Caption1>
-                <Title2 as="h1" className={styles.title}>
-                  ¿Qué materias te interesan?
-                </Title2>
-                <Body1 className={styles.muted}>
-                  Con ellas te recomendamos tutores afines. Puedes cambiarlas cuando quieras desde
-                  “Mis intereses”.
-                </Body1>
-              </div>
-
-              {error && (
-                <MessageBar intent="error" layout="multiline">
-                  <MessageBarBody>{error}</MessageBarBody>
-                </MessageBar>
-              )}
-
-              <div className={styles.surface}>
-                <MateriaSelector
-                  materias={materias}
-                  seleccionadas={seleccionadas}
-                  onToggle={toggleMateria}
-                  disabled={guardando}
-                />
-              </div>
-            </main>
-
-            <div className={styles.footer}>
-              <div className={styles.footerInner}>
-                <Caption1 className={styles.hint}>
-                  {seleccionadas.length === 0
-                    ? "Elige al menos una materia para guardar."
-                    : "Puedes agregar más después."}
-                </Caption1>
-                <Button appearance="subtle" onClick={handleOmitir} disabled={guardando}>
-                  Omitir por ahora
-                </Button>
-                <Button
-                  appearance="primary"
-                  onClick={handleGuardar}
-                  disabled={guardando || seleccionadas.length === 0}
-                  icon={guardando ? <Spinner size="tiny" /> : undefined}
-                >
-                  {guardando ? "Guardando…" : "Guardar y continuar"}
-                </Button>
-              </div>
+          <main className={styles.main}>
+            <div className={styles.heading}>
+              <Caption1 className={styles.step}>Último paso</Caption1>
+              <Title2 as="h1" className={styles.title}>
+                ¿Qué materias te interesan?
+              </Title2>
+              <Body1 className={styles.muted}>
+                Con ellas te recomendamos tutores afines. Puedes cambiarlas cuando quieras desde
+                “Mis intereses”.
+              </Body1>
             </div>
-          </>
+
+            {error && (
+              <MessageBar intent="error" layout="multiline">
+                <MessageBarBody>{error}</MessageBarBody>
+              </MessageBar>
+            )}
+
+            <div className={styles.surface}>
+              <MateriaSelector
+                materias={materias}
+                seleccionadas={seleccionadas}
+                onToggle={toggleMateria}
+                disabled={guardando}
+              />
+            </div>
+          </main>
         )}
       </div>
 
@@ -312,6 +296,29 @@ export default function SelectorIntereses() {
           </div>
         </div>
       </aside>
+
+      {!cargandoMaterias && (
+        <div className={styles.footer}>
+          <div className={styles.footerInner}>
+            <Caption1 className={styles.hint}>
+              {seleccionadas.length === 0
+                ? "Elige al menos una materia para guardar."
+                : "Puedes agregar más después."}
+            </Caption1>
+            <Button appearance="subtle" onClick={handleOmitir} disabled={guardando}>
+              Omitir por ahora
+            </Button>
+            <Button
+              appearance="primary"
+              onClick={handleGuardar}
+              disabled={guardando || seleccionadas.length === 0}
+              icon={guardando ? <Spinner size="tiny" /> : undefined}
+            >
+              {guardando ? "Guardando…" : "Guardar y continuar"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

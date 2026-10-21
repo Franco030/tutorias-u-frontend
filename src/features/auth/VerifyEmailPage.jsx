@@ -11,7 +11,6 @@ import {
 } from '@fluentui/react-components';
 import { CheckmarkCircle48Regular, ErrorCircle48Regular } from '@fluentui/react-icons';
 import authService from './authService';
-import DarkModeToggle from '../../components/DarkModeToggle';
 import { BrandMark } from '../../components/shell/BrandMark';
 import { Surface } from '../../components/ui/Page';
 
@@ -85,7 +84,6 @@ export function VerifyEmailPage() {
     <div className={styles.root}>
       <div className={styles.topBar}>
         <BrandMark />
-        <DarkModeToggle />
       </div>
 
       <main className={styles.main}>

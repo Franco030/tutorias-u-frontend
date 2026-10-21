@@ -1,37 +1,37 @@
 import {
   bundleIcon,
-  BookLetter24Filled,
-  BookLetter24Regular,
-  BookStar24Filled,
-  BookStar24Regular,
-  CalendarClock24Filled,
-  CalendarClock24Regular,
-  CalendarLtr24Filled,
-  CalendarLtr24Regular,
-  DocumentQueue24Filled,
-  DocumentQueue24Regular,
-  HatGraduation24Filled,
-  HatGraduation24Regular,
-  Home24Filled,
-  Home24Regular,
-  PeopleCheckmark24Filled,
-  PeopleCheckmark24Regular,
-  PeopleSearch24Filled,
-  PeopleSearch24Regular,
-  TaskListSquareLtr24Filled,
-  TaskListSquareLtr24Regular,
+  BookLetter20Filled,
+  BookLetter20Regular,
+  BookStar20Filled,
+  BookStar20Regular,
+  CalendarClock20Filled,
+  CalendarClock20Regular,
+  CalendarLtr20Filled,
+  CalendarLtr20Regular,
+  DocumentQueue20Filled,
+  DocumentQueue20Regular,
+  HatGraduation20Filled,
+  HatGraduation20Regular,
+  Home20Filled,
+  Home20Regular,
+  PeopleCheckmark20Filled,
+  PeopleCheckmark20Regular,
+  PeopleSearch20Filled,
+  PeopleSearch20Regular,
+  TaskListSquareLtr20Filled,
+  TaskListSquareLtr20Regular,
 } from "@fluentui/react-icons";
 
-const Inicio = bundleIcon(Home24Filled, Home24Regular);
-const Buscar = bundleIcon(PeopleSearch24Filled, PeopleSearch24Regular);
-const Calendario = bundleIcon(CalendarLtr24Filled, CalendarLtr24Regular);
-const Intereses = bundleIcon(BookStar24Filled, BookStar24Regular);
-const SerTutor = bundleIcon(HatGraduation24Filled, HatGraduation24Regular);
-const Solicitud = bundleIcon(DocumentQueue24Filled, DocumentQueue24Regular);
-const Pendientes = bundleIcon(TaskListSquareLtr24Filled, TaskListSquareLtr24Regular);
-const Materias = bundleIcon(BookLetter24Filled, BookLetter24Regular);
-const Disponibilidad = bundleIcon(CalendarClock24Filled, CalendarClock24Regular);
-const Aprobaciones = bundleIcon(PeopleCheckmark24Filled, PeopleCheckmark24Regular);
+const Inicio = bundleIcon(Home20Filled, Home20Regular);
+const Buscar = bundleIcon(PeopleSearch20Filled, PeopleSearch20Regular);
+const Calendario = bundleIcon(CalendarLtr20Filled, CalendarLtr20Regular);
+const Intereses = bundleIcon(BookStar20Filled, BookStar20Regular);
+const SerTutor = bundleIcon(HatGraduation20Filled, HatGraduation20Regular);
+const Solicitud = bundleIcon(DocumentQueue20Filled, DocumentQueue20Regular);
+const Pendientes = bundleIcon(TaskListSquareLtr20Filled, TaskListSquareLtr20Regular);
+const Materias = bundleIcon(BookLetter20Filled, BookLetter20Regular);
+const Disponibilidad = bundleIcon(CalendarClock20Filled, CalendarClock20Regular);
+const Aprobaciones = bundleIcon(PeopleCheckmark20Filled, PeopleCheckmark20Regular);
 
 const normalizar = (valor) => valor?.trim().toLowerCase() || "";
 

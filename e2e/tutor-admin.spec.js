@@ -36,6 +36,28 @@ test.describe('Tutor', () => {
   });
 });
 
+test.describe('Disponibilidad', () => {
+  test('añade el mismo rango a varios días y omite los que se cruzan', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+    const recibidas = await simularApi(page, {
+      '/api/tutores/11/disponibilidad': [{ diaSemana: 3, horaInicio: '09:30:00', horaFin: '10:30:00' }],
+      'POST /api/tutores/disponibilidad': (request) => request.postDataJSON(),
+    });
+
+    await page.goto('/tutor/disponibilidad');
+    await page.getByRole('button', { name: 'Lun a vie' }).click();
+    await page.getByRole('button', { name: 'Añadir a 5 días' }).click();
+
+    await expect(page.getByText('El miércoles se omitió porque se cruza con otro horario.', { exact: false })).toBeVisible();
+    const semana = page.getByRole('region', { name: 'Tu semana' });
+    await expect(semana.getByRole('button', { name: /^Retirar bloque/ })).toHaveCount(5);
+
+    await page.getByRole('button', { name: 'Guardar disponibilidad' }).click();
+    const guardado = recibidas.find((r) => r.metodo === 'POST' && r.ruta === '/api/tutores/disponibilidad');
+    expect(guardado?.cuerpo.map((b) => b.diaSemana).sort()).toEqual([1, 2, 3, 4, 5]);
+  });
+});
+
 test.describe('Administración', () => {
   test('revisa el comprobante y rechaza una solicitud', async ({ page }) => {
     await iniciarSesion(page, usuarios.admin);
@@ -64,5 +86,17 @@ test.describe('Administración', () => {
     await page.getByRole('button', { name: 'Rechazar solicitud' }).click();
     await expect(page.getByText('No hay solicitudes por revisar')).toBeVisible();
     expect(recibidas.some((r) => r.metodo === 'PUT' && r.ruta === '/api/admin/tutores/40/rechazar')).toBe(true);
+  });
+
+  test('el aspirante ve su aprobación sin volver a iniciar sesión', async ({ page }) => {
+    const aspirante = { ...usuarios.estudiante, estadoAprobacion: 'Pendiente' };
+    await iniciarSesion(page, aspirante);
+    await simularApi(page, {
+      '/api/auth/sesion': { ...usuarios.tutor, ...aspirante, token: 'fake-jwt-nuevo', rol: 'Tutor', estadoAprobacion: 'Aprobado' },
+    });
+
+    await page.goto('/estado-solicitud');
+    await expect(page.getByRole('heading', { name: 'Fuiste aprobado como tutor' })).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem('tutoriasu_token'))).toBe('fake-jwt-nuevo');
   });
 });

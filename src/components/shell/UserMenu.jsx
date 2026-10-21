@@ -7,6 +7,7 @@ import {
   Menu,
   MenuDivider,
   MenuItem,
+  MenuItemSwitch,
   MenuList,
   MenuPopover,
   MenuTrigger,
@@ -14,8 +15,9 @@ import {
   Text,
   tokens,
 } from "@fluentui/react-components";
-import { CalendarLtr20Regular, SignOut20Regular } from "@fluentui/react-icons";
+import { CalendarLtr20Regular, DarkTheme20Regular, SignOut20Regular } from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { getRol } from "./navigation";
 
 const useStyles = makeStyles({
@@ -68,6 +70,7 @@ export function UserMenu() {
   const styles = useStyles();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { isDark, setTheme } = useTheme();
 
   if (!user) return null;
 
@@ -106,12 +109,20 @@ export function UserMenu() {
           </div>
         </div>
         <MenuDivider />
-        <MenuList>
+        {/* El tema vive aquí (y en el acceso), no como botón suelto en cada página. */}
+        <MenuList
+          checkedValues={{ tema: isDark ? ["oscuro"] : [] }}
+          onCheckedValueChange={(_, data) => setTheme(data.checkedItems.includes("oscuro") ? "dark" : "light")}
+        >
           {puedeVerTutorias && (
             <MenuItem icon={<CalendarLtr20Regular />} onClick={() => navigate("/mis-tutorias")}>
               Mis tutorías
             </MenuItem>
           )}
+          <MenuItemSwitch icon={<DarkTheme20Regular />} name="tema" value="oscuro">
+            Tema oscuro
+          </MenuItemSwitch>
+          <MenuDivider />
           <MenuItem icon={<SignOut20Regular />} onClick={logout}>
             Cerrar sesión
           </MenuItem>
