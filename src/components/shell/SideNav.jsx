@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Caption1, makeStyles, mergeClasses, tokens, Tooltip } from "@fluentui/react-components";
+import { veloHover, veloPresionado } from "../../theme/superficies";
 
 const ITEM_HEIGHT = 40;
 const SECTION_HEADER_HEIGHT = 32;
@@ -57,12 +58,12 @@ const useStyles = makeStyles({
     transitionTimingFunction: tokens.curveEasyEase,
     "@media (hover: hover)": {
       ":hover": {
-        backgroundColor: tokens.colorSubtleBackgroundHover,
+        backgroundColor: veloHover,
         color: tokens.colorNeutralForeground1,
       },
     },
     ":active": {
-      backgroundColor: tokens.colorSubtleBackgroundPressed,
+      backgroundColor: veloPresionado,
     },
     ":focus-visible": {
       outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`,

@@ -19,6 +19,7 @@ import { DarkModeToggle } from "../DarkModeToggle";
 import { Avisos } from "../ui/notificaciones";
 import { BrandMark } from "./BrandMark";
 import { PanelLateralMotion } from "../../theme/navMotion";
+import { veloHover, veloPresionado } from "../../theme/superficies";
 import { SideNav } from "./SideNav";
 import { UserMenu } from "./UserMenu";
 import { getActiveNavValue, getNavSections, getRol } from "./navigation";
@@ -36,6 +37,10 @@ const useStyles = makeStyles({
   },
   // El botón de menú (32 px) queda centrado sobre la columna de íconos del riel (56 px).
   titleBar: {
+    // Botones sutiles de la barra (menú, tema, usuario) con el mismo velo
+    // que la navegación: el hover de Fluent no se distingue sobre la base.
+    "& .fui-Button:hover": { backgroundColor: veloHover },
+    "& .fui-Button:hover:active": { backgroundColor: veloPresionado },
     display: "flex",
     alignItems: "center",
     gap: tokens.spacingHorizontalS,
