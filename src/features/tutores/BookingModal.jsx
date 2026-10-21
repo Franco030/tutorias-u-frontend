@@ -21,7 +21,9 @@ import {
   Subtitle1,
   tokens,
 } from "@fluentui/react-components";
+import { Calendar, DayOfWeek } from "@fluentui/react-calendar-compat";
 import { CheckmarkCircle48Regular, Dismiss24Regular } from "@fluentui/react-icons";
+import { calendarioEs } from "../../lib/calendarioEs";
 import { agendarCita, getHorasOcupadas } from "../../services/citaService";
 import { getMaterias } from "../../services/materiaService";
 import { getDisponibilidadTutor } from "../../services/tutorService";
@@ -51,7 +53,24 @@ const crearFechaHoraUtc = (fecha, hora) => `${fecha}T${hora}:00.000Z`;
 
 const useStyles = makeStyles({
   surface: {
-    width: "min(560px, calc(100vw - 32px))",
+    width: "min(720px, calc(100vw - 32px))",
+    maxWidth: "none",
+  },
+  // Calendario y horarios lado a lado; apilados en pantallas angostas.
+  schedule: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr)",
+    gap: tokens.spacingHorizontalXL,
+    "@media (min-width: 680px)": {
+      gridTemplateColumns: "auto minmax(0, 1fr)",
+      alignItems: "start",
+    },
+  },
+  calendar: {
+    display: "inline-block",
+    padding: tokens.spacingHorizontalS,
+    borderRadius: tokens.borderRadiusMedium,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
   form: {
     display: "flex",
@@ -63,7 +82,7 @@ const useStyles = makeStyles({
   },
   slots: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
     columnGap: tokens.spacingHorizontalS,
   },
   slotLabel: {
@@ -299,6 +318,16 @@ export default function BookingModal({
 
   const styles = useStyles();
   const fechasDisponibles = opcionesFecha.filter((opcion) => !opcion.disabled);
+  // El calendario solo deja elegir días con horario: el resto va restringido.
+  const fechasRestringidas = opcionesFecha
+    .filter((opcion) => opcion.disabled)
+    .map((opcion) => new Date(`${opcion.value}T12:00:00`));
+  const limitesFecha = {
+    min: opcionesFecha.length ? new Date(`${opcionesFecha[0].value}T00:00:00`) : new Date(),
+    max: opcionesFecha.length
+      ? new Date(`${opcionesFecha[opcionesFecha.length - 1].value}T23:59:59`)
+      : new Date(),
+  };
   const fechaSeleccionada = opcionesFecha.find((opcion) => opcion.value === fecha);
   const materiaSeleccionada = materias.find((materia) => String(materia.id) === materiaId);
 
@@ -358,46 +387,52 @@ export default function BookingModal({
                     </Dropdown>
                   </Field>
 
-                  <Field
-                    label="Fecha"
-                    required
-                    hint={
-                      !cargando && disponibilidad.length > 0
-                        ? "Solo se muestran los días en que el tutor atiende."
-                        : undefined
-                    }
-                  >
-                    <Dropdown
-                      id="fecha"
-                      placeholder="Selecciona una fecha"
-                      value={fechaSeleccionada?.label || ""}
-                      selectedOptions={fecha ? [fecha] : []}
-                      onOptionSelect={(_, data) => {
-                        const valor = data.optionValue || "";
-                        setFecha(valor);
-                        setBloqueSeleccionado("");
-                        setHorariosOcupados([]);
-                        setErrorOcupados("");
-                        setCargandoOcupados(Boolean(valor));
-                      }}
-                      disabled={cargando || submitting || fechasDisponibles.length === 0}
-                    >
-                      {fechasDisponibles.map((opcion) => (
-                        <Option key={opcion.value} value={opcion.value}>
-                          {opcion.label}
-                        </Option>
-                      ))}
-                    </Dropdown>
-                  </Field>
-
-                  {fecha && (
+                  <div className={styles.schedule}>
                     <Field
-                      label="Horario disponible"
+                      label="Fecha"
+                      required
+                      hint={
+                        !cargando && disponibilidad.length > 0
+                          ? "Solo puedes elegir los días en que el tutor atiende."
+                          : undefined
+                      }
+                    >
+                      <div className={styles.calendar}>
+                        <Calendar
+                          strings={calendarioEs}
+                          firstDayOfWeek={DayOfWeek.Monday}
+                          showGoToToday={false}
+                          isMonthPickerVisible={false}
+                          highlightSelectedMonth
+                          minDate={limitesFecha.min}
+                          maxDate={limitesFecha.max}
+                          restrictedDates={fechasRestringidas}
+                          value={fecha ? new Date(`${fecha}T12:00:00`) : undefined}
+                          onSelectDate={(dia) => {
+                            const valor = dia ? fechaComoClave(dia) : "";
+                            setFecha(valor);
+                            setBloqueSeleccionado("");
+                            setHorariosOcupados([]);
+                            setErrorOcupados("");
+                            setCargandoOcupados(Boolean(valor));
+                          }}
+                        />
+                      </div>
+                    </Field>
+
+                    <Field
+                      label={fechaSeleccionada ? `Horario · ${fechaSeleccionada.label}` : "Horario"}
                       required
                       validationState={errorOcupados ? "error" : "none"}
                       validationMessage={errorOcupados || undefined}
                     >
-                      {cargandoOcupados ? (
+                      {!fecha ? (
+                        <Caption1 className={styles.muted}>
+                          {fechasDisponibles.length === 0 && !cargando
+                            ? "No hay días disponibles en los próximos 90 días."
+                            : "Elige un día en el calendario para ver sus horarios."}
+                        </Caption1>
+                      ) : cargandoOcupados ? (
                         <Spinner size="tiny" label="Verificando compromisos del tutor…" labelPosition="after" />
                       ) : bloquesDisponibles.length === 0 ? (
                         <Caption1 className={styles.muted}>No quedan horarios este día.</Caption1>
@@ -424,7 +459,7 @@ export default function BookingModal({
                         </RadioGroup>
                       )}
                     </Field>
-                  )}
+                  </div>
 
                   {cargando && <Spinner size="tiny" label="Cargando horarios…" labelPosition="after" />}
 

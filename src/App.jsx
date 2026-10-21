@@ -1,21 +1,25 @@
 
 import { Navigate, Outlet, Routes, Route, useLocation, useNavigate } from "react-router-dom";
-import VerifyEmailPage from "./features/auth/VerifyEmailPage";
-import AprobacionTutores from "./features/admin/AprobacionTutores";
 import { useAuth } from "./context/AuthContext";
 import { AppShell } from "./components/shell/AppShell";
+import { PageLoading } from "./components/ui/Page";
 import { AuthView } from "./features/auth/AuthView";
-import { useEffect, useState } from "react";
-import SelectorIntereses from "./features/onboarding/SelectorIntereses";
-import AplicacionTutor from "./features/onboarding/AplicacionTutor";
-import MisIntereses from "./features/dashboard/MisIntereses";
-import EstadoSolicitud from "./features/onboarding/EstadoSolicitud";
-import PerfilTutor from "./features/tutores/PerfilTutor";
-import CatalogoTutores from "./features/tutores/CatalogoTutores";
-import MisMateriasTutor from "./features/tutores/MisMateriasTutor";
-import ConfiguracionDisponibilidad from "./features/tutores/ConfiguracionDisponibilidad";
-import MisTutorias from "./features/tutores/MisTutorias";
-import ProximasTutorias from "./features/tutores/ProximasTutorias";
+import { lazy, Suspense, useEffect, useState } from "react";
+
+// Acceso y panel de inicio van en el paquete principal (primera pantalla);
+// el resto se carga por ruta para aligerar la carga inicial.
+const VerifyEmailPage = lazy(() => import("./features/auth/VerifyEmailPage"));
+const AprobacionTutores = lazy(() => import("./features/admin/AprobacionTutores"));
+const SelectorIntereses = lazy(() => import("./features/onboarding/SelectorIntereses"));
+const AplicacionTutor = lazy(() => import("./features/onboarding/AplicacionTutor"));
+const MisIntereses = lazy(() => import("./features/dashboard/MisIntereses"));
+const EstadoSolicitud = lazy(() => import("./features/onboarding/EstadoSolicitud"));
+const PerfilTutor = lazy(() => import("./features/tutores/PerfilTutor"));
+const CatalogoTutores = lazy(() => import("./features/tutores/CatalogoTutores"));
+const MisMateriasTutor = lazy(() => import("./features/tutores/MisMateriasTutor"));
+const ConfiguracionDisponibilidad = lazy(() => import("./features/tutores/ConfiguracionDisponibilidad"));
+const MisTutorias = lazy(() => import("./features/tutores/MisTutorias"));
+const ProximasTutorias = lazy(() => import("./features/tutores/ProximasTutorias"));
 
 import { DashboardView } from "./features/dashboard/DashboardView";
 
@@ -212,13 +216,17 @@ function ShellLayout() {
 
   return (
     <AppShell>
-      <Outlet />
+      {/* Suspense dentro del shell: la barra y la navegación no parpadean. */}
+      <Suspense fallback={<PageLoading />}>
+        <Outlet />
+      </Suspense>
     </AppShell>
   );
 }
 
 export function App() {
   return (
+    <Suspense fallback={<PageLoading />}>
     <Routes>
       <Route
         path="/verificar-correo"
@@ -303,6 +311,7 @@ export function App() {
         />
       </Route>
     </Routes>
+    </Suspense>
   );
 }
 

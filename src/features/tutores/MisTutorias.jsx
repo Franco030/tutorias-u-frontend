@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNotificar } from "../../hooks/useNotificar";
 import {
   Body1,
   Button,
@@ -20,6 +21,7 @@ import {
 } from "../../services/citaService";
 import ConfirmarTutoriaModal from "./ConfirmarTutoriaModal";
 import { DangerButton } from "../../components/ui/DangerButton";
+import { IlustracionRevision } from "../../components/illustrations/Ilustraciones";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Page, PageHeader } from "../../components/ui/Page";
 import { formatoSesion } from "../../lib/formato";
@@ -30,6 +32,7 @@ import {
 } from "../../components/ui/SessionList";
 
 export default function MisTutorias() {
+  const notificar = useNotificar();
   const [citas, setCitas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -82,6 +85,9 @@ export default function MisTutorias() {
       await aceptarCita(citaSeleccionada.id, data);
 
       removerCita(citaSeleccionada.id);
+      notificar("Tutoría aceptada", {
+        cuerpo: `${citaSeleccionada.materiaNombre} con ${citaSeleccionada.estudianteNombre}. Ya aparece en Mis tutorías.`,
+      });
       setCitaSeleccionada(null);
     } catch (err) {
       console.error("Error al aceptar la cita:", err);
@@ -110,6 +116,10 @@ export default function MisTutorias() {
       await rechazarCita(cita.id);
 
       removerCita(cita.id);
+      notificar("Solicitud rechazada", {
+        cuerpo: `${cita.materiaNombre} con ${cita.estudianteNombre}.`,
+        intent: "info",
+      });
     } catch (err) {
       console.error("Error al rechazar la cita:", err);
 
@@ -141,6 +151,7 @@ export default function MisTutorias() {
         ) : citas.length === 0 ? (
           <EmptyState
             icon={<TaskListSquareLtr24Regular />}
+          ilustracion={<IlustracionRevision estado="aprobado" />}
             title="No tienes solicitudes pendientes"
             description="Cuando un estudiante solicite una tutoría, aparecerá aquí."
           />

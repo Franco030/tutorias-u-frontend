@@ -1,24 +1,43 @@
 import { useEffect, useState } from 'react';
+import { useNotificar } from '../../hooks/useNotificar';
 import {
   Avatar,
+  Body1,
   Button,
   Caption1,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
   makeStyles,
   MessageBar,
   MessageBarActions,
   MessageBarBody,
   Spinner,
+  Tag,
   Text,
   tokens,
 } from '@fluentui/react-components';
-import { ArrowClockwise20Regular, Checkmark20Regular, PeopleCheckmark24Regular } from '@fluentui/react-icons';
+import {
+  ArrowClockwise20Regular,
+  Checkmark20Regular,
+  DocumentSearch20Regular,
+  PeopleCheckmark24Regular,
+} from '@fluentui/react-icons';
 import {
   aprobarTutor,
   getSolicitudesPendientes,
+  rechazarTutor,
 } from '../../services/adminService';
+import { DangerButton } from '../../components/ui/DangerButton';
+import { IlustracionRevision } from '../../components/illustrations/Ilustraciones';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Page, PageHeader, PageSection, Surface } from '../../components/ui/Page';
 import { SessionListSkeleton } from '../../components/ui/SessionList';
+
+const formatoFecha = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' });
 
 const useStyles = makeStyles({
   list: {
@@ -56,9 +75,19 @@ const useStyles = makeStyles({
   },
   action: {
     gridColumn: '1 / -1',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: tokens.spacingHorizontalS,
     '@media (min-width: 640px)': {
       gridColumn: 'auto',
+      justifyContent: 'flex-end',
     },
+  },
+  tags: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: tokens.spacingHorizontalXS,
+    marginTop: tokens.spacingVerticalXS,
   },
 });
 
@@ -71,12 +100,14 @@ function getErrorMessage(error) {
 }
 
 export default function AprobacionTutores() {
+  const notificar = useNotificar();
   const styles = useStyles();
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState(null);
+  // Rechazo con confirmación: la solicitud sale de la lista y no se recupera aquí.
+  const [porRechazar, setPorRechazar] = useState(null);
   const [error, setError] = useState(null);
-  const [feedback, setFeedback] = useState(null);
 
   const cargarSolicitudes = async () => {
     setLoading(true);
@@ -122,16 +153,36 @@ export default function AprobacionTutores() {
   const handleAprobar = async (id) => {
     setApprovingId(id);
     setError(null);
-    setFeedback(null);
 
     try {
       await aprobarTutor(id);
+      const aprobado = solicitudes.find((solicitud) => solicitud.id === id);
       setSolicitudes((current) => current.filter((solicitud) => solicitud.id !== id));
-      setFeedback('Tutor aprobado. Ya puede configurar sus materias y horarios.');
+      notificar('Tutor aprobado', {
+        cuerpo: `${aprobado?.nombre ?? 'El tutor'} ya puede configurar sus materias y horarios.`,
+      });
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
       setApprovingId(null);
+    }
+  };
+
+  const confirmarRechazo = async () => {
+    const solicitud = porRechazar;
+    if (!solicitud) return;
+    setApprovingId(solicitud.id);
+    setError(null);
+
+    try {
+      await rechazarTutor(solicitud.id);
+      setSolicitudes((current) => current.filter((s) => s.id !== solicitud.id));
+      notificar('Solicitud rechazada', { cuerpo: solicitud.nombre, intent: 'info' });
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setApprovingId(null);
+      setPorRechazar(null);
     }
   };
 
@@ -152,11 +203,6 @@ export default function AprobacionTutores() {
         }
       />
 
-      {feedback && (
-        <MessageBar intent="success" layout="multiline">
-          <MessageBarBody>{feedback}</MessageBarBody>
-        </MessageBar>
-      )}
 
       {error && (
         <MessageBar intent="error" layout="multiline">
@@ -176,6 +222,7 @@ export default function AprobacionTutores() {
         ) : solicitudes.length === 0 ? (
           <EmptyState
             icon={<PeopleCheckmark24Regular />}
+            ilustracion={<IlustracionRevision estado="aprobado" />}
             title="No hay solicitudes por revisar"
             description="Cuando un estudiante se postule como tutor, su solicitud aparecerá aquí."
           />
@@ -192,19 +239,53 @@ export default function AprobacionTutores() {
                         {solicitud.nombre}
                       </Text>
                       <Caption1 className={styles.truncate}>
-                        <span className={styles.email}>{solicitud.correo}</span>
+                        <span className={styles.email}>
+                          {solicitud.correo}
+                          {solicitud.fechaSolicitud &&
+                            ` · ${formatoFecha.format(new Date(solicitud.fechaSolicitud))}`}
+                        </span>
                       </Caption1>
+                      {solicitud.materias?.length > 0 && (
+                        <div className={styles.tags} aria-label="Materias solicitadas">
+                          {solicitud.materias.map((materia) => (
+                            <Tag key={materia} size="small" appearance="outline" shape="rounded">
+                              {materia}
+                            </Tag>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <Button
-                      appearance="primary"
-                      className={styles.action}
-                      onClick={() => handleAprobar(solicitud.id)}
-                      disabled={approvingId !== null}
-                      icon={aprobando ? <Spinner size="tiny" /> : <Checkmark20Regular />}
-                      aria-label={`Aprobar a ${solicitud.nombre}`}
-                    >
-                      {aprobando ? 'Aprobando…' : 'Aprobar'}
-                    </Button>
+                    <div className={styles.action}>
+                      {solicitud.urlCredencial && (
+                        <Button
+                          as="a"
+                          href={solicitud.urlCredencial}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          appearance="subtle"
+                          icon={<DocumentSearch20Regular />}
+                        >
+                          Ver comprobante
+                        </Button>
+                      )}
+                      <DangerButton
+                        variant="outline"
+                        onClick={() => setPorRechazar(solicitud)}
+                        disabled={approvingId !== null}
+                        aria-label={`Rechazar a ${solicitud.nombre}`}
+                      >
+                        Rechazar
+                      </DangerButton>
+                      <Button
+                        appearance="primary"
+                        onClick={() => handleAprobar(solicitud.id)}
+                        disabled={approvingId !== null}
+                        icon={aprobando ? <Spinner size="tiny" /> : <Checkmark20Regular />}
+                        aria-label={`Aprobar a ${solicitud.nombre}`}
+                      >
+                        {aprobando ? 'Aprobando…' : 'Aprobar'}
+                      </Button>
+                    </div>
                   </li>
                 );
               })}
@@ -212,6 +293,37 @@ export default function AprobacionTutores() {
           </Surface>
         )}
       </PageSection>
+
+      <Dialog
+        open={Boolean(porRechazar)}
+        onOpenChange={(_, data) => {
+          if (!data.open && approvingId === null) setPorRechazar(null);
+        }}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>¿Rechazar esta solicitud?</DialogTitle>
+            <DialogContent>
+              <Body1>
+                {porRechazar &&
+                  `${porRechazar.nombre} verá su solicitud como rechazada. Podrá volver a postularse más adelante.`}
+              </Body1>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setPorRechazar(null)} disabled={approvingId !== null}>
+                Volver
+              </Button>
+              <DangerButton
+                onClick={confirmarRechazo}
+                disabled={approvingId !== null}
+                icon={approvingId !== null ? <Spinner size="tiny" /> : undefined}
+              >
+                {approvingId !== null ? 'Rechazando…' : 'Rechazar solicitud'}
+              </DangerButton>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
     </Page>
   );
 }

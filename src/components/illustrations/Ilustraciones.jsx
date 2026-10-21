@@ -243,3 +243,39 @@ export function IlustracionRevision({ className, label, ajuste, estado = "pendie
     </Base>
   );
 }
+
+/* Calendario: una hoja de calendario con una cita marcada y un reloj. */
+export function IlustracionCalendario({ className, label, ajuste }) {
+  const s = useStyles();
+  const id = `il-${limpiarId(useId())}`;
+
+  return (
+    <Base id={id} className={className} label={label} ajuste={ajuste}>
+      <ellipse cx="240" cy="226" rx="128" ry="22" className={s.floor} />
+      <Sombra id={id} cx={236} cy={222} rx={96} ry={14} />
+      <g transform="rotate(-4 236 150)">
+        {/* Hoja del calendario */}
+        <rect x="160" y="80" width="152" height="140" rx="14" className={s.paper} />
+        <rect x="160" y="80" width="152" height="140" rx="14" fill="none" stroke="currentColor" opacity="0.1" />
+        {/* Encabezado de marca y anillas */}
+        <Volumen id={id} tono="brand">
+          <path d="M174 80 H298 A14 14 0 0 1 312 94 V112 H160 V94 A14 14 0 0 1 174 80 Z" />
+        </Volumen>
+        {[196, 276].map((x) => (
+          <rect key={x} x={x - 4} y="70" width="8" height="22" rx="4" className={s.lavender} />
+        ))}
+        {/* Cuadrícula de días */}
+        {Array.from({ length: 12 }, (_, i) => (
+          <circle key={i} cx={184 + (i % 4) * 34} cy={134 + Math.floor(i / 4) * 26} r="5" className={s.line} />
+        ))}
+        {/* Día con cita */}
+        <Esfera id={id} cx={252} cy={160} r={11} tono="teal" sombra={false} />
+      </g>
+      {/* Reloj */}
+      <Esfera id={id} cx={330} cy={192} r={28} tono="marigold" />
+      <path d="M330 178 V192 L340 200" fill="none" className={s.whiteStroke} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+      <Esfera id={id} cx={140} cy={98} r={9} tono="berry" sombra={false} />
+      <Esfera id={id} cx={368} cy={90} r={6} tono="teal" sombra={false} />
+    </Base>
+  );
+}

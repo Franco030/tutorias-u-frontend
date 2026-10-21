@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNotificar } from "../../hooks/useNotificar";
 import {
+  Button,
   makeStyles,
   MessageBar,
   MessageBarBody,
@@ -7,12 +9,13 @@ import {
   TabList,
   tokens,
 } from "@fluentui/react-components";
-import { CalendarEmpty24Regular, History24Regular } from "@fluentui/react-icons";
+import { CalendarEmpty24Regular, History24Regular, Video20Regular } from "@fluentui/react-icons";
 import {
   getHistorialTutorias,
   getProximasTutorias,
 } from "../../services/citaService";
 import TutoriaDetallesModal from "./TutoriaDetallesModal";
+import { IlustracionCalendario } from "../../components/illustrations/Ilustraciones";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { EstadoBadge } from "../../components/ui/EstadoBadge";
 import { Page, PageHeader } from "../../components/ui/Page";
@@ -30,6 +33,7 @@ const useStyles = makeStyles({
 });
 
 export default function ProximasTutorias() {
+  const notificar = useNotificar();
   const styles = useStyles();
   const [tutorias, setTutorias] = useState([]);
   const [historial, setHistorial] = useState([]);
@@ -77,6 +81,7 @@ export default function ProximasTutorias() {
   };
 
   const handleCancelled = (tutoria) => {
+    notificar("Tutoría cancelada", { cuerpo: tutoria.materia, intent: "info" });
     setTutorias((actuales) =>
       actuales.filter((actual) => actual.id !== tutoria.id)
     );
@@ -115,6 +120,7 @@ export default function ProximasTutorias() {
       ) : listaActual.length === 0 ? (
         <EmptyState
           icon={esProximas ? <CalendarEmpty24Regular /> : <History24Regular />}
+          ilustracion={<IlustracionCalendario />}
           title={esProximas ? "No tienes próximas tutorías" : "Tu historial está vacío"}
           description={
             esProximas
@@ -126,6 +132,35 @@ export default function ProximasTutorias() {
         <SessionList label={esProximas ? "Próximas sesiones" : "Historial de sesiones"}>
           {listaActual.map((tutoria) => {
             const fecha = new Date(tutoria.fechaHoraInicio);
+            // Con enlace de reunión, la fila ofrece "Unirse" directo (sin abrir detalles).
+            const puedeUnirse =
+              esProximas && Boolean(tutoria.linkReunion) && (tutoria.estado || "Aceptada") === "Aceptada";
+            if (puedeUnirse) {
+              return (
+                <SessionRow
+                  key={tutoria.id}
+                  fecha={fecha}
+                  title={tutoria.materia}
+                  meta={`${formatoSesion.format(fecha)} · con ${tutoria.rolOpuestoNombre}`}
+                  actions={
+                    <>
+                      <Button onClick={() => abrirDetalles(tutoria)}>Detalles</Button>
+                      <Button
+                        as="a"
+                        href={tutoria.linkReunion}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        appearance="primary"
+                        icon={<Video20Regular />}
+                        aria-label={`Unirse a ${tutoria.materia} con ${tutoria.rolOpuestoNombre}`}
+                      >
+                        Unirse
+                      </Button>
+                    </>
+                  }
+                />
+              );
+            }
             return (
               <SessionRow
                 key={tutoria.id}

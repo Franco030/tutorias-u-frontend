@@ -26,7 +26,7 @@ import { useAuth } from "../../context/AuthContext";
 import { getCitasPendientes, getProximasTutorias } from "../../services/citaService";
 import { getTutoresRecomendados } from "../../services/tutorService";
 import TutorCard from "../../components/TutorCard";
-import { IlustracionComunidad } from "../../components/illustrations/Ilustraciones";
+import { IlustracionCalendario, IlustracionComunidad, IlustracionRevision } from "../../components/illustrations/Ilustraciones";
 import { Page, PageHeader, PageSection } from "../../components/ui/Page";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { EstadoBadge } from "../../components/ui/EstadoBadge";
@@ -194,6 +194,7 @@ function ProximasSesiones({ to = "/mis-tutorias" }) {
       ) : filas.length === 0 ? (
         <EmptyState
           icon={<CalendarEmpty24Regular />}
+          ilustracion={<IlustracionCalendario />}
           title="No tienes sesiones programadas"
           description="Cuando una tutoría sea aceptada aparecerá aquí con su fecha y enlace de reunión."
         />
@@ -243,6 +244,7 @@ function SolicitudesPendientes() {
       ) : filas.length === 0 ? (
         <EmptyState
           icon={<TaskListSquareLtr24Regular />}
+          ilustracion={<IlustracionRevision estado="aprobado" />}
           title="No hay solicitudes pendientes"
           description="Cuando un estudiante pida una tutoría contigo, podrás aceptarla o rechazarla desde aquí."
         />
@@ -293,6 +295,7 @@ function TutoresRecomendados() {
       ) : datos.length === 0 ? (
         <EmptyState
           icon={<PeopleSearch24Regular />}
+          ilustracion={<IlustracionComunidad />}
           title="Aún no hay recomendaciones"
           description="Las recomendaciones salen de las materias que marcas como interés. Agrega algunas o explora el catálogo completo."
           action={
@@ -323,7 +326,8 @@ function PanelEstudiante({ user }) {
         title="Panel de control"
         description="Tus próximas sesiones y tutores para las materias que te interesan."
         actions={
-          <Button appearance="primary" icon={<PeopleSearch24Regular />} onClick={() => navigate("/tutores")}>
+          <Button appearance="primary" icon={<PeopleSearch24Regular />}
+          ilustracion={<IlustracionComunidad />} onClick={() => navigate("/tutores")}>
             Buscar tutores
           </Button>
         }

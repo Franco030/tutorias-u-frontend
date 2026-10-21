@@ -10,13 +10,16 @@ import {
   Button,
   Caption1,
   makeStyles,
+  Spinner,
   Tag,
   Title2,
   tokens,
 } from "@fluentui/react-components";
 import { CalendarAdd20Regular, PersonQuestionMark24Regular, Star16Filled } from "@fluentui/react-icons";
-import { getTutorById } from "../../services/tutorService";
+import { getDisponibilidadTutor, getTutorById } from "../../services/tutorService";
+import { HorarioSemanal } from "../../components/ui/HorarioSemanal";
 import BookingModal from "./BookingModal";
+import { IlustracionComunidad } from "../../components/illustrations/Ilustraciones";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Page, PageLoading, PageSection, Surface } from "../../components/ui/Page";
 
@@ -77,6 +80,16 @@ const useStyles = makeStyles({
       width: "auto",
     },
   },
+  details: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr)",
+    gap: tokens.spacingVerticalXXL,
+    alignItems: "start",
+    "@media (min-width: 1024px)": {
+      gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+      columnGap: tokens.spacingHorizontalXXL,
+    },
+  },
   tags: {
     display: "flex",
     flexWrap: "wrap",
@@ -96,6 +109,28 @@ export default function PerfilTutor() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bookingOpen, setBookingOpen] = useState(false);
+  // Horario semanal: carga aparte para no bloquear el perfil si falla.
+  const [horario, setHorario] = useState({ bloques: [], cargando: true, error: false });
+
+  useEffect(() => {
+    let activo = true;
+    getDisponibilidadTutor(id)
+      .then((data) => {
+        if (!activo) return;
+        const bloques = (Array.isArray(data) ? data : []).map((bloque) => ({
+          diaSemana: Number(bloque.diaSemana ?? bloque.DiaSemana),
+          horaInicio: String(bloque.horaInicio ?? bloque.HoraInicio).slice(0, 5),
+          horaFin: String(bloque.horaFin ?? bloque.HoraFin).slice(0, 5),
+        }));
+        setHorario({ bloques, cargando: false, error: false });
+      })
+      .catch(() => {
+        if (activo) setHorario({ bloques: [], cargando: false, error: true });
+      });
+    return () => {
+      activo = false;
+    };
+  }, [id]);
 
   useEffect(() => {
     const fetchTutor = async () => {
@@ -134,6 +169,7 @@ export default function PerfilTutor() {
       <Page narrow>
         <EmptyState
           icon={<PersonQuestionMark24Regular />}
+          ilustracion={<IlustracionComunidad />}
           title="Perfil no encontrado"
           description={error || "El perfil del tutor no fue encontrado o no está disponible."}
           action={
@@ -193,19 +229,35 @@ export default function PerfilTutor() {
           </div>
         </Surface>
 
-        <PageSection id="materias" title="Materias que enseña">
-          {tutor.materias && tutor.materias.length > 0 ? (
-            <div className={styles.tags}>
-              {tutor.materias.map((materia) => (
-                <Tag key={materia} appearance="outline" shape="rounded">
-                  {materia}
-                </Tag>
-              ))}
-            </div>
-          ) : (
-            <Body1 className={styles.muted}>No hay materias registradas.</Body1>
-          )}
-        </PageSection>
+        <div className={styles.details}>
+          <PageSection id="materias" title="Materias que enseña">
+            {tutor.materias && tutor.materias.length > 0 ? (
+              <div className={styles.tags}>
+                {tutor.materias.map((materia) => (
+                  <Tag key={materia} appearance="outline" shape="rounded">
+                    {materia}
+                  </Tag>
+                ))}
+              </div>
+            ) : (
+              <Body1 className={styles.muted}>No hay materias registradas.</Body1>
+            )}
+          </PageSection>
+
+          <PageSection id="horario" title="Horario semanal">
+            <Surface>
+              {horario.cargando ? (
+                <Spinner size="tiny" label="Cargando horario…" labelPosition="after" />
+              ) : horario.error ? (
+                <Body1 className={styles.muted}>No se pudo cargar el horario. Puedes verlo al agendar.</Body1>
+              ) : horario.bloques.length === 0 ? (
+                <Body1 className={styles.muted}>Este tutor aún no publica horarios.</Body1>
+              ) : (
+                <HorarioSemanal bloques={horario.bloques} />
+              )}
+            </Surface>
+          </PageSection>
+        </div>
       </Page>
 
       <BookingModal

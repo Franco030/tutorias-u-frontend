@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNotificar } from "../../hooks/useNotificar";
 import {
   Badge,
   Body1,
@@ -137,6 +138,7 @@ const useStyles = makeStyles({
 });
 
 export default function ConfiguracionDisponibilidad() {
+  const notificar = useNotificar();
   const styles = useStyles();
   const { user } = useAuth();
   const [bloques, setBloques] = useState([]);
@@ -147,7 +149,6 @@ export default function ConfiguracionDisponibilidad() {
   const [cargaCompleta, setCargaCompleta] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
-  const [mensajeExito, setMensajeExito] = useState("");
   const [cambiosSinGuardar, setCambiosSinGuardar] = useState(false);
 
   useEffect(() => {
@@ -185,7 +186,6 @@ export default function ConfiguracionDisponibilidad() {
 
   const agregarBloque = () => {
     setError("");
-    setMensajeExito("");
 
     if (!FORMATO_HORA.test(horaInicio) || !FORMATO_HORA.test(horaFin)) {
       setError("Ingresa una hora de inicio y fin válidas.");
@@ -222,13 +222,11 @@ export default function ConfiguracionDisponibilidad() {
 
   const retirarBloque = (indice) => {
     setBloques((actuales) => actuales.filter((_, i) => i !== indice));
-    setMensajeExito("");
     setCambiosSinGuardar(true);
   };
 
   const handleGuardar = async () => {
     setError("");
-    setMensajeExito("");
 
     try {
       setGuardando(true);
@@ -236,7 +234,7 @@ export default function ConfiguracionDisponibilidad() {
       setBloques(
         (Array.isArray(guardados) ? guardados : []).map(normalizarBloque)
       );
-      setMensajeExito("Tu disponibilidad se guardó. Los estudiantes ya pueden reservar estos horarios.");
+      notificar("Disponibilidad guardada", { cuerpo: "Los estudiantes ya pueden reservar estos horarios." });
       setCambiosSinGuardar(false);
     } catch (err) {
       console.error("Error al guardar disponibilidad:", err);
@@ -277,11 +275,6 @@ export default function ConfiguracionDisponibilidad() {
         </MessageBar>
       )}
 
-      {mensajeExito && (
-        <MessageBar intent="success" layout="multiline">
-          <MessageBarBody>{mensajeExito}</MessageBarBody>
-        </MessageBar>
-      )}
 
       <div className={styles.layout}>
         <Surface as="section" aria-labelledby="titulo-nuevo-bloque">

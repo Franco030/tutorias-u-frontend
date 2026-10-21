@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNotificar } from "../../hooks/useNotificar";
 import { MessageBar, MessageBarBody } from "@fluentui/react-components";
 import { getMaterias, getMisIntereses, guardarIntereses } from "../../services/materiaService";
 import { MateriaSelector } from "../../components/ui/MateriaSelector";
@@ -6,6 +7,7 @@ import { Page, PageHeader, PageLoading, Surface } from "../../components/ui/Page
 import { SelectionLayout, SelectionPanel } from "../../components/ui/SelectionPanel";
 
 export default function MisIntereses() {
+  const notificar = useNotificar();
   const [materias, setMaterias] = useState([]);
   const [seleccionadas, setSeleccionadas] = useState([]);
   // Selección guardada en el servidor, para saber si hay cambios pendientes.
@@ -14,7 +16,6 @@ export default function MisIntereses() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
-  const [mensajeExito, setMensajeExito] = useState("");
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -47,7 +48,6 @@ export default function MisIntereses() {
   }, []);
 
   const toggleMateria = (id) => {
-    setMensajeExito("");
     setSeleccionadas((prev) =>
       prev.includes(id)
         ? prev.filter((materiaId) => materiaId !== id)
@@ -59,13 +59,11 @@ export default function MisIntereses() {
     try {
       setGuardando(true);
       setError("");
-      setMensajeExito("");
 
       await guardarIntereses(seleccionadas);
-      setMensajeExito("Tus intereses se actualizaron. Las recomendaciones del inicio ya los usan.");
+      notificar("Intereses guardados", { cuerpo: "Las recomendaciones del inicio ya los usan." });
 
       setGuardadas(seleccionadas);
-      setTimeout(() => setMensajeExito(""), 3000);
     } catch (err) {
       console.error("Error al guardar intereses:", err);
       setError("No se pudieron guardar tus materias. Intenta nuevamente.");
@@ -95,11 +93,6 @@ export default function MisIntereses() {
         </MessageBar>
       )}
 
-      {mensajeExito && (
-        <MessageBar intent="success" layout="multiline">
-          <MessageBarBody>{mensajeExito}</MessageBarBody>
-        </MessageBar>
-      )}
 
       <SelectionLayout
         panel={

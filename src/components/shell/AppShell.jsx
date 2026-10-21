@@ -8,6 +8,7 @@ import {
   makeStyles,
   mergeClasses,
   OverlayDrawer,
+  SearchBox,
   tokens,
   Tooltip,
 } from "@fluentui/react-components";
@@ -16,10 +17,11 @@ import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { getApiBaseUrl } from "../../services/apiClient";
 import { keyframes } from "../../theme/motion";
 import { DarkModeToggle } from "../DarkModeToggle";
+import { Avisos } from "../ui/notificaciones";
 import { BrandMark } from "./BrandMark";
 import { SideNav } from "./SideNav";
 import { UserMenu } from "./UserMenu";
-import { getActiveNavValue, getNavSections } from "./navigation";
+import { getActiveNavValue, getNavSections, getRol } from "./navigation";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
 const RAIL_WIDTH = "56px";
@@ -59,6 +61,15 @@ const useStyles = makeStyles({
     },
   },
   spacer: { flexGrow: 1 },
+  // Búsqueda global (estudiantes): centrada en la barra, oculta en móvil.
+  search: {
+    display: "none",
+    "@media (min-width: 768px)": {
+      display: "flex",
+      width: "min(420px, 36vw)",
+      maxWidth: "none",
+    },
+  },
   body: {
     position: "relative",
     display: "flex",
@@ -158,6 +169,13 @@ export function AppShell({ children }) {
   const hamburgerRef = useRef(null);
 
   const isAzureProd = getApiBaseUrl().includes("azurewebsites.net");
+  const esEstudiante = getRol(user) === "estudiante";
+  const [busqueda, setBusqueda] = useState("");
+
+  const buscar = (texto) => {
+    const termino = texto.trim();
+    navigate(termino ? `/tutores?q=${encodeURIComponent(termino)}` : "/tutores");
+  };
   const sections = getNavSections(user);
   const selectedValue = getActiveNavValue(sections, pathname);
 
@@ -216,6 +234,24 @@ export function AppShell({ children }) {
 
         <div className={styles.spacer} />
 
+        {esEstudiante && (
+          <SearchBox
+            className={styles.search}
+            placeholder="Buscar tutores o materias"
+            aria-label="Buscar tutores o materias"
+            value={busqueda}
+            onChange={(_, data) => setBusqueda(data.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                buscar(busqueda);
+                setBusqueda("");
+              }
+            }}
+          />
+        )}
+
+        <div className={styles.spacer} />
+
         <DarkModeToggle />
         <UserMenu />
       </header>
@@ -246,6 +282,8 @@ export function AppShell({ children }) {
           </div>
         </div>
       </div>
+
+      <Avisos />
 
       {!isDesktop && (
         <OverlayDrawer

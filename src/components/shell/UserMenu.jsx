@@ -84,7 +84,6 @@ export function UserMenu() {
           appearance="subtle"
           className={styles.trigger}
           title="Menú de usuario"
-          aria-label={`Menú de usuario: ${user.nombre}`}
         >
           <span className={styles.triggerText}>
             <Text size={200} className={styles.name}>

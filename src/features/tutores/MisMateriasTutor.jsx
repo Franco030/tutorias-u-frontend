@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNotificar } from "../../hooks/useNotificar";
 import { MessageBar, MessageBarBody } from "@fluentui/react-components";
 import { getMaterias } from "../../services/materiaService";
 import { getTutorById, updateMisMaterias } from "../../services/tutorService";
@@ -15,6 +16,7 @@ const normalizarTexto = (texto = "") => {
 };
 
 export default function MisMateriasTutor() {
+  const notificar = useNotificar();
   const { user } = useAuth();
 
   const [materias, setMaterias] = useState([]);
@@ -25,7 +27,6 @@ export default function MisMateriasTutor() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
-  const [mensajeExito, setMensajeExito] = useState("");
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -65,7 +66,6 @@ export default function MisMateriasTutor() {
   }, [user]);
 
   const toggleMateria = (id) => {
-    setMensajeExito("");
     setSeleccionadas((prev) =>
       prev.includes(id)
         ? prev.filter((materiaId) => materiaId !== id)
@@ -77,13 +77,11 @@ export default function MisMateriasTutor() {
     try {
       setGuardando(true);
       setError("");
-      setMensajeExito("");
 
       await updateMisMaterias(seleccionadas);
-      setMensajeExito("Tus materias se actualizaron. Los estudiantes ya las ven en tu perfil.");
+      notificar("Materias guardadas", { cuerpo: "Los estudiantes ya las ven en tu perfil." });
 
       setGuardadas(seleccionadas);
-      setTimeout(() => setMensajeExito(""), 3000);
     } catch (err) {
       console.error("Error al guardar materias:", err);
       setError("No se pudieron guardar tus materias. Intenta nuevamente.");
@@ -113,11 +111,6 @@ export default function MisMateriasTutor() {
         </MessageBar>
       )}
 
-      {mensajeExito && (
-        <MessageBar intent="success" layout="multiline">
-          <MessageBarBody>{mensajeExito}</MessageBarBody>
-        </MessageBar>
-      )}
 
       <SelectionLayout
         panel={

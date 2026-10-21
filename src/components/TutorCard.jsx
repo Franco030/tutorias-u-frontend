@@ -126,7 +126,7 @@ export default function TutorCard({ tutor, to, onClick }) {
 
   if (to) {
     return (
-      <Link to={to} className={styles.card} aria-label={`Ver perfil de ${tutor.nombre}`}>
+      <Link to={to} className={styles.card}>
         {contenido}
       </Link>
     );
@@ -137,7 +137,6 @@ export default function TutorCard({ tutor, to, onClick }) {
       type="button"
       onClick={onClick}
       className={styles.card}
-      aria-label={`Ver perfil de ${tutor.nombre}`}
     >
       {contenido}
     </button>
