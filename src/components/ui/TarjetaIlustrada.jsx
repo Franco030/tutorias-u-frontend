@@ -1,3 +1,4 @@
+import { cloneElement, isValidElement } from "react";
 import { Body1, makeStyles, Subtitle2, tokens } from "@fluentui/react-components";
 
 const useStyles = makeStyles({
@@ -53,7 +54,10 @@ export function TarjetaIlustrada({ ilustracion, etiqueta, title, description, ac
   const styles = useStyles();
   return (
     <div className={styles.root}>
-      <div className={styles.art}>{ilustracion}</div>
+      {/* Encuadre de tarjeta: cada ilustración ocupa el panel por igual. */}
+      <div className={styles.art}>
+        {isValidElement(ilustracion) ? cloneElement(ilustracion, { ajuste: "tarjeta" }) : ilustracion}
+      </div>
       <div className={styles.text}>
         {etiqueta}
         <Subtitle2 as="p" className={styles.title}>

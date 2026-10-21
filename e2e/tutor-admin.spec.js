@@ -37,6 +37,22 @@ test.describe('Tutor', () => {
 });
 
 test.describe('Disponibilidad', () => {
+  test('elige la hora en la lista o escribiéndola', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+    await simularApi(page, { '/api/tutores/11/disponibilidad': [] });
+
+    await page.goto('/tutor/disponibilidad');
+    await page.getByRole('combobox', { name: 'Inicio' }).click();
+    await page.getByRole('option', { name: '11:00' }).click();
+    const fin = page.getByRole('combobox', { name: 'Fin' });
+    await fin.fill('12:15');
+    await fin.press('Enter');
+    await page.getByRole('button', { name: 'Añadir al lunes' }).click();
+
+    const semana = page.getByRole('region', { name: 'Tu semana' });
+    await expect(semana.getByText('11:00 – 12:15')).toBeVisible();
+  });
+
   test('añade el mismo rango a varios días y omite los que se cruzan', async ({ page }) => {
     await iniciarSesion(page, usuarios.tutor);
     const recibidas = await simularApi(page, {
