@@ -156,11 +156,15 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   fundido rápido** (`pageFade`, 200 ms, solo opacidad) del contenido de
   `Page`. Nada se desplaza, escala ni entra escalonado; las fotos y el
   acceso usan ese mismo fundido, sin animación propia.
-- Cargas · `PageLoading` aparece con 300 ms de retraso (`delayedFade`): si
-  los datos llegan antes, no hay destello de spinner. Las pantallas se
-  precargan en segundo plano cuando la app está en reposo (`App.jsx`), así
-  al navegar no se espera código (React mantiene cualquier fallback de
-  Suspense al menos 300 ms).
+- Cargas · una página no muestra componentes provisionales si sus datos
+  llegan rápido. `Page` monta el contenido oculto y hace su único fundido
+  cuando terminan sus cargas, o a los 300 ms como máximo (entonces sí se ven
+  esqueletos). La pantalla avisa con `<Page cargando={...}>` y cada sección
+  interna con `useCargaDePagina(cargando)`. `PageLoading` y `Diferido`
+  (spinners secundarios) aparecen con 300 ms de retraso. Las pantallas se
+  precargan en reposo y, ya descargadas, se renderizan sin Suspense
+  (`lib/pantallaDiferida.jsx`): React mantiene cualquier fallback al menos
+  300 ms.
 - Selección · los indicadores de lo recién elegido aparecen con `scaleIn`;
   lo que ya estaba seleccionado al entrar no se anima
   (`useSeleccionInicial`).
