@@ -152,8 +152,18 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 
 ## Movimiento (`src/theme/motion.js`)
 - Duraciones y curvas de Fluent (`durationNormal`, `curveDecelerateMid`…).
-- Cambio de página · el lienzo hace fundido y cada bloque de `Page` sube 8 px
-  con 50 ms de escalonado. Es la única entrada orquestada por pantalla.
+- Cambio de página · navegación de nivel superior en Fluent 2: **un solo
+  fundido rápido** (`pageFade`, 200 ms, solo opacidad) del contenido de
+  `Page`. Nada se desplaza, escala ni entra escalonado; las fotos y el
+  acceso usan ese mismo fundido, sin animación propia.
+- Cargas · `PageLoading` aparece con 300 ms de retraso (`delayedFade`): si
+  los datos llegan antes, no hay destello de spinner. Las pantallas se
+  precargan en segundo plano cuando la app está en reposo (`App.jsx`), así
+  al navegar no se espera código (React mantiene cualquier fallback de
+  Suspense al menos 300 ms).
+- Selección · los indicadores de lo recién elegido aparecen con `scaleIn`;
+  lo que ya estaba seleccionado al entrar no se anima
+  (`useSeleccionInicial`).
 - Navegación · cuatro escuadras de marca (10 px por brazo, 2 px, esquinas
   rectas) enmarcan el elemento activo y se deslizan a la nueva opción
   (`curveDecelerateMax`); el activo lleva texto e ícono Filled en
@@ -162,7 +172,6 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   una línea centrada), así al abrir el menú nada cambia de posición. El
   panel se revela con `clip-path` desde el ancho del riel.
 - Tarjetas clicables · `liftOnHover`. Filas · chevron que avanza 3 px.
-- Selección · indicadores que aparecen con `scaleIn`; nada cambia de tamaño.
 - Sin animaciones de entrada por scroll ni carruseles automáticos.
 - `prefers-reduced-motion` desactiva todo movimiento (ver `index.css`), y el
   cambio de tema suspende transiciones para ser instantáneo.
