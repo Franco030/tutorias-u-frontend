@@ -24,6 +24,7 @@ import {
 import { Calendar, DayOfWeek } from "@fluentui/react-calendar-compat";
 import { CheckmarkCircle48Regular, Dismiss24Regular } from "@fluentui/react-icons";
 import { calendarioEs } from "../../lib/calendarioEs";
+import { Diferido } from "../../components/ui/Page";
 import { agendarCita, getHorasOcupadas } from "../../services/citaService";
 import { getMaterias } from "../../services/materiaService";
 import { getDisponibilidadTutor } from "../../services/tutorService";
@@ -373,7 +374,7 @@ export default function BookingModal({
                   <Field label="Materia" required>
                     <Dropdown
                       id="materia"
-                      placeholder={cargando ? "Cargando materias…" : "Selecciona una materia"}
+                      placeholder="Selecciona una materia"
                       value={materiaSeleccionada?.nombre || ""}
                       selectedOptions={materiaId ? [materiaId] : []}
                       onOptionSelect={(_, data) => setMateriaId(data.optionValue || "")}
@@ -433,7 +434,9 @@ export default function BookingModal({
                             : "Elige un día en el calendario para ver sus horarios."}
                         </Caption1>
                       ) : cargandoOcupados ? (
-                        <Spinner size="tiny" label="Verificando compromisos del tutor…" labelPosition="after" />
+                        <Diferido>
+                          <Spinner size="tiny" label="Verificando compromisos del tutor…" labelPosition="after" />
+                        </Diferido>
                       ) : bloquesDisponibles.length === 0 ? (
                         <Caption1 className={styles.muted}>No quedan horarios este día.</Caption1>
                       ) : (
@@ -461,7 +464,11 @@ export default function BookingModal({
                     </Field>
                   </div>
 
-                  {cargando && <Spinner size="tiny" label="Cargando horarios…" labelPosition="after" />}
+                  {cargando && (
+                    <Diferido>
+                      <Spinner size="tiny" label="Cargando horarios…" labelPosition="after" />
+                    </Diferido>
+                  )}
 
                   {!cargando && disponibilidad.length === 0 && !error && (
                     <MessageBar intent="info" layout="multiline">

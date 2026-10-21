@@ -187,7 +187,7 @@ export default function AprobacionTutores() {
   };
 
   return (
-    <Page>
+    <Page cargando={loading}>
       <PageHeader
         title="Aprobación de tutores"
         description="Revisa las solicitudes pendientes antes de habilitar a un tutor para enseñar."

@@ -95,7 +95,7 @@ export default function ProximasTutorias() {
   const listaActual = esProximas ? tutorias : historial;
 
   return (
-    <Page>
+    <Page cargando={loading}>
       <PageHeader
         title="Mis tutorías"
         description="Tus próximas sesiones y el historial de las anteriores. Abre una para ver el enlace y las notas."

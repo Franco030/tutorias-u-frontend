@@ -134,7 +134,7 @@ export default function MisTutorias() {
 
   return (
     <>
-      <Page>
+      <Page cargando={cargando}>
         <PageHeader
           title="Solicitudes"
           description="Tutorías que los estudiantes te pidieron. Acepta las que puedas atender o recházalas para liberar el horario."

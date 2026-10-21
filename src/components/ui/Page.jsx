@@ -1,3 +1,4 @@
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Body1,
@@ -11,6 +12,11 @@ import {
 } from "@fluentui/react-components";
 import { ArrowLeft20Regular } from "@fluentui/react-icons";
 import { delayedFade, pageFade } from "../../theme/motion";
+import { CargaDePaginaContext } from "../../hooks/useCargaDePagina";
+
+// Tiempo máximo que la página espera a sus datos antes de mostrarse con
+// esqueletos (mismo umbral que el spinner diferido).
+const ESPERA_MAXIMA_MS = 300;
 
 const useStyles = makeStyles({
   page: {
@@ -31,9 +37,17 @@ const useStyles = makeStyles({
     "@media (min-width: 1440px)": {
       paddingInline: "48px",
     },
-    // Una sola entrada por página: fundido del contenido completo.
-    ...pageFade,
   },
+  // Mientras sus secciones cargan (máx. 300 ms) la página está montada pero
+  // invisible; al estar lista hace un único fundido ya con los datos.
+  oculta: {
+    opacity: 0,
+  },
+  diferido: {
+    display: "inline-flex",
+    ...delayedFade,
+  },
+  visible: pageFade,
   narrow: {
     maxWidth: "960px",
   },
@@ -151,16 +165,78 @@ export function PageLoading({ label }) {
   );
 }
 
+// Indicador de carga secundario (dentro de diálogos o secciones): aparece
+// solo si la espera supera 300 ms.
+export function Diferido({ children }) {
+  const styles = useStyles();
+  return <span className={styles.diferido}>{children}</span>;
+}
+
 // Fila de acciones al pie de un formulario (apiladas en móvil, a la derecha en escritorio).
 export function FormActions({ children }) {
   const styles = useStyles();
   return <div className={styles.footerActions}>{children}</div>;
 }
 
-export function Page({ children, narrow = false, className }) {
+export function Page({ children, narrow = false, className, cargando = false }) {
   const styles = useStyles();
+  const [visible, setVisible] = useState(false);
+  const pendientes = useRef(new Set());
+  const montada = useRef(false);
+
+  const carga = useMemo(
+    () => ({
+      agregar: (id) => pendientes.current.add(id),
+      quitar: (id) => {
+        pendientes.current.delete(id);
+        // Se revisa en un microtask: si la sección se vuelve a registrar en el
+        // mismo ciclo (remontaje de StrictMode), la página no se adelanta.
+        queueMicrotask(() => {
+          if (montada.current && pendientes.current.size === 0) setVisible(true);
+        });
+      },
+    }),
+    []
+  );
+
+  // Carga propia de la pantalla (la que renderiza <Page cargando={...}>).
+  useLayoutEffect(() => {
+    if (!cargando) return undefined;
+    carga.agregar("pagina");
+    return () => carga.quitar("pagina");
+  }, [cargando, carga]);
+
+  // Los efectos de las secciones corren antes que este: si ninguna quedó
+  // cargando, la página se muestra antes del primer pintado.
+  useLayoutEffect(() => {
+    montada.current = true;
+    if (pendientes.current.size === 0) {
+      setVisible(true);
+      return () => {
+        montada.current = false;
+      };
+    }
+    const limite = setTimeout(() => setVisible(true), ESPERA_MAXIMA_MS);
+    return () => {
+      montada.current = false;
+      clearTimeout(limite);
+    };
+  }, []);
+
   return (
-    <main className={mergeClasses(styles.page, narrow && styles.narrow, className)}>{children}</main>
+    <CargaDePaginaContext.Provider value={carga}>
+      <main
+        className={mergeClasses(
+          styles.page,
+          narrow && styles.narrow,
+          visible ? styles.visible : styles.oculta,
+          className
+        )}
+        aria-busy={!visible || undefined}
+      >
+        {children}
+      </main>
+    </CargaDePaginaContext.Provider>
   );
 }
 

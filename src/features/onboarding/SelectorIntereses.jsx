@@ -21,6 +21,7 @@ import { useAuth } from "../../context/AuthContext";
 import DarkModeToggle from "../../components/DarkModeToggle";
 import { BrandMark } from "../../components/shell/BrandMark";
 import { MateriaSelector } from "../../components/ui/MateriaSelector";
+import { PageLoading } from "../../components/ui/Page";
 import { IlustracionAprender } from "../../components/illustrations/Ilustraciones";
 
 const useStyles = makeStyles({
@@ -152,12 +153,6 @@ const useStyles = makeStyles({
       marginInlineEnd: "auto",
     },
   },
-  loading: {
-    flexGrow: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
 });
 
 export default function SelectorIntereses() {
@@ -249,9 +244,7 @@ export default function SelectorIntereses() {
         </div>
 
         {cargandoMaterias ? (
-          <div className={styles.loading}>
-            <Spinner label="Cargando materias…" />
-          </div>
+          <PageLoading label="Cargando materias…" />
         ) : (
           <>
             <main className={styles.main}>

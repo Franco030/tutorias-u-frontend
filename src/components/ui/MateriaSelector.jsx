@@ -5,6 +5,8 @@ import {
   makeStyles,
   mergeClasses,
   SearchBox,
+  Skeleton,
+  SkeletonItem,
   shorthands,
   Subtitle2,
   Tab,
@@ -175,7 +177,7 @@ const useStyles = makeStyles({
  * categoría y mosaicos de tamaño fijo con estado aria-pressed. Seleccionar
  * solo cambia color e indicador; ningún elemento cambia de tamaño.
  */
-export function MateriaSelector({ materias, seleccionadas, onToggle, disabled = false }) {
+export function MateriaSelector({ materias, seleccionadas, onToggle, disabled = false, cargando = false }) {
   const styles = useStyles();
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState(TODAS);
@@ -239,7 +241,13 @@ export function MateriaSelector({ materias, seleccionadas, onToggle, disabled = 
         )}
       </div>
 
-      {grupos.length === 0 ? (
+      {cargando ? (
+        <Skeleton aria-label="Cargando materias" className={styles.grid}>
+          {Array.from({ length: 6 }, (_, i) => (
+            <SkeletonItem key={i} shape="rectangle" size={48} />
+          ))}
+        </Skeleton>
+      ) : grupos.length === 0 ? (
         <Body1 className={styles.empty}>
           {busqueda
             ? `Ninguna materia coincide con “${busqueda}”. Prueba con otra palabra.`

@@ -172,7 +172,7 @@ export default function CatalogoTutores() {
   const hayFiltros = Boolean(busqueda || materia || categoria !== TODAS);
 
   return (
-    <Page>
+    <Page cargando={loading}>
       <PageHeader
         title="Buscar tutores"
         description="Encuentra a quien domina la materia en la que necesitas apoyo y agenda una sesión."

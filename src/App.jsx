@@ -4,7 +4,8 @@ import { useAuth } from "./context/AuthContext";
 import { AppShell } from "./components/shell/AppShell";
 import { PageLoading } from "./components/ui/Page";
 import { AuthView } from "./features/auth/AuthView";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { pantallaDiferida } from "./lib/pantallaDiferida";
 
 // Acceso y panel de inicio van en el paquete principal (primera pantalla);
 // el resto se carga por ruta para aligerar la carga inicial.
@@ -23,24 +24,29 @@ const pantallas = {
   ProximasTutorias: () => import("./features/tutores/ProximasTutorias"),
 };
 
-const VerifyEmailPage = lazy(pantallas.VerifyEmailPage);
-const AprobacionTutores = lazy(pantallas.AprobacionTutores);
-const SelectorIntereses = lazy(pantallas.SelectorIntereses);
-const AplicacionTutor = lazy(pantallas.AplicacionTutor);
-const MisIntereses = lazy(pantallas.MisIntereses);
-const EstadoSolicitud = lazy(pantallas.EstadoSolicitud);
-const PerfilTutor = lazy(pantallas.PerfilTutor);
-const CatalogoTutores = lazy(pantallas.CatalogoTutores);
-const MisMateriasTutor = lazy(pantallas.MisMateriasTutor);
-const ConfiguracionDisponibilidad = lazy(pantallas.ConfiguracionDisponibilidad);
-const MisTutorias = lazy(pantallas.MisTutorias);
-const ProximasTutorias = lazy(pantallas.ProximasTutorias);
+const VerifyEmailPage = pantallaDiferida(pantallas.VerifyEmailPage);
+const AprobacionTutores = pantallaDiferida(pantallas.AprobacionTutores);
+const SelectorIntereses = pantallaDiferida(pantallas.SelectorIntereses);
+const AplicacionTutor = pantallaDiferida(pantallas.AplicacionTutor);
+const MisIntereses = pantallaDiferida(pantallas.MisIntereses);
+const EstadoSolicitud = pantallaDiferida(pantallas.EstadoSolicitud);
+const PerfilTutor = pantallaDiferida(pantallas.PerfilTutor);
+const CatalogoTutores = pantallaDiferida(pantallas.CatalogoTutores);
+const MisMateriasTutor = pantallaDiferida(pantallas.MisMateriasTutor);
+const ConfiguracionDisponibilidad = pantallaDiferida(pantallas.ConfiguracionDisponibilidad);
+const MisTutorias = pantallaDiferida(pantallas.MisTutorias);
+const ProximasTutorias = pantallaDiferida(pantallas.ProximasTutorias);
 
 // Con la app ya en reposo se descargan las demás pantallas en segundo plano:
 // al navegar no hay espera de código y solo se ve el fundido de la página.
 function usePrecargarPantallas() {
   useEffect(() => {
-    const precargar = () => Object.values(pantallas).forEach((cargar) => cargar().catch(() => {}));
+    const precargar = () =>
+      [
+        VerifyEmailPage, AprobacionTutores, SelectorIntereses, AplicacionTutor, MisIntereses,
+        EstadoSolicitud, PerfilTutor, CatalogoTutores, MisMateriasTutor,
+        ConfiguracionDisponibilidad, MisTutorias, ProximasTutorias,
+      ].forEach((pantalla) => pantalla.precargar().catch(() => {}));
     if ("requestIdleCallback" in window) {
       const id = window.requestIdleCallback(precargar, { timeout: 4000 });
       return () => window.cancelIdleCallback(id);

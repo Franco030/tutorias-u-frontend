@@ -165,6 +165,7 @@ export default function AplicacionTutor() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [mensajeExito, setMensajeExito] = useState("");
+  const [cargandoMaterias, setCargandoMaterias] = useState(true);
 
   useEffect(() => {
     const cargarMaterias = async () => {
@@ -175,6 +176,8 @@ export default function AplicacionTutor() {
       } catch (err) {
         console.error("Error al cargar materias:", err);
         setError(err.message || "No se pudieron cargar las materias.");
+      } finally {
+        setCargandoMaterias(false);
       }
     };
     cargarMaterias();
@@ -263,7 +266,7 @@ export default function AplicacionTutor() {
   const pendientes = pasos.filter((paso) => !paso.completo).map((paso) => paso.titulo.toLowerCase());
 
   return (
-    <Page>
+    <Page cargando={cargandoMaterias}>
       <PageHero
         title="Conviértete en tutor"
         description="Comparte lo que dominas con otros estudiantes. Completa las tres partes; la administración revisa tu postulación antes de habilitarte."
@@ -285,6 +288,7 @@ export default function AplicacionTutor() {
             </div>
             <MateriaSelector
               materias={materias}
+              cargando={cargandoMaterias}
               seleccionadas={materiasSeleccionadas}
               onToggle={toggleMateria}
               disabled={loading}

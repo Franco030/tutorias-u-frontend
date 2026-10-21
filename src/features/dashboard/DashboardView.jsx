@@ -23,6 +23,7 @@ import {
   TaskListSquareLtr24Regular,
 } from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
+import { useCargaDePagina } from "../../hooks/useCargaDePagina";
 import { getCitasPendientes, getProximasTutorias } from "../../services/citaService";
 import { getTutoresRecomendados } from "../../services/tutorService";
 import TutorCard from "../../components/TutorCard";
@@ -156,6 +157,7 @@ function useCarga(cargar, activo = true) {
     };
   }, [cargar, activo]);
 
+  useCargaDePagina(estado.cargando);
   return estado;
 }
 

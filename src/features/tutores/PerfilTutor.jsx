@@ -187,7 +187,7 @@ export default function PerfilTutor() {
 
   return (
     <>
-      <Page>
+      <Page cargando={horario.cargando}>
         <Breadcrumb aria-label="Ruta de navegación" className={styles.breadcrumb}>
           <BreadcrumbItem>
             <BreadcrumbButton onClick={() => navigate("/tutores")}>Buscar tutores</BreadcrumbButton>
