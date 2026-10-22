@@ -22,6 +22,7 @@ import {
 } from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
 import { InterruptorTema } from "../../components/InterruptorTema";
+import { EnlaceInterno } from "../../components/ui/EnlaceInterno";
 import { BrandMark } from "../../components/shell/BrandMark";
 import GoogleLoginButton from "./GoogleLoginButton";
 import MicrosoftLoginButton from "./MicrosoftLoginButton";
@@ -69,6 +70,29 @@ const useStyles = makeStyles({
     bottom: tokens.spacingVerticalM,
     left: tokens.spacingHorizontalM,
     zIndex: 1,
+  },
+  // Abajo a la derecha, como en el inicio de sesión de Microsoft: enlaces
+  // pequeños sobre el fondo, sin barra de pie de página.
+  legales: {
+    position: "absolute",
+    bottom: tokens.spacingVerticalM,
+    right: tokens.spacingHorizontalM,
+    zIndex: 1,
+    display: "flex",
+    alignItems: "center",
+    gap: tokens.spacingHorizontalM,
+    paddingInline: tokens.spacingHorizontalS,
+    paddingBlock: tokens.spacingVerticalXXS,
+    borderRadius: tokens.borderRadiusMedium,
+    // Velo para el contraste del texto sobre la foto.
+    backgroundColor: `color-mix(in srgb, ${tokens.colorNeutralBackground1} 70%, transparent)`,
+    backdropFilter: "blur(8px)",
+    fontSize: tokens.fontSizeBase200,
+    lineHeight: tokens.lineHeightBase200,
+  },
+  enlaceLegal: {
+    fontSize: "inherit",
+    color: tokens.colorNeutralForeground2,
   },
   surface: {
     position: "relative",
@@ -303,6 +327,18 @@ export function AuthView({ onComplete }) {
       </div>
 
       <InterruptorTema className={styles.themeToggle} />
+
+      <nav className={styles.legales} aria-label="Información">
+        <EnlaceInterno to="/ayuda" className={styles.enlaceLegal}>
+          Ayuda
+        </EnlaceInterno>
+        <EnlaceInterno to="/terminos" className={styles.enlaceLegal}>
+          Términos
+        </EnlaceInterno>
+        <EnlaceInterno to="/privacidad" className={styles.enlaceLegal}>
+          Privacidad
+        </EnlaceInterno>
+      </nav>
 
       <main className={styles.surface}>
         <BrandMark />

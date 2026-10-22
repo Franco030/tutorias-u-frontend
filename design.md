@@ -151,6 +151,19 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   `validationMessage`. Nunca placeholder como etiqueta.
 - Selección de materias · `ToggleButton` o `Checkbox`, nunca chips hechos a mano.
 - Diálogos · `Dialog` de Fluent (foco, Escape y backdrop resueltos).
+- Páginas de información · sin pie de página, ni fijo ni al final del
+  contenido (las apps de Microsoft no lo usan). "Ayuda y soporte" (`/ayuda`)
+  va anclada al pie del menú lateral para todos los roles, como
+  Configuración en NavigationView. "Acerca de TutoriasU" (`/acerca`) va en el
+  menú de usuario. Términos (`/terminos`) y Privacidad (`/privacidad`) se
+  enlazan desde Acerca de, Ayuda, el registro y, en el acceso, abajo a la
+  derecha (frente al interruptor de tema), como en el inicio de sesión de
+  Microsoft. Las cuatro se leen sin sesión. Los datos institucionales
+  (responsable, domicilio, correo de soporte) viven en
+  `features/info/contenido.js`.
+- Desplazamiento · el lienzo del shell reserva siempre el espacio de la barra
+  de desplazamiento (`scrollbar-gutter: stable`): cuando una página pasa a
+  necesitar scroll, nada se recorre de lado.
 - Página no encontrada · cualquier ruta desconocida muestra el pato
   (`assets/pato-perdido.png`, recortado sin fondo), "Error 404", un título,
   una línea y un único botón primario "Volver al inicio". Con sesión va

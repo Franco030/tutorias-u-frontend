@@ -23,6 +23,10 @@ const pantallas = {
   ConfiguracionDisponibilidad: () => import("./features/tutores/ConfiguracionDisponibilidad"),
   MisTutorias: () => import("./features/tutores/MisTutorias"),
   ProximasTutorias: () => import("./features/tutores/ProximasTutorias"),
+  Ayuda: () => import("./features/info/Ayuda"),
+  AcercaDe: () => import("./features/info/AcercaDe"),
+  TerminosUso: () => import("./features/info/TerminosUso"),
+  AvisoPrivacidad: () => import("./features/info/AvisoPrivacidad"),
 };
 
 const VerifyEmailPage = pantallaDiferida(pantallas.VerifyEmailPage);
@@ -37,6 +41,10 @@ const MisMateriasTutor = pantallaDiferida(pantallas.MisMateriasTutor);
 const ConfiguracionDisponibilidad = pantallaDiferida(pantallas.ConfiguracionDisponibilidad);
 const MisTutorias = pantallaDiferida(pantallas.MisTutorias);
 const ProximasTutorias = pantallaDiferida(pantallas.ProximasTutorias);
+const Ayuda = pantallaDiferida(pantallas.Ayuda);
+const AcercaDe = pantallaDiferida(pantallas.AcercaDe);
+const TerminosUso = pantallaDiferida(pantallas.TerminosUso);
+const AvisoPrivacidad = pantallaDiferida(pantallas.AvisoPrivacidad);
 
 // Con la app ya en reposo se descargan las demás pantallas en segundo plano:
 // al navegar no hay espera de código y solo se ve el fundido de la página.
@@ -47,6 +55,7 @@ function usePrecargarPantallas() {
         VerifyEmailPage, AprobacionTutores, SelectorIntereses, AplicacionTutor, MisIntereses,
         EstadoSolicitud, PerfilTutor, CatalogoTutores, MisMateriasTutor,
         ConfiguracionDisponibilidad, MisTutorias, ProximasTutorias,
+        Ayuda, AcercaDe, TerminosUso, AvisoPrivacidad,
       ].forEach((pantalla) => pantalla.precargar().catch(() => {}));
     if ("requestIdleCallback" in window) {
       const id = window.requestIdleCallback(precargar, { timeout: 4000 });
@@ -347,6 +356,12 @@ export function App() {
             </ProximasTutoriasGuard>
           }
         />
+
+        {/* Información: se leen con o sin sesión. */}
+        <Route path="/ayuda" element={<Ayuda />} />
+        <Route path="/acerca" element={<AcercaDe />} />
+        <Route path="/terminos" element={<TerminosUso />} />
+        <Route path="/privacidad" element={<AvisoPrivacidad />} />
 
         <Route path="*" element={<PaginaNoEncontrada />} />
       </Route>

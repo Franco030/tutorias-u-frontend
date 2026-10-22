@@ -18,6 +18,8 @@ import {
   PeopleCheckmark20Regular,
   PeopleSearch20Filled,
   PeopleSearch20Regular,
+  QuestionCircle20Filled,
+  QuestionCircle20Regular,
   TaskListSquareLtr20Filled,
   TaskListSquareLtr20Regular,
 } from "@fluentui/react-icons";
@@ -32,6 +34,14 @@ const Pendientes = bundleIcon(TaskListSquareLtr20Filled, TaskListSquareLtr20Regu
 const Materias = bundleIcon(BookLetter20Filled, BookLetter20Regular);
 const Disponibilidad = bundleIcon(CalendarClock20Filled, CalendarClock20Regular);
 const Aprobaciones = bundleIcon(PeopleCheckmark20Filled, PeopleCheckmark20Regular);
+const Ayuda = bundleIcon(QuestionCircle20Filled, QuestionCircle20Regular);
+
+// Sección fija al pie del menú para todos los roles, como Configuración en el
+// NavigationView de Windows.
+const SECCION_AYUDA = {
+  fija: true,
+  items: [{ to: "/ayuda", label: "Ayuda y soporte", icon: Ayuda }],
+};
 
 const normalizar = (valor) => valor?.trim().toLowerCase() || "";
 
@@ -46,11 +56,15 @@ export const tieneSolicitudTutor = (user) => {
 };
 
 /*
- * Secciones de la navegación lateral según el rol.
+ * Secciones de la navegación lateral según el rol, más la de ayuda al pie.
  * Cada destino corresponde a una ruta existente en App.jsx; ninguna se
  * muestra si su guard redirigiría al usuario.
  */
 export function getNavSections(user) {
+  return [...seccionesDelRol(user), SECCION_AYUDA];
+}
+
+function seccionesDelRol(user) {
   const rol = getRol(user);
 
   if (rol === "administrador") {

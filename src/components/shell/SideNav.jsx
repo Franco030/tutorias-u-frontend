@@ -11,12 +11,20 @@ const NAV_PADDING = 8;
 
 const useStyles = makeStyles({
   root: {
+    boxSizing: "border-box",
     position: "relative",
     display: "flex",
     flexDirection: "column",
     gap: tokens.spacingVerticalXXS,
+    // Ocupa todo el alto del panel para poder anclar la sección fija al pie.
+    minHeight: "100%",
     paddingBlock: tokens.spacingVerticalS,
     paddingInline: `${NAV_PADDING}px`,
+  },
+  // Sección fija (Ayuda): al pie del menú, como Configuración en NavigationView.
+  seccionFija: {
+    marginTop: "auto",
+    paddingTop: tokens.spacingVerticalL,
   },
   // Encabezado de sección con la misma altura en riel y panel: así, al abrir
   // el menú, ningún elemento cambia de posición vertical.
@@ -239,8 +247,13 @@ export function SideNav({ sections, selectedValue, compact = false, onNavigate }
         }}
       />
       {sections.map((section, index) => (
-        <div key={section.title || index} role="group" aria-label={section.title}>
-          {index > 0 && (
+        <div
+          key={section.title || index}
+          role="group"
+          aria-label={section.title}
+          className={section.fija ? styles.seccionFija : undefined}
+        >
+          {index > 0 && !section.fija && (
             <div className={styles.sectionHeader} role={compact || !section.title ? "separator" : undefined}>
               {section.title && (
                 <Caption1
