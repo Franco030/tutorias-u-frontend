@@ -88,6 +88,15 @@ for (const tema of ['light', 'dark']) {
       await revisar(page);
     });
 
+    test('página no encontrada', async ({ page }) => {
+      await iniciarSesion(page, usuarios.estudiante, { tema });
+      await simularApi(page, rutas);
+      await page.goto('/esta-ruta-no-existe');
+      await expect(page.getByRole('heading', { name: 'Esta página no existe' })).toBeVisible();
+      await page.waitForTimeout(600);
+      await revisar(page);
+    });
+
     for (const pestana of ['Días sin tutorías', 'Reservas']) {
       test(`disponibilidad: ${pestana}`, async ({ page }) => {
         await iniciarSesion(page, usuarios.tutor, { tema });

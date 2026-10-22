@@ -1,5 +1,8 @@
-import { useId } from "react";
 import { makeStyles, mergeClasses, Text, tokens } from "@fluentui/react-components";
+import logoTutoriasU from "../../assets/marca/tutoriasu-logo.png";
+
+// Proporción del logo (ancho / alto) del archivo en assets/marca.
+const PROPORCION = 200 / 108;
 
 const useStyles = makeStyles({
   root: {
@@ -12,16 +15,6 @@ const useStyles = makeStyles({
   mark: {
     flexShrink: 0,
     display: "block",
-    filter: `drop-shadow(0 1px 1px color-mix(in srgb, ${tokens.colorBrandBackground} 35%, transparent))`,
-  },
-  stopTop: {
-    stopColor: tokens.colorBrandBackground,
-  },
-  stopBottom: {
-    stopColor: tokens.colorBrandBackgroundPressed,
-  },
-  glyph: {
-    fill: tokens.colorNeutralForegroundOnBrand,
   },
   wordmark: {
     fontWeight: tokens.fontWeightSemibold,
@@ -34,37 +27,21 @@ const useStyles = makeStyles({
 });
 
 /*
- * Marca de TutoriasU: mosaico de marca con un libro abierto y una persona
- * leyendo encima (aprender acompañado). SVG propio, toma el color del tema.
+ * Marca de TutoriasU: dos cintas que se entrelazan (quien enseña y quien
+ * aprende), en la rampa de marca con brillo cian y punta durazno. PNG con
+ * transparencia a 3x del tamaño más grande que se usa; el original y los SVG
+ * están fuera del repositorio, en la carpeta logo.
  */
 export function LogoMark({ size = 24, className }) {
   const styles = useStyles();
-  // useId incluye caracteres que rompen url(#…) en algunos navegadores.
-  const gradienteId = `logo-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width={size}
+    <img
+      src={logoTutoriasU}
       height={size}
+      width={Math.round(size * PROPORCION)}
       className={mergeClasses(styles.mark, className)}
-      role="img"
-      aria-label="TutoriasU"
-    >
-      <defs>
-        <linearGradient id={gradienteId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" className={styles.stopTop} />
-          <stop offset="1" className={styles.stopBottom} />
-        </linearGradient>
-      </defs>
-      <rect width="24" height="24" rx="6" fill={`url(#${gradienteId})`} />
-      <circle cx="12" cy="6.2" r="2.2" className={styles.glyph} />
-      <path d="M4.4 10.6c2.5-1.1 5-.8 7.1.9v8c-2.1-1.4-4.6-1.7-7.1-.8z" className={styles.glyph} />
-      <path
-        d="M19.6 10.6c-2.5-1.1-5-.8-7.1.9v8c2.1-1.4 4.6-1.7 7.1-.8z"
-        className={styles.glyph}
-        opacity="0.8"
-      />
-    </svg>
+      alt="TutoriasU"
+    />
   );
 }
 

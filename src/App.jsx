@@ -4,6 +4,7 @@ import { useAuth } from "./context/AuthContext";
 import { AppShell } from "./components/shell/AppShell";
 import { PageLoading } from "./components/ui/Page";
 import { AuthView } from "./features/auth/AuthView";
+import PaginaNoEncontrada from "./features/PaginaNoEncontrada";
 import { Suspense, useEffect, useState } from "react";
 import { pantallaDiferida } from "./lib/pantallaDiferida";
 
@@ -346,6 +347,8 @@ export function App() {
             </ProximasTutoriasGuard>
           }
         />
+
+        <Route path="*" element={<PaginaNoEncontrada />} />
       </Route>
     </Routes>
     </Suspense>
