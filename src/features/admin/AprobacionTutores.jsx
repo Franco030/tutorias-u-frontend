@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogSurface,
   DialogTitle,
+  Field,
   makeStyles,
   MessageBar,
   MessageBarActions,
@@ -18,6 +19,7 @@ import {
   Spinner,
   Tag,
   Text,
+  Textarea,
   tokens,
 } from '@fluentui/react-components';
 import {
@@ -40,6 +42,11 @@ import { SessionListSkeleton } from '../../components/ui/SessionList';
 const formatoFecha = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' });
 
 const useStyles = makeStyles({
+  rechazo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalL,
+  },
   list: {
     margin: 0,
     padding: 0,
@@ -107,6 +114,7 @@ export default function AprobacionTutores() {
   const [approvingId, setApprovingId] = useState(null);
   // Rechazo con confirmación: la solicitud sale de la lista y no se recupera aquí.
   const [porRechazar, setPorRechazar] = useState(null);
+  const [motivoRechazo, setMotivoRechazo] = useState('');
   const [error, setError] = useState(null);
 
   const cargarSolicitudes = async () => {
@@ -173,16 +181,16 @@ export default function AprobacionTutores() {
     if (!solicitud) return;
     setApprovingId(solicitud.id);
     setError(null);
-
     try {
-      await rechazarTutor(solicitud.id);
+      await rechazarTutor(solicitud.id, motivoRechazo.trim());
       setSolicitudes((current) => current.filter((s) => s.id !== solicitud.id));
       notificar('Solicitud rechazada', { cuerpo: solicitud.nombre, intent: 'info' });
+      setPorRechazar(null);
+      setMotivoRechazo('');
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
       setApprovingId(null);
-      setPorRechazar(null);
     }
   };
 
@@ -297,25 +305,44 @@ export default function AprobacionTutores() {
       <Dialog
         open={Boolean(porRechazar)}
         onOpenChange={(_, data) => {
-          if (!data.open && approvingId === null) setPorRechazar(null);
+          if (!data.open && approvingId === null) {
+            setPorRechazar(null);
+            setMotivoRechazo('');
+          }
         }}
       >
         <DialogSurface>
           <DialogBody>
             <DialogTitle>¿Rechazar esta solicitud?</DialogTitle>
-            <DialogContent>
+            <DialogContent className={styles.rechazo}>
               <Body1>
                 {porRechazar &&
                   `${porRechazar.nombre} verá su solicitud como rechazada. Podrá volver a postularse más adelante.`}
               </Body1>
+              <Field label="Motivo del rechazo" required hint="Se incluye en el correo que recibe el aspirante.">
+                <Textarea
+                  value={motivoRechazo}
+                  onChange={(_, data) => setMotivoRechazo(data.value)}
+                  placeholder="Escribe el motivo del rechazo..."
+                  maxLength={500}
+                  resize="vertical"
+                  rows={3}
+                />
+              </Field>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setPorRechazar(null)} disabled={approvingId !== null}>
+              <Button
+                onClick={() => {
+                  setPorRechazar(null);
+                  setMotivoRechazo('');
+                }}
+                disabled={approvingId !== null}
+              >
                 Volver
               </Button>
               <DangerButton
                 onClick={confirmarRechazo}
-                disabled={approvingId !== null}
+                disabled={approvingId !== null || !motivoRechazo.trim()}
                 icon={approvingId !== null ? <Spinner size="tiny" /> : undefined}
               >
                 {approvingId !== null ? 'Rechazando…' : 'Rechazar solicitud'}
