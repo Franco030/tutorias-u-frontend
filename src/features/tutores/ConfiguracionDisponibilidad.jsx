@@ -5,55 +5,53 @@ import {
   Body1,
   Button,
   Caption1,
-  Field,
+  LargeTitle,
   makeStyles,
+  Menu,
+  MenuItem,
+  MenuList,
+  MenuPopover,
+  MenuTrigger,
   MessageBar,
   MessageBarBody,
   Spinner,
   Subtitle2,
-  Text,
   ToggleButton,
   tokens,
-  Tooltip,
 } from "@fluentui/react-components";
-import { Add20Regular, Dismiss16Regular, Save20Regular } from "@fluentui/react-icons";
-import { useAuth } from "../../context/AuthContext";
 import {
-  getDisponibilidadTutor,
-  guardarDisponibilidadTutor,
-} from "../../services/tutorService";
+  ArrowUndo20Regular,
+  Copy20Regular,
+  Delete20Regular,
+  Eraser20Regular,
+  PaintBrush20Regular,
+  Save20Regular,
+} from "@fluentui/react-icons";
+import { useAuth } from "../../context/AuthContext";
+import { getDisponibilidadTutor, guardarDisponibilidadTutor } from "../../services/tutorService";
+import { ahoraEnPlataforma } from "../../lib/horaPlataforma";
 import { Page, PageHeader, PageLoading, Surface } from "../../components/ui/Page";
-import { SelectorHora } from "../../components/ui/SelectorHora";
-
-const DIAS_SEMANA = [
-  "Domingo",
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-  "Sábado",
-];
-
-// Orden de la semana laboral (lunes primero); los índices siguen el backend (0 = domingo).
-const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];
-const ENTRE_SEMANA = [1, 2, 3, 4, 5];
-
-// "lunes", "lunes y martes", "lunes, martes y jueves" (en orden de la semana).
-const listaDias = (dias) => {
-  const nombres = ORDEN_DIAS.filter((dia) => dias.includes(dia)).map((dia) => DIAS_SEMANA[dia].toLowerCase());
-  return nombres.length <= 1
-    ? nombres.join("")
-    : `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
-};
-
-const FORMATO_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+import { RejillaFranjas } from "./disponibilidad/RejillaFranjas";
+import {
+  bloquesParaGuardar,
+  celdaATexto,
+  celdasDesdeBloques,
+  DIAS,
+  DIAS_HABILES,
+  formatoHoras,
+  horasTotales,
+  ORDEN_DIAS,
+  resumenEnPalabras,
+  semanaVacia,
+} from "./disponibilidad/franjas";
 
 const normalizarBloque = (bloque) => ({
   diaSemana: Number(bloque.diaSemana ?? bloque.DiaSemana),
   horaInicio: String(bloque.horaInicio ?? bloque.HoraInicio).slice(0, 5),
   horaFin: String(bloque.horaFin ?? bloque.HoraFin).slice(0, 5),
 });
+
+const HISTORIAL_MAXIMO = 50;
 
 const useStyles = makeStyles({
   layout: {
@@ -62,109 +60,106 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalXL,
     alignItems: "start",
     "@media (min-width: 1024px)": {
-      gridTemplateColumns: "minmax(0, 340px) minmax(0, 1fr)",
+      gridTemplateColumns: "300px minmax(0, 1fr)",
     },
   },
-  form: {
+  panel: {
     display: "flex",
     flexDirection: "column",
     gap: tokens.spacingVerticalL,
+    "@media (min-width: 1024px)": {
+      position: "sticky",
+      top: tokens.spacingVerticalXXL,
+    },
+  },
+  total: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: tokens.spacingHorizontalS,
+  },
+  cifra: {
+    fontVariantNumeric: "tabular-nums",
   },
   muted: {
     color: tokens.colorNeutralForeground3,
   },
-  formHead: {
+  palabras: {
     display: "flex",
     flexDirection: "column",
-    gap: tokens.spacingVerticalXXS,
+    gap: tokens.spacingVerticalXS,
+    padding: tokens.spacingHorizontalM,
+    borderRadius: tokens.borderRadiusLarge,
+    backgroundColor: tokens.colorNeutralBackground2,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
-  days: {
-    display: "grid",
-    gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-    gap: tokens.spacingHorizontalXS,
-  },
-  day: {
-    minWidth: 0,
-    paddingInline: 0,
-    "@media (pointer: coarse)": {
-      minHeight: "44px",
-    },
-  },
-  presets: {
-    display: "flex",
-    gap: tokens.spacingHorizontalXS,
-    marginTop: tokens.spacingVerticalXS,
-  },
-  times: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: tokens.spacingHorizontalM,
-  },
-  week: {
-    display: "flex",
-    flexDirection: "column",
-    margin: 0,
-    padding: 0,
-    listStyleType: "none",
-  },
-  weekRow: {
-    display: "grid",
-    gridTemplateColumns: "96px minmax(0, 1fr)",
-    alignItems: "center",
-    gap: tokens.spacingHorizontalM,
-    minHeight: "48px",
-    paddingBlock: tokens.spacingVerticalS,
-    borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke3}`,
-    ":last-child": {
-      borderBottomStyle: "none",
-    },
-  },
-  dayName: {
+  eyebrow: {
+    color: tokens.colorNeutralForeground3,
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
     fontWeight: tokens.fontWeightSemibold,
   },
-  blocks: {
+  herramientas: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: tokens.spacingHorizontalXS,
+  },
+  secundarias: {
     display: "flex",
     flexWrap: "wrap",
+    justifyContent: "space-between",
     gap: tokens.spacingHorizontalS,
   },
-  block: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: tokens.spacingHorizontalXXS,
-    paddingInlineStart: tokens.spacingHorizontalS,
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorBrandBackground2,
-    color: tokens.colorBrandForeground2,
-    fontVariantNumeric: "tabular-nums",
-    whiteSpace: "nowrap",
+  copiar: {
+    width: "100%",
   },
-  removeButton: {
-    minWidth: "28px",
-    color: "inherit",
+  rejilla: {
+    padding: 0,
+    overflow: "hidden",
   },
-  weekHeader: {
+  pie: {
     display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: tokens.spacingHorizontalM,
-    marginBlockEnd: tokens.spacingVerticalS,
+    flexWrap: "wrap",
+    justifyContent: "center",
+    columnGap: tokens.spacingHorizontalL,
+    rowGap: tokens.spacingVerticalXXS,
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
+    borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    color: tokens.colorNeutralForeground3,
+  },
+  tecla: {
+    paddingInline: "4px",
+    borderRadius: tokens.borderRadiusSmall,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
+    fontWeight: tokens.fontWeightSemibold,
   },
 });
 
+const horaDeHoy = () => {
+  const { fecha, hora } = ahoraEnPlataforma();
+  const [h, m] = hora.split(":").map(Number);
+  return { dia: new Date(`${fecha}T12:00:00`).getDay(), minutos: h * 60 + m };
+};
+
+/*
+ * Disponibilidad "a pinceladas": el tutor pinta sus franjas sobre la semana.
+ * Al guardar, cada franja se divide en sesiones de 1 hora (cada una es una
+ * cita reservable); la media hora que no completa una sesión se avisa.
+ */
 export default function ConfiguracionDisponibilidad() {
   const notificar = useNotificar();
   const styles = useStyles();
   const { user } = useAuth();
-  const [bloques, setBloques] = useState([]);
-  const [diasSeleccionados, setDiasSeleccionados] = useState([1]);
-  const [horaInicio, setHoraInicio] = useState("09:00");
-  const [horaFin, setHoraFin] = useState("10:00");
+  const [celdas, setCeldas] = useState(semanaVacia);
+  const [historial, setHistorial] = useState([]);
+  const [herramienta, setHerramienta] = useState("pintar");
+  const [diaActivo, setDiaActivo] = useState(1);
   const [cargando, setCargando] = useState(true);
   const [cargaCompleta, setCargaCompleta] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
-  const [aviso, setAviso] = useState("");
+  const [ajuste, setAjuste] = useState("");
   const [cambiosSinGuardar, setCambiosSinGuardar] = useState(false);
+  const [hoy] = useState(horaDeHoy);
 
   useEffect(() => {
     let activo = true;
@@ -174,19 +169,18 @@ export default function ConfiguracionDisponibilidad() {
         setCargando(true);
         setError("");
         const disponibilidad = await getDisponibilidadTutor(user.id);
-        if (activo) {
-          setBloques(
-            (Array.isArray(disponibilidad) ? disponibilidad : []).map(
-              normalizarBloque
-            )
+        if (!activo) return;
+        const resultado = celdasDesdeBloques((Array.isArray(disponibilidad) ? disponibilidad : []).map(normalizarBloque));
+        setCeldas(resultado.celdas);
+        if (resultado.ajustados || resultado.fuera) {
+          setAjuste(
+            "Algunos horarios guardados no coincidían con la rejilla de media hora (de 6:00 a 22:00) y se ajustaron. Revísalos antes de guardar."
           );
-          setCargaCompleta(true);
         }
+        setCargaCompleta(true);
       } catch (err) {
         console.error("Error al cargar disponibilidad:", err);
-        if (activo) {
-          setError("No se pudo cargar tu disponibilidad. Intenta nuevamente.");
-        }
+        if (activo) setError("No se pudo cargar tu disponibilidad. Intenta nuevamente.");
       } finally {
         if (activo) setCargando(false);
       }
@@ -199,91 +193,56 @@ export default function ConfiguracionDisponibilidad() {
     };
   }, [user?.id]);
 
-  const alternarDia = (dia) => {
-    setDiasSeleccionados((actuales) =>
-      actuales.includes(dia) ? actuales.filter((d) => d !== dia) : [...actuales, dia]
-    );
-  };
-
-  // El mismo rango se añade a todos los días elegidos; los días donde se
-  // cruza con otro bloque se omiten y se avisa cuáles fueron.
-  const agregarBloque = () => {
-    setError("");
-    setAviso("");
-
-    if (diasSeleccionados.length === 0) {
-      setError("Elige al menos un día.");
-      return;
-    }
-
-    if (!FORMATO_HORA.test(horaInicio) || !FORMATO_HORA.test(horaFin)) {
-      setError("Ingresa una hora de inicio y fin válidas.");
-      return;
-    }
-
-    if (horaInicio >= horaFin) {
-      setError("La hora de fin debe ser posterior a la hora de inicio.");
-      return;
-    }
-
-    const seCruza = (dia) =>
-      bloques.some(
-        (bloque) =>
-          bloque.diaSemana === dia &&
-          horaInicio < bloque.horaFin &&
-          horaFin > bloque.horaInicio
-      );
-    const conCruce = diasSeleccionados.filter(seCruza);
-    const libres = diasSeleccionados.filter((dia) => !seCruza(dia));
-
-    if (libres.length === 0) {
-      setError(
-        diasSeleccionados.length === 1
-          ? "Este bloque se cruza con otro horario del mismo día."
-          : `El bloque se cruza con otro horario el ${listaDias(conCruce)}.`
-      );
-      return;
-    }
-
-    if (conCruce.length > 0) {
-      setAviso(
-        conCruce.length === 1
-          ? `Se añadió al ${listaDias(libres)}. El ${listaDias(conCruce)} se omitió porque se cruza con otro horario.`
-          : `Se añadió al ${listaDias(libres)}. El ${listaDias(conCruce)} se omitieron porque se cruzan con otro horario.`
-      );
-    }
-
-    setBloques((actuales) =>
-      [...actuales, ...libres.map((dia) => ({ diaSemana: dia, horaInicio, horaFin }))].sort(
-        (a, b) =>
-          a.diaSemana - b.diaSemana ||
-          a.horaInicio.localeCompare(b.horaInicio)
-      )
-    );
+  // Todo cambio pasa por aquí: se guarda el estado anterior para deshacer.
+  const cambiar = (nuevas) => {
+    setHistorial((anteriores) => [...anteriores.slice(-(HISTORIAL_MAXIMO - 1)), celdas]);
+    setCeldas(nuevas);
     setCambiosSinGuardar(true);
   };
 
-  const retirarBloque = (indice) => {
-    setBloques((actuales) => actuales.filter((_, i) => i !== indice));
+  const deshacer = () => {
+    if (historial.length === 0) return;
+    setCeldas(historial[historial.length - 1]);
+    setHistorial((anteriores) => anteriores.slice(0, -1));
     setCambiosSinGuardar(true);
+  };
+
+  // Ctrl+Z deshace la última pincelada.
+  useEffect(() => {
+    const alTeclear = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !event.shiftKey) {
+        const enCampo = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
+        if (enCampo) return;
+        event.preventDefault();
+        deshacer();
+      }
+    };
+    window.addEventListener("keydown", alTeclear);
+    return () => window.removeEventListener("keydown", alTeclear);
+  });
+
+  const copiarA = (destinos) => {
+    const nuevas = celdas.map((dia) => [...dia]);
+    for (const dia of destinos) {
+      if (dia !== diaActivo) nuevas[dia] = [...celdas[diaActivo]];
+    }
+    cambiar(nuevas);
   };
 
   const handleGuardar = async () => {
     setError("");
-
     try {
       setGuardando(true);
-      const guardados = await guardarDisponibilidadTutor(bloques);
-      setBloques(
-        (Array.isArray(guardados) ? guardados : []).map(normalizarBloque)
-      );
+      const guardados = await guardarDisponibilidadTutor(bloquesParaGuardar(celdas).bloques);
+      const resultado = celdasDesdeBloques((Array.isArray(guardados) ? guardados : []).map(normalizarBloque));
+      setCeldas(resultado.celdas);
+      setHistorial([]);
+      setAjuste("");
       notificar("Disponibilidad guardada", { cuerpo: "Los estudiantes ya pueden reservar estos horarios." });
       setCambiosSinGuardar(false);
     } catch (err) {
       console.error("Error al guardar disponibilidad:", err);
-      setError(
-        err.message || "No se pudo guardar tu disponibilidad. Intenta nuevamente."
-      );
+      setError(err.message || "No se pudo guardar tu disponibilidad. Intenta nuevamente.");
     } finally {
       setGuardando(false);
     }
@@ -293,18 +252,20 @@ export default function ConfiguracionDisponibilidad() {
     return <PageLoading label="Cargando disponibilidad…" />;
   }
 
-  const bloquesConIndice = bloques.map((bloque, indice) => ({ ...bloque, indice }));
+  const horas = horasTotales(celdas);
+  const { bloques, sobrantes } = bloquesParaGuardar(celdas);
+  const diaActivoNombre = DIAS[diaActivo].toLowerCase();
 
   return (
     <Page>
       <PageHeader
         title="Disponibilidad"
-        description="Los bloques semanales en los que los estudiantes pueden reservar contigo. Cada bloque es una cita posible."
+        description="Pinta sobre la semana las horas en las que puedes dar tutorías. Cada hora pintada es una cita que los estudiantes pueden reservar."
         actions={
           <Button
             appearance="primary"
             onClick={handleGuardar}
-            disabled={guardando || !cargaCompleta}
+            disabled={guardando || !cargaCompleta || !cambiosSinGuardar}
             icon={guardando ? <Spinner size="tiny" /> : <Save20Regular />}
           >
             {guardando ? "Guardando…" : "Guardar disponibilidad"}
@@ -317,142 +278,117 @@ export default function ConfiguracionDisponibilidad() {
           <MessageBarBody>{error}</MessageBarBody>
         </MessageBar>
       )}
-
-      {aviso && (
+      {ajuste && (
         <MessageBar intent="warning" layout="multiline">
-          <MessageBarBody>{aviso}</MessageBarBody>
+          <MessageBarBody>{ajuste}</MessageBarBody>
         </MessageBar>
       )}
 
-
       <div className={styles.layout}>
-        <Surface as="section" aria-labelledby="titulo-nuevo-bloque">
-          <div className={styles.form}>
-            <div className={styles.formHead}>
-              <Subtitle2 as="h2" id="titulo-nuevo-bloque">
-                Añadir un bloque
-              </Subtitle2>
-              <Caption1 as="p" className={styles.muted}>
-                Elige uno o varios días y el rango de horas.
-              </Caption1>
+        <Surface as="aside" className={styles.panel} aria-labelledby="titulo-semana">
+          <div>
+            <Subtitle2 as="h2" id="titulo-semana">
+              Tu semana
+            </Subtitle2>
+            <div className={styles.total}>
+              <LargeTitle as="p" className={styles.cifra}>
+                {formatoHoras(horas)}
+              </LargeTitle>
+              <Body1 className={styles.muted}>
+                {horas === 1 ? "hora" : "horas"} · {bloques.length} {bloques.length === 1 ? "sesión" : "sesiones"} de 1 h
+              </Body1>
             </div>
+            {cambiosSinGuardar && (
+              <Badge appearance="tint" color="warning" shape="rounded">
+                Cambios sin guardar
+              </Badge>
+            )}
+          </div>
 
-            <Field label="Días">
-              <div className={styles.days} role="group" aria-label="Días de la semana">
-                {ORDEN_DIAS.map((index) => (
-                  <Tooltip key={index} content={DIAS_SEMANA[index]} relationship="label">
-                    <ToggleButton
-                      checked={diasSeleccionados.includes(index)}
-                      appearance={diasSeleccionados.includes(index) ? "primary" : "secondary"}
-                      onClick={() => alternarDia(index)}
-                      disabled={guardando}
-                      className={styles.day}
-                    >
-                      {DIAS_SEMANA[index].slice(0, 2)}
-                    </ToggleButton>
-                  </Tooltip>
-                ))}
-              </div>
-              <div className={styles.presets}>
-                <Button
-                  size="small"
-                  appearance="subtle"
-                  onClick={() => setDiasSeleccionados(ENTRE_SEMANA)}
-                  disabled={guardando}
-                >
-                  Lun a vie
-                </Button>
-                <Button
-                  size="small"
-                  appearance="subtle"
-                  onClick={() => setDiasSeleccionados([])}
-                  disabled={guardando || diasSeleccionados.length === 0}
-                >
-                  Limpiar
-                </Button>
-              </div>
-            </Field>
+          <div className={styles.palabras}>
+            <Caption1 className={styles.eyebrow}>En palabras</Caption1>
+            <Body1 aria-live="polite">{resumenEnPalabras(celdas)}</Body1>
+          </div>
 
-            <div className={styles.times}>
-              <Field label="Inicio">
-                <SelectorHora value={horaInicio} onChange={setHoraInicio} disabled={guardando} />
-              </Field>
-              <Field label="Fin">
-                <SelectorHora value={horaFin} onChange={setHoraFin} disabled={guardando} />
-              </Field>
+          {sobrantes.length > 0 && (
+            <MessageBar intent="warning" layout="multiline">
+              <MessageBarBody>
+                Las sesiones son de 1 hora: la media hora rayada (
+                {sobrantes
+                  .map((s) => `${DIAS[s.diaSemana].toLowerCase()} de ${celdaATexto(s.inicio)} a ${celdaATexto(s.fin)}`)
+                  .join(", ")}
+                ) no se podrá reservar.
+              </MessageBarBody>
+            </MessageBar>
+          )}
+
+          <div>
+            <div className={styles.herramientas} role="group" aria-label="Herramienta">
+              <ToggleButton
+                checked={herramienta === "pintar"}
+                appearance={herramienta === "pintar" ? "primary" : "secondary"}
+                icon={<PaintBrush20Regular />}
+                onClick={() => setHerramienta("pintar")}
+              >
+                Pintar
+              </ToggleButton>
+              <ToggleButton
+                checked={herramienta === "borrar"}
+                appearance={herramienta === "borrar" ? "primary" : "secondary"}
+                icon={<Eraser20Regular />}
+                onClick={() => setHerramienta("borrar")}
+              >
+                Borrar
+              </ToggleButton>
             </div>
+            <Caption1 className={styles.muted}>Clic derecho o Mayús para borrar mientras arrastras.</Caption1>
+          </div>
 
+          <Menu>
+            <MenuTrigger disableButtonEnhancement>
+              <Button icon={<Copy20Regular />} className={styles.copiar}>
+                Copiar el {diaActivoNombre} a…
+              </Button>
+            </MenuTrigger>
+            <MenuPopover>
+              <MenuList>
+                <MenuItem onClick={() => copiarA(DIAS_HABILES)}>Días hábiles (lun a vie)</MenuItem>
+                <MenuItem onClick={() => copiarA(ORDEN_DIAS)}>Todos los días</MenuItem>
+              </MenuList>
+            </MenuPopover>
+          </Menu>
+
+          <div className={styles.secundarias}>
+            <Button appearance="subtle" icon={<ArrowUndo20Regular />} onClick={deshacer} disabled={historial.length === 0}>
+              Deshacer
+            </Button>
             <Button
-              icon={<Add20Regular />}
-              onClick={agregarBloque}
-              disabled={guardando || diasSeleccionados.length === 0}
+              appearance="subtle"
+              icon={<Delete20Regular />}
+              onClick={() => cambiar(semanaVacia())}
+              disabled={horas === 0}
             >
-              {diasSeleccionados.length === 0
-                ? "Elige al menos un día"
-                : diasSeleccionados.length === 1
-                  ? `Añadir al ${listaDias(diasSeleccionados)}`
-                  : `Añadir a ${diasSeleccionados.length} días`}
+              Vaciar semana
             </Button>
           </div>
         </Surface>
 
-        <Surface as="section" aria-labelledby="titulo-semana">
-          <div className={styles.weekHeader}>
-            <Subtitle2 as="h2" id="titulo-semana">
-              Tu semana
-            </Subtitle2>
-            {cambiosSinGuardar ? (
-              <Badge appearance="tint" color="warning" shape="rounded">
-                Cambios sin guardar
-              </Badge>
-            ) : (
-              <Caption1 className={styles.muted}>
-                {bloques.length} {bloques.length === 1 ? "bloque" : "bloques"}
-              </Caption1>
-            )}
-          </div>
-
-          {bloques.length === 0 && (
-            <Body1 className={styles.muted}>
-              Aún no tienes horarios configurados. Añade tu primer bloque para empezar a recibir citas.
-            </Body1>
-          )}
-
-          {bloques.length > 0 && (
-            <ul className={styles.week}>
-              {ORDEN_DIAS.map((dia) => {
-                const delDia = bloquesConIndice.filter((bloque) => bloque.diaSemana === dia);
-                return (
-                  <li key={dia} className={styles.weekRow}>
-                    <Text className={styles.dayName}>{DIAS_SEMANA[dia]}</Text>
-                    {delDia.length === 0 ? (
-                      <Caption1 className={styles.muted}>Sin horarios</Caption1>
-                    ) : (
-                      <div className={styles.blocks}>
-                        {delDia.map((bloque) => (
-                          <span
-                            key={`${bloque.horaInicio}-${bloque.horaFin}-${bloque.indice}`}
-                            className={styles.block}
-                          >
-                            {bloque.horaInicio} – {bloque.horaFin}
-                            <Button
-                              appearance="transparent"
-                              size="small"
-                              icon={<Dismiss16Regular />}
-                              className={styles.removeButton}
-                              onClick={() => retirarBloque(bloque.indice)}
-                              disabled={guardando}
-                              aria-label={`Retirar bloque del ${DIAS_SEMANA[bloque.diaSemana]} de ${bloque.horaInicio} a ${bloque.horaFin}`}
-                            />
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+        <Surface flush className={styles.rejilla}>
+          <RejillaFranjas
+            celdas={celdas}
+            onCambiar={cambiar}
+            herramienta={herramienta}
+            diaActivo={diaActivo}
+            onDiaActivo={setDiaActivo}
+            hoy={hoy}
+          />
+          <Caption1 as="p" className={styles.pie}>
+            <span>Arrastra para pintar</span>
+            <span>Estira el borde de una franja</span>
+            <span>
+              <span className={styles.tecla}>Espacio</span> pinta con el teclado
+            </span>
+          </Caption1>
         </Surface>
       </div>
     </Page>

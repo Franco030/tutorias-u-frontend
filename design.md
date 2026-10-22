@@ -154,9 +154,14 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 - Fechas · `Calendar` de `@fluentui/react-calendar-compat` con
   `lib/calendarioEs.js` (español, semana desde el lunes); los días sin
   disponibilidad van en `restrictedDates`.
-- Horas · `SelectorHora` (TimePicker de `@fluentui/react-timepicker-compat`):
-  24 h, lista cada 30 min de unos 7 renglones y se puede escribir otra hora
-  ("09:15"). Nunca el `<input type="time">` del navegador.
+- Disponibilidad del tutor · rejilla semanal "a pinceladas"
+  (`features/tutores/disponibilidad`), al estilo del calendario de Outlook:
+  celdas de 30 min de 6:00 a 22:00, franjas en `colorBrandBackground`,
+  línea roja de la hora actual en el día de hoy. Arrastrar pinta (o borra con
+  la herramienta, con Mayús o con el clic derecho) y los bordes de una franja se estiran; con
+  teclado es una rejilla ARIA (flechas y Espacio). Cada franja se guarda como
+  sesiones de 1 h; la media hora que no completa una sesión va rayada y se
+  avisa. Nunca el `<input type="time">` del navegador.
 - Estados vacíos · `EmptyState` con `ilustracion` (Comunidad, Calendario,
   Revisión) en las pantallas principales; ícono simple en lugares secundarios.
 - Tarjetas ilustradas · siempre `TarjetaIlustrada` (la usa `EmptyState`):
