@@ -16,6 +16,8 @@ import {
   MessageBarBody,
   Spinner,
   Subtitle2,
+  Tab,
+  TabList,
   ToggleButton,
   tokens,
 } from "@fluentui/react-components";
@@ -28,10 +30,20 @@ import {
   Save20Regular,
 } from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
-import { getDisponibilidadTutor, guardarDisponibilidadTutor } from "../../services/tutorService";
+import {
+  getDisponibilidadTutor,
+  getMisBloqueos,
+  getPreferenciasTutor,
+  guardarDisponibilidadTutor,
+  guardarMisBloqueos,
+  guardarPreferenciasTutor,
+} from "../../services/tutorService";
 import { ahoraEnPlataforma } from "../../lib/horaPlataforma";
 import { Page, PageHeader, PageLoading, Surface } from "../../components/ui/Page";
 import { RejillaFranjas } from "./disponibilidad/RejillaFranjas";
+import { DiasBloqueados } from "./disponibilidad/DiasBloqueados";
+import { PreferenciasReserva } from "./disponibilidad/PreferenciasReserva";
+import { esEnlaceWeb } from "../../lib/enlaces";
 import {
   bloquesParaGuardar,
   celdaATexto,
@@ -53,7 +65,13 @@ const normalizarBloque = (bloque) => ({
 
 const HISTORIAL_MAXIMO = 50;
 
+const normalizarBloqueos = (respuesta) =>
+  (respuesta?.bloqueos ?? []).map((bloqueo) => ({ fecha: String(bloqueo.fecha).slice(0, 10), motivo: bloqueo.motivo ?? "" }));
+
 const useStyles = makeStyles({
+  pestanas: {
+    marginBlockEnd: `calc(${tokens.spacingVerticalXXL} * -0.5)`,
+  },
   layout: {
     display: "grid",
     gridTemplateColumns: "minmax(0, 1fr)",
@@ -160,6 +178,13 @@ export default function ConfiguracionDisponibilidad() {
   const [ajuste, setAjuste] = useState("");
   const [cambiosSinGuardar, setCambiosSinGuardar] = useState(false);
   const [hoy] = useState(horaDeHoy);
+  const [pestana, setPestana] = useState("horario");
+  // Días sin tutorías y preferencias de reserva: se guardan con el mismo botón.
+  const [bloqueos, setBloqueos] = useState([]);
+  const [citasAfectadas, setCitasAfectadas] = useState(0);
+  const [bloqueosCambiados, setBloqueosCambiados] = useState(false);
+  const [preferencias, setPreferencias] = useState({ antelacionMinimaHoras: 12, linkReunion: "" });
+  const [preferenciasCambiadas, setPreferenciasCambiadas] = useState(false);
 
   useEffect(() => {
     let activo = true;
@@ -168,8 +193,18 @@ export default function ConfiguracionDisponibilidad() {
       try {
         setCargando(true);
         setError("");
-        const disponibilidad = await getDisponibilidadTutor(user.id);
+        const [disponibilidad, misBloqueos, misPreferencias] = await Promise.all([
+          getDisponibilidadTutor(user.id),
+          getMisBloqueos(),
+          getPreferenciasTutor(),
+        ]);
         if (!activo) return;
+        setBloqueos(normalizarBloqueos(misBloqueos));
+        setCitasAfectadas(misBloqueos?.citasAfectadas ?? 0);
+        setPreferencias({
+          antelacionMinimaHoras: misPreferencias?.antelacionMinimaHoras ?? 12,
+          linkReunion: misPreferencias?.linkReunion ?? "",
+        });
         const resultado = celdasDesdeBloques((Array.isArray(disponibilidad) ? disponibilidad : []).map(normalizarBloque));
         setCeldas(resultado.celdas);
         if (resultado.ajustados || resultado.fuera) {
@@ -229,20 +264,47 @@ export default function ConfiguracionDisponibilidad() {
     cambiar(nuevas);
   };
 
+  const hayCambios = cambiosSinGuardar || bloqueosCambiados || preferenciasCambiadas;
+  const enlaceInvalido = Boolean(preferencias.linkReunion?.trim()) && !esEnlaceWeb(preferencias.linkReunion.trim());
+
+  // Guarda solo lo que cambió: horario, días sin tutorías y preferencias.
   const handleGuardar = async () => {
     setError("");
+    if (enlaceInvalido) {
+      setPestana("reservas");
+      setError("Revisa el enlace fijo de videollamada antes de guardar.");
+      return;
+    }
     try {
       setGuardando(true);
-      const guardados = await guardarDisponibilidadTutor(bloquesParaGuardar(celdas).bloques);
-      const resultado = celdasDesdeBloques((Array.isArray(guardados) ? guardados : []).map(normalizarBloque));
-      setCeldas(resultado.celdas);
-      setHistorial([]);
-      setAjuste("");
-      notificar("Disponibilidad guardada", { cuerpo: "Los estudiantes ya pueden reservar estos horarios." });
-      setCambiosSinGuardar(false);
+      if (cambiosSinGuardar) {
+        const guardados = await guardarDisponibilidadTutor(bloquesParaGuardar(celdas).bloques);
+        const resultado = celdasDesdeBloques((Array.isArray(guardados) ? guardados : []).map(normalizarBloque));
+        setCeldas(resultado.celdas);
+        setHistorial([]);
+        setAjuste("");
+        setCambiosSinGuardar(false);
+      }
+      if (bloqueosCambiados) {
+        const respuesta = await guardarMisBloqueos(
+          bloqueos.map(({ fecha, motivo }) => ({ fecha, motivo: motivo.trim() || null }))
+        );
+        setBloqueos(normalizarBloqueos(respuesta));
+        setCitasAfectadas(respuesta?.citasAfectadas ?? 0);
+        setBloqueosCambiados(false);
+      }
+      if (preferenciasCambiadas) {
+        const respuesta = await guardarPreferenciasTutor({
+          antelacionMinimaHoras: preferencias.antelacionMinimaHoras,
+          linkReunion: preferencias.linkReunion?.trim() || null,
+        });
+        setPreferencias({ antelacionMinimaHoras: respuesta.antelacionMinimaHoras, linkReunion: respuesta.linkReunion ?? "" });
+        setPreferenciasCambiadas(false);
+      }
+      notificar("Cambios guardados", { cuerpo: "Los estudiantes ya ven tu disponibilidad actualizada." });
     } catch (err) {
       console.error("Error al guardar disponibilidad:", err);
-      setError(err.message || "No se pudo guardar tu disponibilidad. Intenta nuevamente.");
+      setError(err.message || "No se pudieron guardar los cambios. Intenta nuevamente.");
     } finally {
       setGuardando(false);
     }
@@ -265,13 +327,24 @@ export default function ConfiguracionDisponibilidad() {
           <Button
             appearance="primary"
             onClick={handleGuardar}
-            disabled={guardando || !cargaCompleta || !cambiosSinGuardar}
+            disabled={guardando || !cargaCompleta || !hayCambios}
             icon={guardando ? <Spinner size="tiny" /> : <Save20Regular />}
           >
-            {guardando ? "Guardando…" : "Guardar disponibilidad"}
+            {guardando ? "Guardando…" : "Guardar cambios"}
           </Button>
         }
       />
+
+      <TabList
+        className={styles.pestanas}
+        selectedValue={pestana}
+        onTabSelect={(_, data) => setPestana(data.value)}
+        aria-label="Secciones de disponibilidad"
+      >
+        <Tab value="horario">Horario semanal</Tab>
+        <Tab value="bloqueos">Días sin tutorías{bloqueos.length > 0 && ` (${bloqueos.length})`}</Tab>
+        <Tab value="reservas">Reservas</Tab>
+      </TabList>
 
       {error && (
         <MessageBar intent="error" layout="multiline">
@@ -284,113 +357,138 @@ export default function ConfiguracionDisponibilidad() {
         </MessageBar>
       )}
 
-      <div className={styles.layout}>
-        <Surface as="aside" className={styles.panel} aria-labelledby="titulo-semana">
-          <div>
-            <Subtitle2 as="h2" id="titulo-semana">
-              Tu semana
-            </Subtitle2>
-            <div className={styles.total}>
-              <LargeTitle as="p" className={styles.cifra}>
-                {formatoHoras(horas)}
-              </LargeTitle>
-              <Body1 className={styles.muted}>
-                {horas === 1 ? "hora" : "horas"} · {bloques.length} {bloques.length === 1 ? "sesión" : "sesiones"} de 1 h
-              </Body1>
+      {pestana === "bloqueos" && (
+        <DiasBloqueados
+          bloqueos={bloqueos}
+          citasAfectadas={citasAfectadas}
+          deshabilitado={guardando}
+          onCambiar={(nuevos) => {
+            setBloqueos(nuevos);
+            setBloqueosCambiados(true);
+          }}
+        />
+      )}
+
+      {pestana === "reservas" && (
+        <PreferenciasReserva
+          preferencias={preferencias}
+          deshabilitado={guardando}
+          onCambiar={(nuevas) => {
+            setPreferencias(nuevas);
+            setPreferenciasCambiadas(true);
+          }}
+        />
+      )}
+
+      {pestana === "horario" && (
+        <div className={styles.layout}>
+          <Surface as="aside" className={styles.panel} aria-labelledby="titulo-semana">
+            <div>
+              <Subtitle2 as="h2" id="titulo-semana">
+                Tu semana
+              </Subtitle2>
+              <div className={styles.total}>
+                <LargeTitle as="p" className={styles.cifra}>
+                  {formatoHoras(horas)}
+                </LargeTitle>
+                <Body1 className={styles.muted}>
+                  {horas === 1 ? "hora" : "horas"} · {bloques.length} {bloques.length === 1 ? "sesión" : "sesiones"} de 1 h
+                </Body1>
+              </div>
+              {cambiosSinGuardar && (
+                <Badge appearance="tint" color="warning" shape="rounded">
+                  Cambios sin guardar
+                </Badge>
+              )}
             </div>
-            {cambiosSinGuardar && (
-              <Badge appearance="tint" color="warning" shape="rounded">
-                Cambios sin guardar
-              </Badge>
+
+            <div className={styles.palabras}>
+              <Caption1 className={styles.eyebrow}>En palabras</Caption1>
+              <Body1 aria-live="polite">{resumenEnPalabras(celdas)}</Body1>
+            </div>
+
+            {sobrantes.length > 0 && (
+              <MessageBar intent="warning" layout="multiline">
+                <MessageBarBody>
+                  Las sesiones son de 1 hora: la media hora rayada (
+                  {sobrantes
+                    .map((s) => `${DIAS[s.diaSemana].toLowerCase()} de ${celdaATexto(s.inicio)} a ${celdaATexto(s.fin)}`)
+                    .join(", ")}
+                  ) no se podrá reservar.
+                </MessageBarBody>
+              </MessageBar>
             )}
-          </div>
 
-          <div className={styles.palabras}>
-            <Caption1 className={styles.eyebrow}>En palabras</Caption1>
-            <Body1 aria-live="polite">{resumenEnPalabras(celdas)}</Body1>
-          </div>
-
-          {sobrantes.length > 0 && (
-            <MessageBar intent="warning" layout="multiline">
-              <MessageBarBody>
-                Las sesiones son de 1 hora: la media hora rayada (
-                {sobrantes
-                  .map((s) => `${DIAS[s.diaSemana].toLowerCase()} de ${celdaATexto(s.inicio)} a ${celdaATexto(s.fin)}`)
-                  .join(", ")}
-                ) no se podrá reservar.
-              </MessageBarBody>
-            </MessageBar>
-          )}
-
-          <div>
-            <div className={styles.herramientas} role="group" aria-label="Herramienta">
-              <ToggleButton
-                checked={herramienta === "pintar"}
-                appearance={herramienta === "pintar" ? "primary" : "secondary"}
-                icon={<PaintBrush20Regular />}
-                onClick={() => setHerramienta("pintar")}
-              >
-                Pintar
-              </ToggleButton>
-              <ToggleButton
-                checked={herramienta === "borrar"}
-                appearance={herramienta === "borrar" ? "primary" : "secondary"}
-                icon={<Eraser20Regular />}
-                onClick={() => setHerramienta("borrar")}
-              >
-                Borrar
-              </ToggleButton>
+            <div>
+              <div className={styles.herramientas} role="group" aria-label="Herramienta">
+                <ToggleButton
+                  checked={herramienta === "pintar"}
+                  appearance={herramienta === "pintar" ? "primary" : "secondary"}
+                  icon={<PaintBrush20Regular />}
+                  onClick={() => setHerramienta("pintar")}
+                >
+                  Pintar
+                </ToggleButton>
+                <ToggleButton
+                  checked={herramienta === "borrar"}
+                  appearance={herramienta === "borrar" ? "primary" : "secondary"}
+                  icon={<Eraser20Regular />}
+                  onClick={() => setHerramienta("borrar")}
+                >
+                  Borrar
+                </ToggleButton>
+              </div>
+              <Caption1 className={styles.muted}>Clic derecho o Mayús para borrar mientras arrastras.</Caption1>
             </div>
-            <Caption1 className={styles.muted}>Clic derecho o Mayús para borrar mientras arrastras.</Caption1>
-          </div>
 
-          <Menu>
-            <MenuTrigger disableButtonEnhancement>
-              <Button icon={<Copy20Regular />} className={styles.copiar}>
-                Copiar el {diaActivoNombre} a…
+            <Menu>
+              <MenuTrigger disableButtonEnhancement>
+                <Button icon={<Copy20Regular />} className={styles.copiar}>
+                  Copiar el {diaActivoNombre} a…
+                </Button>
+              </MenuTrigger>
+              <MenuPopover>
+                <MenuList>
+                  <MenuItem onClick={() => copiarA(DIAS_HABILES)}>Días hábiles (lun a vie)</MenuItem>
+                  <MenuItem onClick={() => copiarA(ORDEN_DIAS)}>Todos los días</MenuItem>
+                </MenuList>
+              </MenuPopover>
+            </Menu>
+
+            <div className={styles.secundarias}>
+              <Button appearance="subtle" icon={<ArrowUndo20Regular />} onClick={deshacer} disabled={historial.length === 0}>
+                Deshacer
               </Button>
-            </MenuTrigger>
-            <MenuPopover>
-              <MenuList>
-                <MenuItem onClick={() => copiarA(DIAS_HABILES)}>Días hábiles (lun a vie)</MenuItem>
-                <MenuItem onClick={() => copiarA(ORDEN_DIAS)}>Todos los días</MenuItem>
-              </MenuList>
-            </MenuPopover>
-          </Menu>
+              <Button
+                appearance="subtle"
+                icon={<Delete20Regular />}
+                onClick={() => cambiar(semanaVacia())}
+                disabled={horas === 0}
+              >
+                Vaciar semana
+              </Button>
+            </div>
+          </Surface>
 
-          <div className={styles.secundarias}>
-            <Button appearance="subtle" icon={<ArrowUndo20Regular />} onClick={deshacer} disabled={historial.length === 0}>
-              Deshacer
-            </Button>
-            <Button
-              appearance="subtle"
-              icon={<Delete20Regular />}
-              onClick={() => cambiar(semanaVacia())}
-              disabled={horas === 0}
-            >
-              Vaciar semana
-            </Button>
-          </div>
-        </Surface>
-
-        <Surface flush className={styles.rejilla}>
-          <RejillaFranjas
-            celdas={celdas}
-            onCambiar={cambiar}
-            herramienta={herramienta}
-            diaActivo={diaActivo}
-            onDiaActivo={setDiaActivo}
-            hoy={hoy}
-          />
-          <Caption1 as="p" className={styles.pie}>
-            <span>Arrastra para pintar</span>
-            <span>Estira el borde de una franja</span>
-            <span>
-              <span className={styles.tecla}>Espacio</span> pinta con el teclado
-            </span>
-          </Caption1>
-        </Surface>
-      </div>
+          <Surface flush className={styles.rejilla}>
+            <RejillaFranjas
+              celdas={celdas}
+              onCambiar={cambiar}
+              herramienta={herramienta}
+              diaActivo={diaActivo}
+              onDiaActivo={setDiaActivo}
+              hoy={hoy}
+            />
+            <Caption1 as="p" className={styles.pie}>
+              <span>Arrastra para pintar</span>
+              <span>Estira el borde de una franja</span>
+              <span>
+                <span className={styles.tecla}>Espacio</span> pinta con el teclado
+              </span>
+            </Caption1>
+          </Surface>
+        </div>
+      )}
     </Page>
   );
 }

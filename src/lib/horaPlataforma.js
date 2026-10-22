@@ -35,3 +35,8 @@ export function esFuturo(fecha, hora, instante = new Date()) {
   const ahora = ahoraEnPlataforma(instante);
   return `${fecha}T${hora}` > `${ahora.fecha}T${ahora.hora}`;
 }
+
+// ¿Se puede reservar? El bloque debe empezar después de "ahora + antelación".
+export function esReservable(fecha, hora, antelacionHoras = 0, instante = new Date()) {
+  return esFuturo(fecha, hora, new Date(instante.getTime() + antelacionHoras * 3600000));
+}

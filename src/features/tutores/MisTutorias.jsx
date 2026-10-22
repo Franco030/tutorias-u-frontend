@@ -24,6 +24,7 @@ import {
   rechazarCita,
 } from "../../services/citaService";
 import ConfirmarTutoriaModal from "./ConfirmarTutoriaModal";
+import { getPreferenciasTutor } from "../../services/tutorService";
 import { DangerButton } from "../../components/ui/DangerButton";
 import { IlustracionRevision } from "../../components/illustrations/Ilustraciones";
 import { EmptyState } from "../../components/ui/EmptyState";
@@ -55,6 +56,20 @@ export default function MisTutorias() {
   const [rechazandoId, setRechazandoId] = useState(null);
   const [citaARechazar, setCitaARechazar] = useState(null);
   const [motivoRechazo, setMotivoRechazo] = useState("");
+
+  const [linkPredeterminado, setLinkPredeterminado] = useState("");
+
+  useEffect(() => {
+    let activo = true;
+    getPreferenciasTutor()
+      .then((preferencias) => {
+        if (activo) setLinkPredeterminado(preferencias?.linkReunion ?? "");
+      })
+      .catch(() => {});
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   useEffect(() => {
     const cargarCitas = async () => {
@@ -180,7 +195,7 @@ export default function MisTutorias() {
                   key={cita.id}
                   fecha={fecha}
                   title={cita.materiaNombre}
-                  meta={`${formatoSesion.format(fecha)} · ${cita.estudianteNombre}`}
+                  meta={`${formatoSesion.format(fecha)} · ${cita.estudianteNombre}${cita.tema ? ` · “${cita.tema}”` : ""}`}
                   actions={
                     <>
                       <DangerButton
@@ -219,6 +234,7 @@ export default function MisTutorias() {
           }
         }}
         onConfirmar={handleConfirmarAceptacion}
+        linkPredeterminado={linkPredeterminado}
       />
 
       <Dialog

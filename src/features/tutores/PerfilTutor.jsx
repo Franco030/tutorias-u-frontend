@@ -273,6 +273,7 @@ export default function PerfilTutor() {
         onClose={() => setBookingOpen(false)}
         tutorId={id}
         materiasDisponibles={tutor.materias || []}
+        antelacionMinimaHoras={tutor.antelacionMinimaHoras ?? 0}
       />
     </>
   );

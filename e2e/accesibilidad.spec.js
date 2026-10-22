@@ -5,6 +5,7 @@ import {
   iniciarSesion,
   materias,
   rutasPerfilTutor,
+  rutasTutorReservas,
   simularApi,
   tutores,
   usuarios,
@@ -75,6 +76,7 @@ for (const tema of ['light', 'dark']) {
     test('disponibilidad del tutor', async ({ page }) => {
       await iniciarSesion(page, usuarios.tutor, { tema });
       await simularApi(page, {
+        ...rutasTutorReservas,
         '/api/tutores/11/disponibilidad': [
           { diaSemana: 1, horaInicio: '09:00:00', horaFin: '10:00:00' },
           { diaSemana: 2, horaInicio: '14:00:00', horaFin: '15:00:00' },
@@ -85,5 +87,20 @@ for (const tema of ['light', 'dark']) {
       await page.waitForTimeout(600);
       await revisar(page);
     });
+
+    for (const pestana of ['Días sin tutorías', 'Reservas']) {
+      test(`disponibilidad: ${pestana}`, async ({ page }) => {
+        await iniciarSesion(page, usuarios.tutor, { tema });
+        await simularApi(page, {
+          ...rutasTutorReservas,
+          '/api/tutores/bloqueos': { bloqueos: [{ fecha: '2099-01-15', motivo: 'Examen' }], citasAfectadas: 1 },
+          '/api/tutores/11/disponibilidad': [],
+        });
+        await page.goto('/tutor/disponibilidad');
+        await page.getByRole('tab', { name: new RegExp(pestana) }).click();
+        await page.waitForTimeout(600);
+        await revisar(page);
+      });
+    }
   });
 }

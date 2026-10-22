@@ -162,6 +162,13 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   teclado es una rejilla ARIA (flechas y Espacio). Cada franja se guarda como
   sesiones de 1 h; la media hora que no completa una sesión va rayada y se
   avisa. Nunca el `<input type="time">` del navegador.
+  La pantalla tiene tres pestañas (Horario semanal, Días sin tutorías,
+  Reservas) y un solo botón "Guardar cambios" que guarda lo que cambió. Los
+  días bloqueados se marcan en rojo dentro del mismo `Calendar` de Fluent.
+- Reserva · el calendario deshabilita los días bloqueados y los horarios que
+  no cumplen la antelación mínima del tutor, que se explica en el texto del
+  diálogo. "¿Qué necesitas repasar?" es opcional y el tutor lo ve en la
+  solicitud, al aceptarla y en los detalles de la tutoría.
 - Estados vacíos · `EmptyState` con `ilustracion` (Comunidad, Calendario,
   Revisión) en las pantallas principales; ícono simple en lugares secundarios.
 - Tarjetas ilustradas · siempre `TarjetaIlustrada` (la usa `EmptyState`):

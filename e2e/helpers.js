@@ -92,6 +92,12 @@ export const historialPorCalificar = [
   },
 ];
 
+// Lo que la pantalla de Disponibilidad carga además del horario semanal.
+export const rutasTutorReservas = {
+  '/api/tutores/bloqueos': { bloqueos: [], citasAfectadas: 0 },
+  '/api/tutores/preferencias': { antelacionMinimaHoras: 12, linkReunion: null },
+};
+
 // Abre la app con una sesión ya guardada (sin pasar por el formulario).
 export async function iniciarSesion(page, usuario, { tema = 'light' } = {}) {
   await page.addInitScript(

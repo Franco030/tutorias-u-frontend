@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Body1,
   Button,
@@ -18,6 +18,7 @@ import {
   Radio,
   RadioGroup,
   Spinner,
+  Textarea,
   Subtitle1,
   tokens,
 } from "@fluentui/react-components";
@@ -26,9 +27,9 @@ import { CheckmarkCircle48Regular, Dismiss24Regular } from "@fluentui/react-icon
 import { calendarioEs } from "../../lib/calendarioEs";
 import { Diferido } from "../../components/ui/Page";
 import { agendarCita, getHorasOcupadas } from "../../services/citaService";
-import { ahoraEnPlataforma, crearFechaHora, esFuturo } from "../../lib/horaPlataforma";
+import { ahoraEnPlataforma, crearFechaHora, esReservable } from "../../lib/horaPlataforma";
 import { getMaterias } from "../../services/materiaService";
-import { getDisponibilidadTutor } from "../../services/tutorService";
+import { getBloqueosTutor, getDisponibilidadTutor } from "../../services/tutorService";
 
 const DIAS_SEMANA = [
   "Domingo",
@@ -107,12 +108,15 @@ export default function BookingModal({
   onClose,
   tutorId,
   materiasDisponibles,
+  antelacionMinimaHoras = 0,
 }) {
   const [materiaId, setMateriaId] = useState("");
   const [fecha, setFecha] = useState("");
   const [bloqueSeleccionado, setBloqueSeleccionado] = useState("");
   const [materias, setMaterias] = useState([]);
   const [disponibilidad, setDisponibilidad] = useState([]);
+  const [diasBloqueados, setDiasBloqueados] = useState(() => new Set());
+  const [tema, setTema] = useState("");
   const [horariosOcupados, setHorariosOcupados] = useState([]);
   const [cargandoOcupados, setCargandoOcupados] = useState(false);
   const [errorOcupados, setErrorOcupados] = useState("");
@@ -135,12 +139,16 @@ export default function BookingModal({
         setBloqueSeleccionado("");
         setMaterias([]);
         setDisponibilidad([]);
+        setDiasBloqueados(new Set());
+        setTema("");
         setHorariosOcupados([]);
         setErrorOcupados("");
 
-        const [catalogo, bloquesTutor] = await Promise.all([
+        // Los días bloqueados son opcionales: si fallan, el backend igual valida.
+        const [catalogo, bloquesTutor, bloqueos] = await Promise.all([
           getMaterias(),
           getDisponibilidadTutor(tutorId),
+          getBloqueosTutor(tutorId).catch(() => []),
         ]);
 
         if (!activo) return;
@@ -160,6 +168,7 @@ export default function BookingModal({
             normalizarBloque
           )
         );
+        setDiasBloqueados(new Set((Array.isArray(bloqueos) ? bloqueos : []).map((fecha) => String(fecha).slice(0, 10))));
       } catch (err) {
         console.error("Error al cargar datos de la reserva:", err);
         if (activo) {
@@ -212,6 +221,12 @@ export default function BookingModal({
     };
   }, [isOpen, fecha, tutorId]);
 
+  // Un bloque se puede reservar si empieza después de "ahora + antelación del tutor".
+  const reservable = useCallback(
+    (clave, hora) => esReservable(clave, hora, antelacionMinimaHoras),
+    [antelacionMinimaHoras]
+  );
+
   const opcionesFecha = useMemo(() => {
     // El calendario arranca en el día actual de la plataforma, no del navegador.
     const [anio, mes, diaHoy] = ahoraEnPlataforma().fecha.split("-").map(Number);
@@ -228,9 +243,8 @@ export default function BookingModal({
       const bloquesDelDia = disponibilidad.filter(
         (bloque) => bloque.diaSemana === dia.getDay()
       );
-      const tieneHorarioFuturo = bloquesDelDia.some((bloque) =>
-        esFuturo(clave, bloque.horaInicio)
-      );
+      const tieneHorarioFuturo =
+        !diasBloqueados.has(clave) && bloquesDelDia.some((bloque) => reservable(clave, bloque.horaInicio));
 
       opciones.push({
         value: clave,
@@ -243,19 +257,19 @@ export default function BookingModal({
       });
     }
     return opciones;
-  }, [disponibilidad]);
+  }, [disponibilidad, diasBloqueados, reservable]);
 
   const bloquesDisponibles = useMemo(() => {
     if (!fecha) return [];
     const diaSemana = new Date(`${fecha}T12:00:00`).getDay();
 
     return disponibilidad.filter(
-      (bloque) => bloque.diaSemana === diaSemana && esFuturo(fecha, bloque.horaInicio)
+      (bloque) => bloque.diaSemana === diaSemana && reservable(fecha, bloque.horaInicio)
     ).map((bloque) => ({
       ...bloque,
       ocupado: horariosOcupados.includes(bloque.horaInicio),
     }));
-  }, [disponibilidad, fecha, horariosOcupados]);
+  }, [disponibilidad, fecha, horariosOcupados, reservable]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -285,8 +299,12 @@ export default function BookingModal({
 
     const fechaHoraInicio = crearFechaHora(fecha, bloque.horaInicio);
     const fechaHoraFin = crearFechaHora(fecha, bloque.horaFin);
-    if (!esFuturo(fecha, bloque.horaInicio)) {
-      setError("No puedes agendar una cita en una fecha u hora pasada.");
+    if (!reservable(fecha, bloque.horaInicio)) {
+      setError(
+        antelacionMinimaHoras > 0
+          ? `Este tutor recibe reservas con al menos ${antelacionMinimaHoras} h de anticipación.`
+          : "No puedes agendar una cita en una fecha u hora pasada."
+      );
       return;
     }
 
@@ -297,6 +315,7 @@ export default function BookingModal({
         materiaId: Number(materiaId),
         fechaHoraInicio,
         fechaHoraFin,
+        tema: tema.trim() || null,
       });
 
       setMensajeExito(
@@ -305,6 +324,7 @@ export default function BookingModal({
       setMateriaId("");
       setFecha("");
       setBloqueSeleccionado("");
+      setTema("");
     } catch (err) {
       console.error("Error al agendar la cita:", err);
       setError(
@@ -367,6 +387,8 @@ export default function BookingModal({
                 <div className={styles.form}>
                   <Body1 className={styles.muted}>
                     Elige la materia y uno de los horarios que el tutor tiene disponibles.
+                    {antelacionMinimaHoras > 0 &&
+                      ` Este tutor recibe reservas con al menos ${antelacionMinimaHoras} h de anticipación.`}
                   </Body1>
 
                   <Field label="Materia" required>
@@ -461,6 +483,21 @@ export default function BookingModal({
                       )}
                     </Field>
                   </div>
+
+                  <Field
+                    label="¿Qué necesitas repasar?"
+                    hint="Opcional. Ayuda al tutor a preparar la sesión."
+                  >
+                    <Textarea
+                      value={tema}
+                      onChange={(_, data) => setTema(data.value)}
+                      maxLength={500}
+                      rows={2}
+                      resize="vertical"
+                      placeholder="Por ejemplo: límites laterales y continuidad"
+                      disabled={submitting}
+                    />
+                  </Field>
 
                   {cargando && (
                     <Diferido>
