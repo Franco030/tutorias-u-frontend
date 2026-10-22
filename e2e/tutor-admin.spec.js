@@ -99,9 +99,14 @@ test.describe('Administración', () => {
     await expect(page.getByText('Álgebra')).toBeVisible();
 
     await page.getByRole('button', { name: 'Rechazar a Sofía Treviño' }).click();
-    await page.getByRole('button', { name: 'Rechazar solicitud' }).click();
+    const rechazar = page.getByRole('button', { name: 'Rechazar solicitud' });
+    // El motivo es obligatorio: sin él no se puede rechazar.
+    await expect(rechazar).toBeDisabled();
+    await page.getByLabel(/Motivo del rechazo/).fill('El comprobante no es legible.');
+    await rechazar.click();
     await expect(page.getByText('No hay solicitudes por revisar')).toBeVisible();
-    expect(recibidas.some((r) => r.metodo === 'PUT' && r.ruta === '/api/admin/tutores/40/rechazar')).toBe(true);
+    const rechazo = recibidas.find((r) => r.metodo === 'PUT' && r.ruta === '/api/admin/tutores/40/rechazar');
+    expect(rechazo?.cuerpo).toEqual({ motivo: 'El comprobante no es legible.' });
   });
 
   test('el aspirante ve su aprobación sin volver a iniciar sesión', async ({ page }) => {

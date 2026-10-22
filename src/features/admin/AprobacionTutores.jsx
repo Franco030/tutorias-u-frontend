@@ -42,6 +42,11 @@ import { SessionListSkeleton } from '../../components/ui/SessionList';
 const formatoFecha = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium' });
 
 const useStyles = makeStyles({
+  rechazo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalL,
+  },
   list: {
     margin: 0,
     padding: 0,
@@ -309,12 +314,12 @@ export default function AprobacionTutores() {
         <DialogSurface>
           <DialogBody>
             <DialogTitle>¿Rechazar esta solicitud?</DialogTitle>
-            <DialogContent>
+            <DialogContent className={styles.rechazo}>
               <Body1>
                 {porRechazar &&
                   `${porRechazar.nombre} verá su solicitud como rechazada. Podrá volver a postularse más adelante.`}
               </Body1>
-              <Field label="Motivo del rechazo" hint="Este motivo se enviará al correo del aspirante." style={{ marginTop: '16px' }}>
+              <Field label="Motivo del rechazo" required hint="Se incluye en el correo que recibe el aspirante.">
                 <Textarea
                   value={motivoRechazo}
                   onChange={(_, data) => setMotivoRechazo(data.value)}
@@ -326,7 +331,13 @@ export default function AprobacionTutores() {
               </Field>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => { setPorRechazar(null); setMotivoRechazo(''); }} disabled={approvingId !== null}>
+              <Button
+                onClick={() => {
+                  setPorRechazar(null);
+                  setMotivoRechazo('');
+                }}
+                disabled={approvingId !== null}
+              >
                 Volver
               </Button>
               <DangerButton
