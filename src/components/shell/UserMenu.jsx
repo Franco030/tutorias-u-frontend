@@ -15,7 +15,7 @@ import {
   Text,
   tokens,
 } from "@fluentui/react-components";
-import { CalendarLtr20Regular, DarkTheme20Regular, SignOut20Regular } from "@fluentui/react-icons";
+import { CalendarLtr20Regular, DarkTheme20Regular, Info20Regular, SignOut20Regular } from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { getRol } from "./navigation";
@@ -122,6 +122,9 @@ export function UserMenu() {
           <MenuItemSwitch icon={<DarkTheme20Regular />} name="tema" value="oscuro">
             Tema oscuro
           </MenuItemSwitch>
+          <MenuItem icon={<Info20Regular />} onClick={() => navigate("/acerca")}>
+            Acerca de TutoriasU
+          </MenuItem>
           <MenuDivider />
           <MenuItem icon={<SignOut20Regular />} onClick={logout}>
             Cerrar sesión

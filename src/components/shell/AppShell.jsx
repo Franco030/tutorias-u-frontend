@@ -123,6 +123,10 @@ const useStyles = makeStyles({
     flexGrow: 1,
     minWidth: 0,
     overflowY: "auto",
+    // El espacio de la barra de desplazamiento está siempre reservado: si una
+    // página pasa a necesitar scroll (abrir un acordeón, cargar una lista), el
+    // contenido no se recorre a la izquierda.
+    scrollbarGutter: "stable",
     backgroundColor: tokens.colorNeutralBackground2,
     borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     boxShadow: tokens.shadow4,

@@ -50,6 +50,9 @@ for (const tema of ['light', 'dark']) {
       ['catálogo', '/tutores', 'Buscar tutores'],
       ['mis intereses', '/intereses', 'Mis intereses'],
       ['perfil de tutor con reseñas', '/tutor/11', 'Mateo Herrera'],
+      ['ayuda y soporte', '/ayuda', 'Ayuda y soporte'],
+      ['acerca de', '/acerca', 'Acerca de TutoriasU'],
+      ['aviso de privacidad', '/privacidad', 'Aviso de privacidad'],
     ]) {
       test(nombre, async ({ page }) => {
         await iniciarSesion(page, usuarios.estudiante, { tema });

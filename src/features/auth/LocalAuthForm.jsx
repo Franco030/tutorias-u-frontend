@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   Button,
+  Caption1,
   Field,
   Input,
   Link,
@@ -13,6 +14,7 @@ import {
 import { Eye20Regular, EyeOff20Regular } from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
 import authService from "./authService";
+import { EnlaceInterno } from "../../components/ui/EnlaceInterno";
 
 const useStyles = makeStyles({
   form: {
@@ -25,6 +27,11 @@ const useStyles = makeStyles({
   },
   switch: {
     alignSelf: "center",
+  },
+  aviso: {
+    marginTop: `calc(${tokens.spacingVerticalS} * -1)`,
+    textAlign: "center",
+    color: tokens.colorNeutralForeground3,
   },
 });
 
@@ -146,6 +153,13 @@ export function LocalAuthForm() {
       >
         {isRegister ? "Crear cuenta" : "Iniciar sesión"}
       </Button>
+
+      {isRegister && (
+        <Caption1 className={styles.aviso}>
+          Al crear tu cuenta aceptas los <EnlaceInterno to="/terminos">Términos de uso</EnlaceInterno> y el{" "}
+          <EnlaceInterno to="/privacidad">Aviso de privacidad</EnlaceInterno>.
+        </Caption1>
+      )}
 
       <Link
         as="button"
