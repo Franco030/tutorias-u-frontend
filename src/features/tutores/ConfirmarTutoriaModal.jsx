@@ -39,6 +39,11 @@ const useStyles = makeStyles({
   muted: {
     color: tokens.colorNeutralForeground3,
   },
+  tema: {
+    marginTop: tokens.spacingVerticalXS,
+    whiteSpace: "pre-wrap",
+    overflowWrap: "anywhere",
+  },
 });
 
 export default function ConfirmarTutoriaModal({
@@ -47,10 +52,18 @@ export default function ConfirmarTutoriaModal({
   onCerrar,
   onConfirmar,
   guardando,
+  linkPredeterminado = "",
 }) {
   const styles = useStyles();
   const [linkReunion, setLinkReunion] = useState("");
   const [notas, setNotas] = useState("");
+  const [citaAnterior, setCitaAnterior] = useState(null);
+
+  // Al abrir otra solicitud, el enlace arranca con el enlace fijo del tutor.
+  if (cita !== citaAnterior) {
+    setCitaAnterior(cita);
+    setLinkReunion(linkPredeterminado ?? "");
+  }
 
   if (!abierto || !cita) {
     return null;
@@ -105,13 +118,26 @@ export default function ConfirmarTutoriaModal({
               <div className={styles.summary}>
                 <Text weight="semibold">{cita.materiaNombre}</Text>
                 <Caption1 className={styles.muted}>Estudiante: {cita.estudianteNombre}</Caption1>
+                {cita.tema && (
+                  <Body1 className={styles.tema}>
+                    <span className={styles.muted}>Quiere repasar: </span>
+                    {cita.tema}
+                  </Body1>
+                )}
               </div>
 
               <Body1 className={styles.muted}>
                 Agrega el enlace de la reunión y cualquier indicación para el estudiante. Ambos son opcionales.
               </Body1>
 
-              <Field label="Enlace de reunión">
+              <Field
+                label="Enlace de reunión"
+                hint={
+                  linkPredeterminado && linkReunion === linkPredeterminado
+                    ? "Es tu enlace fijo; cámbialo solo si esta sesión usa otro."
+                    : undefined
+                }
+              >
                 <Input
                   id="linkReunion"
                   type="url"

@@ -153,9 +153,10 @@ describe("citaService", () => {
 
     await agendarCita(datos);
 
+    // Sin tema se envía null (el tema es opcional).
     expect(apiClient.post).toHaveBeenCalledWith(
       "/api/citas/agendar",
-      datos
+      { ...datos, tema: null }
     );
   });
 

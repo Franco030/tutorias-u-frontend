@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { enDias, iniciarSesion, simularApi, usuarios } from './helpers';
+import { enDias, iniciarSesion, rutasTutorReservas, simularApi, usuarios } from './helpers';
 
 test.describe('Tutor', () => {
   test('acepta y rechaza solicitudes con aviso', async ({ page }) => {
@@ -54,6 +54,7 @@ test.describe('Disponibilidad', () => {
   test('pinta franjas arrastrando y las guarda como sesiones de 1 h', async ({ page }) => {
     await iniciarSesion(page, usuarios.tutor);
     const recibidas = await simularApi(page, {
+      ...rutasTutorReservas,
       '/api/tutores/11/disponibilidad': [],
       'POST /api/tutores/disponibilidad': (request) => request.postDataJSON(),
     });
@@ -65,16 +66,73 @@ test.describe('Disponibilidad', () => {
     await expect(page.getByText('Lun a jue, de 9:00 a 13:00.')).toBeVisible();
     await expect(page.getByText('16 sesiones de 1 h', { exact: false })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Guardar disponibilidad' }).click();
-    await expect(page.getByText('Disponibilidad guardada', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Guardar cambios' }).click();
+    await expect(page.getByText('Cambios guardados', { exact: true })).toBeVisible();
     const guardado = recibidas.find((r) => r.metodo === 'POST' && r.ruta === '/api/tutores/disponibilidad');
     expect(guardado.cuerpo).toHaveLength(16);
     expect(guardado.cuerpo[0]).toEqual({ diaSemana: 1, horaInicio: '09:00', horaFin: '10:00' });
   });
 
+  test('avisa al salir con cambios sin guardar', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+    const recibidas = await simularApi(page, {
+      ...rutasTutorReservas,
+      '/api/citas/proximas': [],
+      '/api/tutores/11/disponibilidad': [],
+      'POST /api/tutores/disponibilidad': (request) => request.postDataJSON(),
+    });
+    const irAInicio = () => page.getByRole('navigation').getByRole('link').first().click();
+    const dialogo = page.getByRole('dialog', { name: '¿Guardar los cambios?' });
+
+    await page.goto('/tutor/disponibilidad');
+    await arrastrar(page, celda(page, 0, 9), celda(page, 0, 10.5));
+
+    // Cancelar: se queda con lo pintado.
+    await irAInicio();
+    await expect(dialogo).toBeVisible();
+    await dialogo.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(dialogo).toBeHidden();
+    await expect(page).toHaveURL(/\/tutor\/disponibilidad$/);
+    await expect(page.getByText('Lun, de 9:00 a 11:00.')).toBeVisible();
+
+    // Guardar: guarda y entonces navega.
+    await irAInicio();
+    await dialogo.getByRole('button', { name: 'Guardar', exact: true }).click();
+    await expect(page).not.toHaveURL(/\/tutor\/disponibilidad$/);
+    expect(recibidas.filter((r) => r.metodo === 'POST' && r.ruta === '/api/tutores/disponibilidad')).toHaveLength(1);
+
+    // No guardar: navega sin guardar.
+    await page.goto('/tutor/disponibilidad');
+    await arrastrar(page, celda(page, 1, 9), celda(page, 1, 9.5));
+    await irAInicio();
+    await dialogo.getByRole('button', { name: 'No guardar' }).click();
+    await expect(page).not.toHaveURL(/\/tutor\/disponibilidad$/);
+    expect(recibidas.filter((r) => r.metodo === 'POST' && r.ruta === '/api/tutores/disponibilidad')).toHaveLength(1);
+
+    // Sin cambios no hay aviso.
+    await page.goto('/tutor/disponibilidad');
+    await expect(page.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
+    await irAInicio();
+    await expect(page).not.toHaveURL(/\/tutor\/disponibilidad$/);
+    await expect(dialogo).toBeHidden();
+  });
+
+  test('cerrar sesión con cambios sin guardar no se queda atorado', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+    await simularApi(page, { ...rutasTutorReservas, '/api/tutores/11/disponibilidad': [] });
+
+    await page.goto('/tutor/disponibilidad');
+    await arrastrar(page, celda(page, 0, 9), celda(page, 0, 10.5));
+    await page.getByTitle('Menú de usuario').click();
+    await page.getByRole('menuitem', { name: 'Cerrar sesión' }).click();
+    await expect(page).not.toHaveURL(/\/tutor\/disponibilidad$/);
+    await expect(page.getByRole('dialog')).toBeHidden();
+  });
+
   test('estira el borde de una franja', async ({ page }) => {
     await iniciarSesion(page, usuarios.tutor);
     await simularApi(page, {
+      ...rutasTutorReservas,
       '/api/tutores/11/disponibilidad': [{ diaSemana: 2, horaInicio: '09:00:00', horaFin: '10:00:00' }],
     });
 
@@ -92,7 +150,7 @@ test.describe('Disponibilidad', () => {
 
   test('avisa la media hora que no completa una sesión', async ({ page }) => {
     await iniciarSesion(page, usuarios.tutor);
-    await simularApi(page, { '/api/tutores/11/disponibilidad': [] });
+    await simularApi(page, { ...rutasTutorReservas, '/api/tutores/11/disponibilidad': [] });
 
     await page.goto('/tutor/disponibilidad');
     await arrastrar(page, celda(page, 4, 9), celda(page, 4, 10));
@@ -104,6 +162,7 @@ test.describe('Disponibilidad', () => {
   test('borra con Mayús, pinta con el teclado, copia días y deshace', async ({ page }) => {
     await iniciarSesion(page, usuarios.tutor);
     await simularApi(page, {
+      ...rutasTutorReservas,
       '/api/tutores/11/disponibilidad': [
         { diaSemana: 1, horaInicio: '09:00:00', horaFin: '10:00:00' },
         { diaSemana: 1, horaInicio: '10:00:00', horaFin: '11:00:00' },

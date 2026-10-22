@@ -6,12 +6,14 @@ export const agendarCita = ({
   materiaId,
   fechaHoraInicio,
   fechaHoraFin,
+  tema = null,
 }) => {
   return apiClient.post("/api/citas/agendar", {
     tutorId,
     materiaId,
     fechaHoraInicio,
     fechaHoraFin,
+    tema,
   });
 };
 

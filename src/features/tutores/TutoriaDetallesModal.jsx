@@ -25,6 +25,7 @@ import {
   CalendarLtr20Regular,
   Clock20Regular,
   Dismiss24Regular,
+  Lightbulb20Regular,
   Notepad20Regular,
   Person20Regular,
   Video20Regular,
@@ -200,6 +201,13 @@ export default function TutoriaDetallesModal({
                   <Text className={styles.muted}>Aún no disponible</Text>
                 )}
               </Dato>
+              {tutoria.tema && (
+                <Dato icon={<Lightbulb20Regular />} termino="Quiere repasar">
+                  <Body1 as="p" className={styles.notes}>
+                    {tutoria.tema}
+                  </Body1>
+                </Dato>
+              )}
               {tutoria.notas && (
                 <Dato icon={<Notepad20Regular />} termino="Notas">
                   <Body1 as="p" className={styles.notes}>

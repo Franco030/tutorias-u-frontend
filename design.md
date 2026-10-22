@@ -147,6 +147,9 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   `validationMessage`. Nunca placeholder como etiqueta.
 - Selección de materias · `ToggleButton` o `Checkbox`, nunca chips hechos a mano.
 - Diálogos · `Dialog` de Fluent (foco, Escape y backdrop resueltos).
+- Cambios sin guardar · al salir a otra página se pregunta "¿Guardar los
+  cambios?" con Cancelar, No guardar y Guardar (primario), como en Windows.
+  Recargar o cerrar la pestaña usa el aviso nativo del navegador.
 - Mensajes · `MessageBar` para errores y avisos de la página. Tras una acción
   cuyo resultado no se ve en la misma vista (aceptar, rechazar, guardar,
   cancelar) se lanza un aviso con `useNotificar` (`hooks/useNotificar.jsx`,
@@ -162,6 +165,15 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   teclado es una rejilla ARIA (flechas y Espacio). Cada franja se guarda como
   sesiones de 1 h; la media hora que no completa una sesión va rayada y se
   avisa. Nunca el `<input type="time">` del navegador.
+  La pantalla tiene tres pestañas (Horario semanal, Días sin tutorías,
+  Reservas) y un solo botón "Guardar cambios" que guarda lo que cambió. En
+  el `Calendar` los días bloqueados llevan el estilo de día seleccionado de
+  Fluent (selección múltiple); no se usan colores propios. Los calendarios
+  usan `components/ui/Calendario`, sin la animación de cambio de mes.
+- Reserva · el calendario deshabilita los días bloqueados y los horarios que
+  no cumplen la antelación mínima del tutor, que se explica en el texto del
+  diálogo. "¿Qué necesitas repasar?" es opcional y el tutor lo ve en la
+  solicitud, al aceptarla y en los detalles de la tutoría.
 - Estados vacíos · `EmptyState` con `ilustracion` (Comunidad, Calendario,
   Revisión) en las pantallas principales; ícono simple en lugares secundarios.
 - Tarjetas ilustradas · siempre `TarjetaIlustrada` (la usa `EmptyState`):

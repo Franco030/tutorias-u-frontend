@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { MsalProvider } from '@azure/msal-react';
 import { msalInstance } from './features/auth/msalConfig';
@@ -14,6 +14,10 @@ import './index.css';
 ignorarModificadorasSolas();
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'TU_GOOGLE_CLIENT_ID';
+
+// Router de datos (las rutas siguen en App): permite avisar de cambios sin
+// guardar antes de salir de una página con useBlocker.
+const router = createBrowserRouter([{ path: '*', element: <App /> }]);
 
 async function initApp() {
   try {
@@ -29,9 +33,7 @@ async function initApp() {
           <ThemeProvider>
             <FluentThemeBridge>
               <AuthProvider>
-                <BrowserRouter>
-                  <App />
-                </BrowserRouter>
+                <RouterProvider router={router} />
               </AuthProvider>
             </FluentThemeBridge>
           </ThemeProvider>
