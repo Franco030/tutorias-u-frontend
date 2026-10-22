@@ -22,9 +22,8 @@ import {
   Subtitle1,
   tokens,
 } from "@fluentui/react-components";
-import { Calendar, DayOfWeek } from "@fluentui/react-calendar-compat";
 import { CheckmarkCircle48Regular, Dismiss24Regular } from "@fluentui/react-icons";
-import { calendarioEs } from "../../lib/calendarioEs";
+import { Calendario } from "../../components/ui/Calendario";
 import { Diferido } from "../../components/ui/Page";
 import { agendarCita, getHorasOcupadas } from "../../services/citaService";
 import { ahoraEnPlataforma, crearFechaHora, esReservable } from "../../lib/horaPlataforma";
@@ -419,12 +418,7 @@ export default function BookingModal({
                       }
                     >
                       <div className={styles.calendar}>
-                        <Calendar
-                          strings={calendarioEs}
-                          firstDayOfWeek={DayOfWeek.Monday}
-                          showGoToToday={false}
-                          isMonthPickerVisible={false}
-                          highlightSelectedMonth
+                        <Calendario
                           minDate={limitesFecha.min}
                           maxDate={limitesFecha.max}
                           restrictedDates={fechasRestringidas}

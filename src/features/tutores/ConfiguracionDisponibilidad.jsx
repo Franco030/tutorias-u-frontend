@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
+import { useBlocker } from "react-router-dom";
 import { useNotificar } from "../../hooks/useNotificar";
 import {
   Badge,
   Body1,
   Button,
   Caption1,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
   LargeTitle,
   makeStyles,
   Menu,
@@ -130,25 +137,12 @@ const useStyles = makeStyles({
   copiar: {
     width: "100%",
   },
+  accionesSalida: {
+    whiteSpace: "nowrap",
+  },
   rejilla: {
     padding: 0,
     overflow: "hidden",
-  },
-  pie: {
-    display: "flex",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    columnGap: tokens.spacingHorizontalL,
-    rowGap: tokens.spacingVerticalXXS,
-    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalM}`,
-    borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
-    color: tokens.colorNeutralForeground3,
-  },
-  tecla: {
-    paddingInline: "4px",
-    borderRadius: tokens.borderRadiusSmall,
-    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
-    fontWeight: tokens.fontWeightSemibold,
   },
 });
 
@@ -267,13 +261,28 @@ export default function ConfiguracionDisponibilidad() {
   const hayCambios = cambiosSinGuardar || bloqueosCambiados || preferenciasCambiadas;
   const enlaceInvalido = Boolean(preferencias.linkReunion?.trim()) && !esEnlaceWeb(preferencias.linkReunion.trim());
 
+  // Salir a otra página con cambios sin guardar abre un diálogo para decidir.
+  const salida = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      hayCambios && Boolean(user) && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  // Recargar o cerrar la pestaña: aviso nativo del navegador.
+  useEffect(() => {
+    if (!hayCambios) return undefined;
+    const alSalir = (event) => event.preventDefault();
+    window.addEventListener("beforeunload", alSalir);
+    return () => window.removeEventListener("beforeunload", alSalir);
+  }, [hayCambios]);
+
   // Guarda solo lo que cambió: horario, días sin tutorías y preferencias.
+  // Devuelve si se guardó todo.
   const handleGuardar = async () => {
     setError("");
     if (enlaceInvalido) {
       setPestana("reservas");
       setError("Revisa el enlace fijo de videollamada antes de guardar.");
-      return;
+      return false;
     }
     try {
       setGuardando(true);
@@ -302,12 +311,20 @@ export default function ConfiguracionDisponibilidad() {
         setPreferenciasCambiadas(false);
       }
       notificar("Cambios guardados", { cuerpo: "Los estudiantes ya ven tu disponibilidad actualizada." });
+      return true;
     } catch (err) {
       console.error("Error al guardar disponibilidad:", err);
       setError(err.message || "No se pudieron guardar los cambios. Intenta nuevamente.");
+      return false;
     } finally {
       setGuardando(false);
     }
+  };
+
+  // Si no se pudo guardar, se queda en la página con el error a la vista.
+  const guardarYSalir = async () => {
+    if (await handleGuardar()) salida.proceed?.();
+    else salida.reset?.();
   };
 
   if (cargando) {
@@ -334,6 +351,38 @@ export default function ConfiguracionDisponibilidad() {
           </Button>
         }
       />
+
+      <Dialog
+        open={salida.state === "blocked"}
+        onOpenChange={(_, data) => {
+          if (!data.open && !guardando) salida.reset?.();
+        }}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>¿Guardar los cambios?</DialogTitle>
+            <DialogContent>
+              <Body1>Tienes cambios sin guardar en tu disponibilidad. Si sales sin guardarlos, se perderán.</Body1>
+            </DialogContent>
+            <DialogActions className={styles.accionesSalida}>
+              <Button appearance="secondary" onClick={() => salida.reset?.()} disabled={guardando}>
+                Cancelar
+              </Button>
+              <Button appearance="secondary" onClick={() => salida.proceed?.()} disabled={guardando}>
+                No guardar
+              </Button>
+              <Button
+                appearance="primary"
+                onClick={guardarYSalir}
+                disabled={guardando}
+                icon={guardando ? <Spinner size="tiny" /> : undefined}
+              >
+                {guardando ? "Guardando…" : "Guardar"}
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
 
       <TabList
         className={styles.pestanas}
@@ -438,7 +487,10 @@ export default function ConfiguracionDisponibilidad() {
                   Borrar
                 </ToggleButton>
               </div>
-              <Caption1 className={styles.muted}>Clic derecho o Mayús para borrar mientras arrastras.</Caption1>
+              <Caption1 className={styles.muted}>
+                Arrastra para pintar y estira el borde de una franja para ajustarla. Clic derecho o Mayús borra
+                mientras arrastras.
+              </Caption1>
             </div>
 
             <Menu>
@@ -479,13 +531,6 @@ export default function ConfiguracionDisponibilidad() {
               onDiaActivo={setDiaActivo}
               hoy={hoy}
             />
-            <Caption1 as="p" className={styles.pie}>
-              <span>Arrastra para pintar</span>
-              <span>Estira el borde de una franja</span>
-              <span>
-                <span className={styles.tecla}>Espacio</span> pinta con el teclado
-              </span>
-            </Caption1>
           </Surface>
         </div>
       )}

@@ -73,6 +73,62 @@ test.describe('Disponibilidad', () => {
     expect(guardado.cuerpo[0]).toEqual({ diaSemana: 1, horaInicio: '09:00', horaFin: '10:00' });
   });
 
+  test('avisa al salir con cambios sin guardar', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+    const recibidas = await simularApi(page, {
+      ...rutasTutorReservas,
+      '/api/citas/proximas': [],
+      '/api/tutores/11/disponibilidad': [],
+      'POST /api/tutores/disponibilidad': (request) => request.postDataJSON(),
+    });
+    const irAInicio = () => page.getByRole('navigation').getByRole('link').first().click();
+    const dialogo = page.getByRole('dialog', { name: '¿Guardar los cambios?' });
+
+    await page.goto('/tutor/disponibilidad');
+    await arrastrar(page, celda(page, 0, 9), celda(page, 0, 10.5));
+
+    // Cancelar: se queda con lo pintado.
+    await irAInicio();
+    await expect(dialogo).toBeVisible();
+    await dialogo.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(dialogo).toBeHidden();
+    await expect(page).toHaveURL(/\/tutor\/disponibilidad$/);
+    await expect(page.getByText('Lun, de 9:00 a 11:00.')).toBeVisible();
+
+    // Guardar: guarda y entonces navega.
+    await irAInicio();
+    await dialogo.getByRole('button', { name: 'Guardar', exact: true }).click();
+    await expect(page).not.toHaveURL(/\/tutor\/disponibilidad$/);
+    expect(recibidas.filter((r) => r.metodo === 'POST' && r.ruta === '/api/tutores/disponibilidad')).toHaveLength(1);
+
+    // No guardar: navega sin guardar.
+    await page.goto('/tutor/disponibilidad');
+    await arrastrar(page, celda(page, 1, 9), celda(page, 1, 9.5));
+    await irAInicio();
+    await dialogo.getByRole('button', { name: 'No guardar' }).click();
+    await expect(page).not.toHaveURL(/\/tutor\/disponibilidad$/);
+    expect(recibidas.filter((r) => r.metodo === 'POST' && r.ruta === '/api/tutores/disponibilidad')).toHaveLength(1);
+
+    // Sin cambios no hay aviso.
+    await page.goto('/tutor/disponibilidad');
+    await expect(page.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
+    await irAInicio();
+    await expect(page).not.toHaveURL(/\/tutor\/disponibilidad$/);
+    await expect(dialogo).toBeHidden();
+  });
+
+  test('cerrar sesión con cambios sin guardar no se queda atorado', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+    await simularApi(page, { ...rutasTutorReservas, '/api/tutores/11/disponibilidad': [] });
+
+    await page.goto('/tutor/disponibilidad');
+    await arrastrar(page, celda(page, 0, 9), celda(page, 0, 10.5));
+    await page.getByTitle('Menú de usuario').click();
+    await page.getByRole('menuitem', { name: 'Cerrar sesión' }).click();
+    await expect(page).not.toHaveURL(/\/tutor\/disponibilidad$/);
+    await expect(page.getByRole('dialog')).toBeHidden();
+  });
+
   test('estira el borde de una franja', async ({ page }) => {
     await iniciarSesion(page, usuarios.tutor);
     await simularApi(page, {

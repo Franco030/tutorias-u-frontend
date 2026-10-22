@@ -15,7 +15,9 @@ import {
   ORDEN_DIAS,
 } from "./franjas";
 
-const ALTO_CELDA = 20;
+// Con 19 px la semana entera (6:00 a 22:00) cabe sin desplazar la página en
+// una pantalla de 1080 px con la barra del navegador.
+const ALTO_CELDA = 19;
 const ANCHO_HORAS = 52;
 const COLUMNAS = `${ANCHO_HORAS}px repeat(7, minmax(0, 1fr))`;
 

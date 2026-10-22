@@ -10,10 +10,10 @@ import {
   Text,
   tokens,
 } from "@fluentui/react-components";
-import { Calendar, DayOfWeek } from "@fluentui/react-calendar-compat";
+import { calendarDayGridClassNames as claseCalendario } from "@fluentui/react-calendar-compat";
 import { Dismiss16Regular } from "@fluentui/react-icons";
-import { calendarioEs } from "../../../lib/calendarioEs";
 import { ahoraEnPlataforma } from "../../../lib/horaPlataforma";
+import { Calendario } from "../../../components/ui/Calendario";
 import { Surface } from "../../../components/ui/Page";
 
 const MAXIMO_DIAS_BLOQUEO = 366;
@@ -48,6 +48,40 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
     gap: tokens.spacingVerticalS,
+  },
+  // El Calendar solo sabe de una fecha seleccionada; aquí la selección son los
+  // días bloqueados. Esos llevan el aspecto de día seleccionado de Fluent, y el
+  // último día tocado pierde el suyo si no quedó bloqueado.
+  seleccionMultiple: {
+    // Hoy conserva el texto claro sobre su círculo de marca.
+    [`& .${claseCalendario.daySingleSelected}:not([data-bloqueado]) > .${claseCalendario.dayButton}:not(.${claseCalendario.dayIsToday})`]:
+      {
+        color: tokens.colorNeutralForeground1,
+      },
+    [`& [data-bloqueado] > .${claseCalendario.dayButton}:not(.${claseCalendario.dayIsToday})`]: {
+      color: tokens.colorNeutralForeground1Static,
+    },
+    [`& .${claseCalendario.daySingleSelected}:not([data-bloqueado]) > .${claseCalendario.dayButton}`]: {
+      backgroundColor: tokens.colorTransparentBackground,
+      border: "none",
+      ":hover": { backgroundColor: tokens.colorBrandBackgroundInvertedHover },
+      ":active": { backgroundColor: tokens.colorBrandBackgroundInvertedPressed },
+      "@media (forced-colors: active)": {
+        backgroundColor: "Window",
+        color: "WindowText",
+      },
+    },
+    [`& [data-bloqueado] > .${claseCalendario.dayButton}`]: {
+      backgroundColor: tokens.colorBrandBackgroundInvertedSelected,
+      border: `${tokens.strokeWidthThin} solid ${tokens.colorBrandStroke1}`,
+      borderRadius: tokens.borderRadiusMedium,
+      ":hover, :active": { backgroundColor: tokens.colorBrandBackgroundInvertedSelected },
+      "@media (forced-colors: active)": {
+        backgroundColor: "Highlight",
+        color: "HighlightText",
+        forcedColorAdjust: "none",
+      },
+    },
   },
   muted: {
     color: tokens.colorNeutralForeground3,
@@ -116,24 +150,18 @@ export function DiasBloqueados({ bloqueos, onCambiar, citasAfectadas = 0, deshab
       <Surface className={styles.calendario}>
         <Subtitle2 as="h2">Elige los días</Subtitle2>
         <Caption1 className={styles.muted}>Toca un día para bloquearlo o desbloquearlo.</Caption1>
-        <Calendar
-          strings={calendarioEs}
-          firstDayOfWeek={DayOfWeek.Monday}
-          showGoToToday={false}
-          isMonthPickerVisible={false}
-          highlightSelectedMonth
+        <Calendario
+          className={styles.seleccionMultiple}
           minDate={hoy}
           maxDate={limite}
           onSelectDate={alternar}
           calendarDayProps={{
-            // Los días bloqueados se marcan en rojo dentro del propio calendario.
+            // Marca los días bloqueados para que se vean seleccionados.
             // (Fluent también la llama con null al desmontar la celda.)
             customDayCellRef: (element, dia) => {
               if (!element || !dia) return;
               const bloqueado = fechas.has(aClave(dia));
-              element.style.backgroundColor = bloqueado ? tokens.colorPaletteRedBackground2 : "";
-              element.style.boxShadow = bloqueado ? `inset 0 0 0 1px ${tokens.colorPaletteRedBorder2}` : "";
-              element.style.borderRadius = bloqueado ? tokens.borderRadiusMedium : "";
+              element.toggleAttribute("data-bloqueado", bloqueado);
               element.title = bloqueado ? "Día bloqueado" : "";
             },
           }}
