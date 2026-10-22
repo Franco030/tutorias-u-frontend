@@ -161,7 +161,7 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   (`features/tutores/disponibilidad`), al estilo del calendario de Outlook:
   celdas de 30 min de 6:00 a 22:00, franjas en `colorBrandBackground`,
   línea roja de la hora actual en el día de hoy. Arrastrar pinta (o borra con
-  la herramienta, con Mayús o con el clic derecho) y los bordes de una franja se estiran; con
+  la herramienta, con Shift o con el clic derecho) y los bordes de una franja se estiran; con
   teclado es una rejilla ARIA (flechas y Espacio). Cada franja se guarda como
   sesiones de 1 h; la media hora que no completa una sesión va rayada y se
   avisa. Nunca el `<input type="time">` del navegador.

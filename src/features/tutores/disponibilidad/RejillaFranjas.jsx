@@ -230,9 +230,9 @@ const limitar = (valor, min, max) => Math.min(max, Math.max(min, valor));
  * Rejilla semanal para pintar la disponibilidad (estilo calendario de
  * Outlook): columna de horas, una columna por día y las franjas en azul.
  * Ratón o táctil: arrastrar pinta (o borra, con la herramienta Borrar, con
- * Mayús o con el botón derecho) un rectángulo que puede abarcar varios días; los bordes de una franja
+ * Shift o con el botón derecho) un rectángulo que puede abarcar varios días; los bordes de una franja
  * se estiran. Teclado: es una rejilla ARIA; las flechas mueven la celda
- * activa, Espacio pinta y Mayús + Espacio borra.
+ * activa, Espacio pinta y Shift + Espacio borra.
  */
 export function RejillaFranjas({ celdas, onCambiar, herramienta, diaActivo, onDiaActivo, hoy }) {
   const styles = useStyles();

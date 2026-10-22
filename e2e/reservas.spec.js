@@ -57,6 +57,46 @@ test.describe('Flujo de reservas', () => {
     await expect(page.getByText(/Tienes 1 cita pendiente o aceptada en un día bloqueado/)).toBeVisible();
   });
 
+  test('el tutor bloquea un rango con Shift + clic y lo edita como uno', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+    const recibidas = await simularApi(page, {
+      ...rutasTutorReservas,
+      '/api/tutores/11/disponibilidad': [],
+      'PUT /api/tutores/bloqueos': (request) => ({ bloqueos: request.postDataJSON(), citasAfectadas: 0 }),
+    });
+    // Días 2 a 5 del mes siguiente: siempre en el mismo mes y dentro del límite.
+    const hoy = new Date();
+    const mes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+    const nombreMes = mes.toLocaleDateString('es-MX', { month: 'long' });
+    const clave = (dia) => `${mes.getFullYear()}-${String(mes.getMonth() + 1).padStart(2, '0')}-0${dia}`;
+    const dia = (n) => page.getByRole('grid').getByRole('button', { name: `${n}, ${nombreMes}, ${mes.getFullYear()}`, exact: true });
+
+    await page.goto('/tutor/disponibilidad');
+    await page.getByRole('tab', { name: /Días sin tutorías/ }).click();
+    await page.getByRole('button', { name: 'Mes siguiente' }).click();
+    await dia(2).click();
+    await dia(5).click({ modifiers: ['Shift'] });
+
+    const rango = `2–5 de ${nombreMes} de ${mes.getFullYear()}`;
+    await expect(page.getByRole('tab', { name: 'Días sin tutorías (4)' })).toBeVisible();
+    await expect(page.getByText(rango)).toBeVisible();
+    await expect(page.getByText('4 días')).toBeVisible();
+    await page.getByRole('textbox', { name: `Motivo del ${rango}` }).fill('Congreso');
+
+    // Desbloquear el 4 y, con Shift, hasta el 5: quedan el 2 y el 3.
+    await dia(4).click();
+    await dia(5).click({ modifiers: ['Shift'] });
+    await expect(page.getByRole('tab', { name: 'Días sin tutorías (2)' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Guardar cambios' }).click();
+    await expect(page.getByText('Cambios guardados', { exact: true })).toBeVisible();
+    const bloqueos = recibidas.find((r) => r.metodo === 'PUT' && r.ruta === '/api/tutores/bloqueos');
+    expect(bloqueos.cuerpo).toEqual([
+      { fecha: clave(2), motivo: 'Congreso' },
+      { fecha: clave(3), motivo: 'Congreso' },
+    ]);
+  });
+
   test('el estudiante no puede reservar un día bloqueado y envía el tema', async ({ page }) => {
     const disponibilidad = [0, 1, 2, 3, 4, 5, 6].map((dia) => ({
       diaSemana: dia,

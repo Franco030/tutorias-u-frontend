@@ -488,7 +488,7 @@ export default function ConfiguracionDisponibilidad() {
                 </ToggleButton>
               </div>
               <Caption1 className={styles.muted}>
-                Arrastra para pintar y estira el borde de una franja para ajustarla. Clic derecho o Mayús borra
+                Arrastra para pintar y estira el borde de una franja para ajustarla. Clic derecho o Shift borra
                 mientras arrastras.
               </Caption1>
             </div>

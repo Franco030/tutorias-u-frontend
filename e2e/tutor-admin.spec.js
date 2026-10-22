@@ -159,7 +159,7 @@ test.describe('Disponibilidad', () => {
     await expect(page.getByText(/la media hora rayada \(viernes de 10:00 a 10:30\) no se podrá reservar/)).toBeVisible();
   });
 
-  test('borra con Mayús, pinta con el teclado, copia días y deshace', async ({ page }) => {
+  test('borra con Shift, pinta con el teclado, copia días y deshace', async ({ page }) => {
     await iniciarSesion(page, usuarios.tutor);
     await simularApi(page, {
       ...rutasTutorReservas,
@@ -172,7 +172,7 @@ test.describe('Disponibilidad', () => {
     await page.goto('/tutor/disponibilidad');
     await expect(page.getByText('Lun, de 9:00 a 11:00.')).toBeVisible();
 
-    // Mayús + arrastrar borra la segunda hora.
+    // Shift + arrastrar borra la segunda hora.
     await arrastrar(page, celda(page, 0, 10), celda(page, 0, 10.5), { shift: true });
     await expect(page.getByText('Lun, de 9:00 a 10:00.')).toBeVisible();
 
