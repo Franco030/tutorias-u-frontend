@@ -1,9 +1,11 @@
+import { useRef, useState } from "react";
 import {
   Body1,
   Button,
   Caption1,
   Input,
   makeStyles,
+  mergeClasses,
   MessageBar,
   MessageBarBody,
   Subtitle2,
@@ -28,10 +30,44 @@ const aFecha = (clave) => {
 
 const formatoDia = new Intl.DateTimeFormat("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
+const formatoRango = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "long", year: "numeric" });
+
+const diaSiguiente = (clave) => {
+  const fecha = aFecha(clave);
+  return aClave(new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + 1));
+};
+
 // "sábado, 24 de octubre de 2026" -> "Sábado, 24 de octubre de 2026"
 const nombreDelDia = (clave) => {
   const texto = formatoDia.format(aFecha(clave));
   return texto.charAt(0).toUpperCase() + texto.slice(1);
+};
+
+// Un día suelto lleva su día de la semana; un rango, "15–30 de diciembre de 2026".
+const nombreDelGrupo = ({ desde, hasta }) =>
+  desde === hasta ? nombreDelDia(desde) : formatoRango.formatRange(aFecha(desde), aFecha(hasta));
+
+// Días seguidos con el mismo motivo se muestran (y se editan) como un rango.
+const agrupar = (bloqueos) => {
+  const grupos = [];
+  for (const { fecha, motivo } of bloqueos) {
+    const ultimo = grupos.at(-1);
+    if (ultimo && diaSiguiente(ultimo.hasta) === fecha && (ultimo.motivo ?? "") === (motivo ?? "")) {
+      ultimo.hasta = fecha;
+      ultimo.fechas.push(fecha);
+    } else {
+      grupos.push({ desde: fecha, hasta: fecha, motivo, fechas: [fecha] });
+    }
+  }
+  return grupos;
+};
+
+// Fechas de "desde" a "hasta" (en cualquier orden), ambas incluidas.
+const fechasEntre = (a, b) => {
+  const [desde, hasta] = a <= b ? [a, b] : [b, a];
+  const fechas = [desde];
+  while (fechas.at(-1) < hasta) fechas.push(diaSiguiente(fechas.at(-1)));
+  return fechas;
 };
 
 const useStyles = makeStyles({
@@ -110,6 +146,15 @@ const useStyles = makeStyles({
       gridTemplateColumns: "minmax(0, 1fr) auto",
     },
   },
+  // No ensancha la columna: el ancho lo marca el calendario.
+  indicacion: {
+    maxWidth: "36ch",
+  },
+  fechaGrupo: {
+    display: "flex",
+    flexDirection: "column",
+    minWidth: 0,
+  },
   fecha: {
     fontWeight: tokens.fontWeightSemibold,
   },
@@ -131,41 +176,61 @@ export function DiasBloqueados({ bloqueos, onCambiar, citasAfectadas = 0, deshab
   const hoy = aFecha(ahoraEnPlataforma().fecha);
   const limite = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + MAXIMO_DIAS_BLOQUEO);
   const fechas = new Set(bloqueos.map((bloqueo) => bloqueo.fecha));
+  // Último día tocado: con Shift + clic, el rango hasta el nuevo día queda como él.
+  const [ancla, setAncla] = useState(null);
+  const conMayus = useRef(false);
+
+  const fijar = (claves, bloquear) => {
+    const afectadas = new Set(claves);
+    const resto = bloqueos.filter((bloqueo) => !afectadas.has(bloqueo.fecha));
+    const nuevos = bloquear
+      ? claves.map((fecha) => bloqueos.find((bloqueo) => bloqueo.fecha === fecha) ?? { fecha, motivo: "" })
+      : [];
+    onCambiar([...resto, ...nuevos].sort((a, b) => a.fecha.localeCompare(b.fecha)));
+  };
 
   const alternar = (dia) => {
     if (!dia || deshabilitado) return;
     const clave = aClave(dia);
-    onCambiar(
-      fechas.has(clave)
-        ? bloqueos.filter((bloqueo) => bloqueo.fecha !== clave)
-        : [...bloqueos, { fecha: clave, motivo: "" }].sort((a, b) => a.fecha.localeCompare(b.fecha))
-    );
+    if (conMayus.current && ancla && ancla !== clave) {
+      fijar(fechasEntre(ancla, clave), fechas.has(ancla));
+    } else {
+      fijar([clave], !fechas.has(clave));
+    }
+    setAncla(clave);
   };
 
-  const cambiarMotivo = (clave, motivo) =>
-    onCambiar(bloqueos.map((bloqueo) => (bloqueo.fecha === clave ? { ...bloqueo, motivo } : bloqueo)));
+  const cambiarMotivo = (claves, motivo) =>
+    onCambiar(bloqueos.map((bloqueo) => (claves.includes(bloqueo.fecha) ? { ...bloqueo, motivo } : bloqueo)));
 
   return (
     <div className={styles.layout}>
       <Surface className={styles.calendario}>
         <Subtitle2 as="h2">Elige los días</Subtitle2>
-        <Caption1 className={styles.muted}>Toca un día para bloquearlo o desbloquearlo.</Caption1>
-        <Calendario
-          className={styles.seleccionMultiple}
-          minDate={hoy}
-          maxDate={limite}
-          onSelectDate={alternar}
-          calendarDayProps={{
-            // Marca los días bloqueados para que se vean seleccionados.
-            // (Fluent también la llama con null al desmontar la celda.)
-            customDayCellRef: (element, dia) => {
-              if (!element || !dia) return;
-              const bloqueado = fechas.has(aClave(dia));
-              element.toggleAttribute("data-bloqueado", bloqueado);
-              element.title = bloqueado ? "Día bloqueado" : "";
-            },
-          }}
-        />
+        <Caption1 className={mergeClasses(styles.muted, styles.indicacion)}>
+          Toca un día para bloquearlo o desbloquearlo. Shift + clic marca un rango.
+        </Caption1>
+        <div
+          onPointerDownCapture={(event) => (conMayus.current = event.shiftKey)}
+          onKeyDownCapture={(event) => (conMayus.current = event.shiftKey)}
+        >
+          <Calendario
+            className={styles.seleccionMultiple}
+            minDate={hoy}
+            maxDate={limite}
+            onSelectDate={alternar}
+            calendarDayProps={{
+              // Marca los días bloqueados para que se vean seleccionados.
+              // (Fluent también la llama con null al desmontar la celda.)
+              customDayCellRef: (element, dia) => {
+                if (!element || !dia) return;
+                const bloqueado = fechas.has(aClave(dia));
+                element.toggleAttribute("data-bloqueado", bloqueado);
+                element.title = bloqueado ? "Día bloqueado" : "";
+              },
+            }}
+          />
+        </div>
       </Surface>
 
       <Surface className={styles.lista} as="section" aria-labelledby="titulo-bloqueados">
@@ -191,16 +256,20 @@ export function DiasBloqueados({ bloqueos, onCambiar, citasAfectadas = 0, deshab
           </Body1>
         ) : (
           <ul className={styles.filas}>
-            {bloqueos.map(({ fecha, motivo }) => {
-              const nombre = nombreDelDia(fecha);
+            {agrupar(bloqueos).map((grupo) => {
+              const nombre = nombreDelGrupo(grupo);
+              const dias = grupo.fechas.length;
               return (
-                <li key={fecha} className={styles.fila}>
-                  <Text className={styles.fecha}>{nombre}</Text>
+                <li key={grupo.desde} className={styles.fila}>
+                  <div className={styles.fechaGrupo}>
+                    <Text className={styles.fecha}>{nombre}</Text>
+                    {dias > 1 && <Caption1 className={styles.muted}>{dias} días</Caption1>}
+                  </div>
                   <Input
                     className={styles.motivo}
                     size="small"
-                    value={motivo ?? ""}
-                    onChange={(_, data) => cambiarMotivo(fecha, data.value)}
+                    value={grupo.motivo ?? ""}
+                    onChange={(_, data) => cambiarMotivo(grupo.fechas, data.value)}
                     maxLength={200}
                     placeholder="Motivo (opcional, solo lo ves tú)"
                     aria-label={`Motivo del ${nombre}`}
@@ -211,7 +280,7 @@ export function DiasBloqueados({ bloqueos, onCambiar, citasAfectadas = 0, deshab
                     size="small"
                     icon={<Dismiss16Regular />}
                     aria-label={`Desbloquear el ${nombre}`}
-                    onClick={() => onCambiar(bloqueos.filter((bloqueo) => bloqueo.fecha !== fecha))}
+                    onClick={() => fijar(grupo.fechas, false)}
                     disabled={deshabilitado}
                   />
                 </li>
