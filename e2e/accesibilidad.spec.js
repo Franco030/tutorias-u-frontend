@@ -71,5 +71,19 @@ for (const tema of ['light', 'dark']) {
       await page.waitForTimeout(600);
       await revisar(page);
     });
+
+    test('disponibilidad del tutor', async ({ page }) => {
+      await iniciarSesion(page, usuarios.tutor, { tema });
+      await simularApi(page, {
+        '/api/tutores/11/disponibilidad': [
+          { diaSemana: 1, horaInicio: '09:00:00', horaFin: '10:00:00' },
+          { diaSemana: 2, horaInicio: '14:00:00', horaFin: '15:00:00' },
+        ],
+      });
+      await page.goto('/tutor/disponibilidad');
+      await expect(page.getByRole('grid', { name: 'Disponibilidad semanal' })).toBeVisible();
+      await page.waitForTimeout(600);
+      await revisar(page);
+    });
   });
 }

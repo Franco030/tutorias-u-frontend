@@ -37,40 +37,103 @@ test.describe('Tutor', () => {
 });
 
 test.describe('Disponibilidad', () => {
-  test('elige la hora en la lista o escribiéndola', async ({ page }) => {
-    await iniciarSesion(page, usuarios.tutor);
-    await simularApi(page, { '/api/tutores/11/disponibilidad': [] });
+  // Celda de la rejilla: columna 0 = lunes, celda 0 = 6:00 (cada celda es media hora).
+  const celda = (page, col, hora) => page.locator(`[data-celda="${col}-${Math.round((hora - 6) * 2)}"]`);
 
-    await page.goto('/tutor/disponibilidad');
-    await page.getByRole('combobox', { name: 'Inicio' }).click();
-    await page.getByRole('option', { name: '11:00' }).click();
-    const fin = page.getByRole('combobox', { name: 'Fin' });
-    await fin.fill('12:15');
-    await fin.press('Enter');
-    await page.getByRole('button', { name: 'Añadir al lunes' }).click();
+  async function arrastrar(page, desde, hasta, { shift = false, button = 'left' } = {}) {
+    const a = await desde.boundingBox();
+    const b = await hasta.boundingBox();
+    if (shift) await page.keyboard.down('Shift');
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.down({ button });
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 6 });
+    await page.mouse.up({ button });
+    if (shift) await page.keyboard.up('Shift');
+  }
 
-    const semana = page.getByRole('region', { name: 'Tu semana' });
-    await expect(semana.getByText('11:00 – 12:15')).toBeVisible();
-  });
-
-  test('añade el mismo rango a varios días y omite los que se cruzan', async ({ page }) => {
+  test('pinta franjas arrastrando y las guarda como sesiones de 1 h', async ({ page }) => {
     await iniciarSesion(page, usuarios.tutor);
     const recibidas = await simularApi(page, {
-      '/api/tutores/11/disponibilidad': [{ diaSemana: 3, horaInicio: '09:30:00', horaFin: '10:30:00' }],
+      '/api/tutores/11/disponibilidad': [],
       'POST /api/tutores/disponibilidad': (request) => request.postDataJSON(),
     });
 
     await page.goto('/tutor/disponibilidad');
-    await page.getByRole('button', { name: 'Lun a vie' }).click();
-    await page.getByRole('button', { name: 'Añadir a 5 días' }).click();
+    // De lunes 9:00 a jueves 12:30 (la celda de 12:30 a 13:00 incluida).
+    await arrastrar(page, celda(page, 0, 9), celda(page, 3, 12.5));
 
-    await expect(page.getByText('El miércoles se omitió porque se cruza con otro horario.', { exact: false })).toBeVisible();
-    const semana = page.getByRole('region', { name: 'Tu semana' });
-    await expect(semana.getByRole('button', { name: /^Retirar bloque/ })).toHaveCount(5);
+    await expect(page.getByText('Lun a jue, de 9:00 a 13:00.')).toBeVisible();
+    await expect(page.getByText('16 sesiones de 1 h', { exact: false })).toBeVisible();
 
     await page.getByRole('button', { name: 'Guardar disponibilidad' }).click();
+    await expect(page.getByText('Disponibilidad guardada', { exact: true })).toBeVisible();
     const guardado = recibidas.find((r) => r.metodo === 'POST' && r.ruta === '/api/tutores/disponibilidad');
-    expect(guardado?.cuerpo.map((b) => b.diaSemana).sort()).toEqual([1, 2, 3, 4, 5]);
+    expect(guardado.cuerpo).toHaveLength(16);
+    expect(guardado.cuerpo[0]).toEqual({ diaSemana: 1, horaInicio: '09:00', horaFin: '10:00' });
+  });
+
+  test('estira el borde de una franja', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+    await simularApi(page, {
+      '/api/tutores/11/disponibilidad': [{ diaSemana: 2, horaInicio: '09:00:00', horaFin: '10:00:00' }],
+    });
+
+    await page.goto('/tutor/disponibilidad');
+    const borde = page.locator('[data-grip="fin"][data-dia="2"]');
+    const b = await borde.boundingBox();
+    const destino = await celda(page, 1, 11.5).boundingBox();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(b.x + b.width / 2, destino.y + destino.height / 2, { steps: 6 });
+    await page.mouse.up();
+
+    await expect(page.getByText('Mar, de 9:00 a 12:00.')).toBeVisible();
+  });
+
+  test('avisa la media hora que no completa una sesión', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+    await simularApi(page, { '/api/tutores/11/disponibilidad': [] });
+
+    await page.goto('/tutor/disponibilidad');
+    await arrastrar(page, celda(page, 4, 9), celda(page, 4, 10));
+
+    await expect(page.getByText('Vie, de 9:00 a 10:30.')).toBeVisible();
+    await expect(page.getByText(/la media hora rayada \(viernes de 10:00 a 10:30\) no se podrá reservar/)).toBeVisible();
+  });
+
+  test('borra con Mayús, pinta con el teclado, copia días y deshace', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+    await simularApi(page, {
+      '/api/tutores/11/disponibilidad': [
+        { diaSemana: 1, horaInicio: '09:00:00', horaFin: '10:00:00' },
+        { diaSemana: 1, horaInicio: '10:00:00', horaFin: '11:00:00' },
+      ],
+    });
+
+    await page.goto('/tutor/disponibilidad');
+    await expect(page.getByText('Lun, de 9:00 a 11:00.')).toBeVisible();
+
+    // Mayús + arrastrar borra la segunda hora.
+    await arrastrar(page, celda(page, 0, 10), celda(page, 0, 10.5), { shift: true });
+    await expect(page.getByText('Lun, de 9:00 a 10:00.')).toBeVisible();
+
+    // Teclado: desde lunes 10:00, Espacio pinta media hora y otra más abajo.
+    await celda(page, 0, 10).focus();
+    await page.keyboard.press('Space');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Space');
+    await expect(page.getByText('Lun, de 9:00 a 11:00.')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Copiar el lunes a…' }).click();
+    await page.getByRole('menuitem', { name: 'Días hábiles (lun a vie)' }).click();
+    await expect(page.getByText('Lun a vie, de 9:00 a 11:00.')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Deshacer' }).click();
+    await expect(page.getByText('Lun, de 9:00 a 11:00.')).toBeVisible();
+
+    // El clic derecho borra aunque la herramienta sea Pintar.
+    await arrastrar(page, celda(page, 0, 9), celda(page, 0, 9.5), { button: 'right' });
+    await expect(page.getByText('Lun, de 10:00 a 11:00.')).toBeVisible();
   });
 });
 
