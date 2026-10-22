@@ -147,6 +147,10 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   `validationMessage`. Nunca placeholder como etiqueta.
 - Selección de materias · `ToggleButton` o `Checkbox`, nunca chips hechos a mano.
 - Diálogos · `Dialog` de Fluent (foco, Escape y backdrop resueltos).
+- Página no encontrada · cualquier ruta desconocida muestra el pato
+  (`assets/pato-perdido.png`, recortado sin fondo), "Error 404", un título,
+  una línea y un único botón primario "Volver al inicio". Con sesión va
+  dentro del shell; sin sesión, sola.
 - Cambios sin guardar · al salir a otra página se pregunta "¿Guardar los
   cambios?" con Cancelar, No guardar y Guardar (primario), como en Windows.
   Recargar o cerrar la pestaña usa el aviso nativo del navegador.
