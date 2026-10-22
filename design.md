@@ -21,8 +21,12 @@ enmienda aquí, no con un estilo suelto en el componente.
   envolverlos en un contenedor `flex` en columna.
 
 ## Marca y color
-- Logotipo · `shell/BrandMark` (`LogoMark`): mosaico con degradado de marca,
-  libro abierto y lector. Favicon equivalente en `public/tutoriasu-mark.svg`.
+- Logotipo · `shell/BrandMark` (`LogoMark`): dos cintas entrelazadas en la
+  rampa de marca, con brillo cian (`#9fd3f5`) y punta durazno (`#f4c58f`). El
+  durazno es exclusivo del logo; la interfaz no lo usa. En la app va el PNG
+  transparente de `assets/marca` (24 px de alto, 36 px en grande). Favicon:
+  `public/tutoriasu-favicon.svg` (versión plana de 6 colores en lienzo
+  cuadrado) y `public/apple-touch-icon.png`.
 - Color de marca · `#456ad1` (tono 80 de la rampa `brandTutoriasU`).
 - Nunca un color literal en un componente: siempre `tokens.color*`.
 - Capas (de abajo arriba) · base tipo Mica (`colorNeutralBackground3` con 5 %
