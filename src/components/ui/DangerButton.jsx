@@ -30,13 +30,14 @@ const useStyles = makeStyles({
 });
 
 // Botón para acciones destructivas (cancelar, rechazar). `variant="outline"` para la versión secundaria.
-export function DangerButton({ variant = "primary", className, disabled, ...props }) {
+export function DangerButton({ variant = "primary", className, disabled, disabledFocusable, ...props }) {
   const styles = useStyles();
   return (
     <Button
       appearance={variant === "primary" ? "primary" : "secondary"}
       disabled={disabled}
-      className={mergeClasses(!disabled && styles[variant], className)}
+      disabledFocusable={disabledFocusable}
+      className={mergeClasses(!disabled && !disabledFocusable && styles[variant], className)}
       {...props}
     />
   );

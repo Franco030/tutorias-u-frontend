@@ -19,7 +19,6 @@ import {
   Textarea,
   tokens,
 } from "@fluentui/react-components";
-import { Dismiss24Regular } from "@fluentui/react-icons";
 import { crearResena } from "../../services/resenaService";
 import { formatoSesion } from "../../lib/formato";
 
@@ -119,17 +118,7 @@ export default function CalificarTutoriaModal({ tutoria, onClose, onCalificada }
       <DialogSurface className={styles.surface}>
         <form onSubmit={enviar}>
           <DialogBody>
-            <DialogTitle
-              action={
-                <Button
-                  appearance="subtle"
-                  aria-label="Cerrar"
-                  icon={<Dismiss24Regular />}
-                  onClick={cerrar}
-                  disabled={enviando}
-                />
-              }
-            >
+            <DialogTitle>
               Calificar tutoría
             </DialogTitle>
 
@@ -192,7 +181,8 @@ export default function CalificarTutoriaModal({ tutoria, onClose, onCalificada }
               <Button
                 type="submit"
                 appearance="primary"
-                disabled={enviando || puntuacion < 1}
+                disabled={puntuacion < 1}
+                disabledFocusable={enviando}
                 icon={enviando ? <Spinner size="tiny" /> : undefined}
               >
                 {enviando ? "Enviando…" : "Enviar reseña"}

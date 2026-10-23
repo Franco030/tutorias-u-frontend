@@ -17,7 +17,6 @@ import {
   Textarea,
   tokens,
 } from "@fluentui/react-components";
-import { Dismiss24Regular } from "@fluentui/react-icons";
 
 const useStyles = makeStyles({
   surface: {
@@ -82,6 +81,7 @@ export default function ConfirmarTutoriaModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (guardando) return;
 
     onConfirmar({
       linkReunion: linkReunion.trim() || null,
@@ -101,17 +101,7 @@ export default function ConfirmarTutoriaModal({
       <DialogSurface className={styles.surface}>
         <form onSubmit={handleSubmit}>
           <DialogBody>
-            <DialogTitle
-              action={
-                <Button
-                  appearance="subtle"
-                  aria-label="Cerrar"
-                  icon={<Dismiss24Regular />}
-                  onClick={cerrar}
-                  disabled={guardando}
-                />
-              }
-            >
+            <DialogTitle>
               Aceptar solicitud
             </DialogTitle>
 
@@ -168,7 +158,7 @@ export default function ConfirmarTutoriaModal({
               <Button
                 type="submit"
                 appearance="primary"
-                disabled={guardando}
+                disabledFocusable={guardando}
                 icon={guardando ? <Spinner size="tiny" /> : undefined}
               >
                 {guardando ? "Aceptando…" : "Confirmar tutoría"}

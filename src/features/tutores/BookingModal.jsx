@@ -19,12 +19,11 @@ import {
   RadioGroup,
   Spinner,
   Textarea,
-  Subtitle1,
   tokens,
 } from "@fluentui/react-components";
-import { CheckmarkCircle48Regular, Dismiss24Regular } from "@fluentui/react-icons";
 import { Calendario } from "../../components/ui/Calendario";
 import { Diferido } from "../../components/ui/Page";
+import { useNotificar } from "../../hooks/useNotificar";
 import { agendarCita, getHorasOcupadas } from "../../services/citaService";
 import { ahoraEnPlataforma, crearFechaHora, esReservable } from "../../lib/horaPlataforma";
 import { getMaterias } from "../../services/materiaService";
@@ -90,16 +89,6 @@ const useStyles = makeStyles({
     fontVariantNumeric: "tabular-nums",
     whiteSpace: "nowrap",
   },
-  success: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: tokens.spacingVerticalS,
-    paddingBlock: tokens.spacingVerticalM,
-  },
-  successIcon: {
-    color: tokens.colorPaletteGreenForeground1,
-  },
 });
 
 export default function BookingModal({
@@ -109,6 +98,7 @@ export default function BookingModal({
   materiasDisponibles,
   antelacionMinimaHoras = 0,
 }) {
+  const notificar = useNotificar();
   const [materiaId, setMateriaId] = useState("");
   const [fecha, setFecha] = useState("");
   const [bloqueSeleccionado, setBloqueSeleccionado] = useState("");
@@ -122,7 +112,6 @@ export default function BookingModal({
   const [cargando, setCargando] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [mensajeExito, setMensajeExito] = useState("");
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -132,7 +121,6 @@ export default function BookingModal({
       try {
         setCargando(true);
         setError("");
-        setMensajeExito("");
         setMateriaId("");
         setFecha("");
         setBloqueSeleccionado("");
@@ -275,7 +263,6 @@ export default function BookingModal({
     if (submitting) return;
 
     setError("");
-    setMensajeExito("");
 
     if (errorOcupados) {
       setError(errorOcupados);
@@ -317,13 +304,9 @@ export default function BookingModal({
         tema: tema.trim() || null,
       });
 
-      setMensajeExito(
-        "Tu solicitud de cita quedó en estado Pendiente."
-      );
-      setMateriaId("");
-      setFecha("");
-      setBloqueSeleccionado("");
-      setTema("");
+      // Éxito discreto: se cierra y lo confirma un aviso, sin otra pantalla.
+      notificar("Solicitud enviada", { cuerpo: "El tutor la revisará. La verás en Mis tutorías." });
+      onClose();
     } catch (err) {
       console.error("Error al agendar la cita:", err);
       setError(
@@ -359,181 +342,152 @@ export default function BookingModal({
       <DialogSurface className={styles.surface}>
         <form onSubmit={handleSubmit}>
           <DialogBody>
-            <DialogTitle
-              action={
-                <Button
-                  appearance="subtle"
-                  aria-label="Cerrar"
-                  icon={<Dismiss24Regular />}
-                  onClick={onClose}
-                  disabled={submitting}
-                />
-              }
-            >
-              Agendar cita
-            </DialogTitle>
+            <DialogTitle>Agendar cita</DialogTitle>
 
             <DialogContent>
-              {mensajeExito ? (
-                <div className={styles.success} role="status">
-                  <CheckmarkCircle48Regular className={styles.successIcon} aria-hidden="true" />
-                  <Subtitle1>Solicitud enviada</Subtitle1>
-                  <Body1 className={styles.muted}>
-                    {mensajeExito} El tutor la revisará y la verás en “Mis tutorías”.
-                  </Body1>
-                </div>
-              ) : (
-                <div className={styles.form}>
-                  <Body1 className={styles.muted}>
-                    Elige la materia y uno de los horarios que el tutor tiene disponibles.
-                    {antelacionMinimaHoras > 0 &&
-                      ` Este tutor recibe reservas con al menos ${antelacionMinimaHoras} h de anticipación.`}
-                  </Body1>
+              <div className={styles.form}>
+                <Body1 className={styles.muted}>
+                  Elige la materia y uno de los horarios que el tutor tiene disponibles.
+                  {antelacionMinimaHoras > 0 &&
+                    ` Este tutor recibe reservas con al menos ${antelacionMinimaHoras} h de anticipación.`}
+                </Body1>
 
-                  <Field label="Materia" required>
-                    <Dropdown
-                      id="materia"
-                      placeholder="Selecciona una materia"
-                      value={materiaSeleccionada?.nombre || ""}
-                      selectedOptions={materiaId ? [materiaId] : []}
-                      onOptionSelect={(_, data) => setMateriaId(data.optionValue || "")}
-                      disabled={cargando || submitting}
-                    >
-                      {materias.map((materia) => (
-                        <Option key={materia.id} value={String(materia.id)}>
-                          {materia.nombre}
-                        </Option>
-                      ))}
-                    </Dropdown>
+                <Field label="Materia" required>
+                  <Dropdown
+                    id="materia"
+                    placeholder="Selecciona una materia"
+                    value={materiaSeleccionada?.nombre || ""}
+                    selectedOptions={materiaId ? [materiaId] : []}
+                    onOptionSelect={(_, data) => setMateriaId(data.optionValue || "")}
+                    disabled={cargando || submitting}
+                  >
+                    {materias.map((materia) => (
+                      <Option key={materia.id} value={String(materia.id)}>
+                        {materia.nombre}
+                      </Option>
+                    ))}
+                  </Dropdown>
+                </Field>
+
+                <div className={styles.schedule}>
+                  {/* Texto fijo: si apareciera al terminar la carga, el diálogo cambiaría de alto. */}
+                  <Field label="Fecha" required hint="Solo puedes elegir los días en que el tutor atiende.">
+                    <div className={styles.calendar}>
+                      <Calendario
+                        minDate={limitesFecha.min}
+                        maxDate={limitesFecha.max}
+                        restrictedDates={fechasRestringidas}
+                        value={fecha ? new Date(`${fecha}T12:00:00`) : undefined}
+                        onSelectDate={(dia) => {
+                          const valor = dia ? fechaComoClave(dia) : "";
+                          setFecha(valor);
+                          setBloqueSeleccionado("");
+                          setHorariosOcupados([]);
+                          setErrorOcupados("");
+                          setCargandoOcupados(Boolean(valor));
+                        }}
+                      />
+                    </div>
                   </Field>
-
-                  <div className={styles.schedule}>
-                    {/* Texto fijo: si apareciera al terminar la carga, el diálogo cambiaría de alto. */}
-                    <Field label="Fecha" required hint="Solo puedes elegir los días en que el tutor atiende.">
-                      <div className={styles.calendar}>
-                        <Calendario
-                          minDate={limitesFecha.min}
-                          maxDate={limitesFecha.max}
-                          restrictedDates={fechasRestringidas}
-                          value={fecha ? new Date(`${fecha}T12:00:00`) : undefined}
-                          onSelectDate={(dia) => {
-                            const valor = dia ? fechaComoClave(dia) : "";
-                            setFecha(valor);
-                            setBloqueSeleccionado("");
-                            setHorariosOcupados([]);
-                            setErrorOcupados("");
-                            setCargandoOcupados(Boolean(valor));
-                          }}
-                        />
-                      </div>
-                    </Field>
-
-                    <Field
-                      label={fechaSeleccionada ? `Horario · ${fechaSeleccionada.label}` : "Horario"}
-                      required
-                      validationState={errorOcupados ? "error" : "none"}
-                      validationMessage={errorOcupados || undefined}
-                    >
-                      {/* La carga se indica en este mismo lugar (y no en una fila aparte) para
-                          que el diálogo no cambie de alto al terminar: con poca altura, eso
-                          hacía aparecer y desaparecer la barra de desplazamiento. */}
-                      {!fecha && cargando ? (
-                        <Diferido>
-                          <Spinner size="tiny" label="Cargando horarios…" labelPosition="after" />
-                        </Diferido>
-                      ) : !fecha ? (
-                        <Caption1 className={styles.muted}>
-                          {fechasDisponibles.length === 0
-                            ? "No hay días disponibles en los próximos 90 días."
-                            : "Elige un día en el calendario para ver sus horarios."}
-                        </Caption1>
-                      ) : cargandoOcupados ? (
-                        <Diferido>
-                          <Spinner size="tiny" label="Verificando compromisos del tutor…" labelPosition="after" />
-                        </Diferido>
-                      ) : bloquesDisponibles.length === 0 ? (
-                        <Caption1 className={styles.muted}>No quedan horarios este día.</Caption1>
-                      ) : (
-                        <RadioGroup
-                          value={bloqueSeleccionado}
-                          onChange={(_, data) => setBloqueSeleccionado(data.value)}
-                          disabled={submitting}
-                          className={styles.slots}
-                        >
-                          {bloquesDisponibles.map((bloque, indice) => (
-                            <Radio
-                              key={`${bloque.horaInicio}-${indice}`}
-                              value={String(indice)}
-                              disabled={bloque.ocupado}
-                              label={
-                                <span className={styles.slotLabel}>
-                                  {bloque.horaInicio} – {bloque.horaFin}
-                                  {bloque.ocupado ? " · ocupado" : ""}
-                                </span>
-                              }
-                            />
-                          ))}
-                        </RadioGroup>
-                      )}
-                    </Field>
-                  </div>
 
                   <Field
-                    label="¿Qué necesitas repasar?"
-                    hint="Opcional. Ayuda al tutor a preparar la sesión."
+                    label={fechaSeleccionada ? `Horario · ${fechaSeleccionada.label}` : "Horario"}
+                    required
+                    validationState={errorOcupados ? "error" : "none"}
+                    validationMessage={errorOcupados || undefined}
                   >
-                    <Textarea
-                      value={tema}
-                      onChange={(_, data) => setTema(data.value)}
-                      maxLength={500}
-                      rows={2}
-                      resize="vertical"
-                      placeholder="Por ejemplo: límites laterales y continuidad"
-                      disabled={submitting}
-                    />
+                    {/* La carga se indica en este mismo lugar (y no en una fila aparte) para
+                        que el diálogo no cambie de alto al terminar: con poca altura, eso
+                        hacía aparecer y desaparecer la barra de desplazamiento. */}
+                    {!fecha && cargando ? (
+                      <Diferido>
+                        <Spinner size="tiny" label="Cargando horarios…" labelPosition="after" />
+                      </Diferido>
+                    ) : !fecha ? (
+                      <Caption1 className={styles.muted}>
+                        {fechasDisponibles.length === 0
+                          ? "No hay días disponibles en los próximos 90 días."
+                          : "Elige un día en el calendario para ver sus horarios."}
+                      </Caption1>
+                    ) : cargandoOcupados ? (
+                      <Diferido>
+                        <Spinner size="tiny" label="Verificando compromisos del tutor…" labelPosition="after" />
+                      </Diferido>
+                    ) : bloquesDisponibles.length === 0 ? (
+                      <Caption1 className={styles.muted}>No quedan horarios este día.</Caption1>
+                    ) : (
+                      <RadioGroup
+                        value={bloqueSeleccionado}
+                        onChange={(_, data) => setBloqueSeleccionado(data.value)}
+                        disabled={submitting}
+                        className={styles.slots}
+                      >
+                        {bloquesDisponibles.map((bloque, indice) => (
+                          <Radio
+                            key={`${bloque.horaInicio}-${indice}`}
+                            value={String(indice)}
+                            disabled={bloque.ocupado}
+                            label={
+                              <span className={styles.slotLabel}>
+                                {bloque.horaInicio} – {bloque.horaFin}
+                                {bloque.ocupado ? " · ocupado" : ""}
+                              </span>
+                            }
+                          />
+                        ))}
+                      </RadioGroup>
+                    )}
                   </Field>
-
-                  {!cargando && disponibilidad.length === 0 && !error && (
-                    <MessageBar intent="info" layout="multiline">
-                      <MessageBarBody>Este tutor aún no tiene horarios disponibles para reservar.</MessageBarBody>
-                    </MessageBar>
-                  )}
-
-                  {error && (
-                    <MessageBar intent="error" layout="multiline">
-                      <MessageBarBody>{error}</MessageBarBody>
-                    </MessageBar>
-                  )}
                 </div>
-              )}
+
+                <Field
+                  label="¿Qué necesitas repasar?"
+                  hint="Opcional. Ayuda al tutor a preparar la sesión."
+                >
+                  <Textarea
+                    value={tema}
+                    onChange={(_, data) => setTema(data.value)}
+                    maxLength={500}
+                    rows={2}
+                    resize="vertical"
+                    placeholder="Por ejemplo: límites laterales y continuidad"
+                    disabled={submitting}
+                  />
+                </Field>
+
+                {!cargando && disponibilidad.length === 0 && !error && (
+                  <MessageBar intent="info" layout="multiline">
+                    <MessageBarBody>Este tutor aún no tiene horarios disponibles para reservar.</MessageBarBody>
+                  </MessageBar>
+                )}
+
+                {error && (
+                  <MessageBar intent="error" layout="multiline">
+                    <MessageBarBody>{error}</MessageBarBody>
+                  </MessageBar>
+                )}
+              </div>
             </DialogContent>
 
             <DialogActions>
-              {mensajeExito ? (
-                <Button appearance="primary" onClick={onClose}>
-                  Cerrar
-                </Button>
-              ) : (
-                <>
-                  <Button appearance="secondary" onClick={onClose} disabled={submitting}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    appearance="primary"
-                    disabled={
-                      cargando ||
-                      submitting ||
-                      cargandoOcupados ||
-                      Boolean(errorOcupados) ||
-                      disponibilidad.length === 0
-                    }
-                    icon={submitting ? <Spinner size="tiny" /> : undefined}
-                  >
-                    {submitting ? "Agendando…" : "Confirmar cita"}
-                  </Button>
-                </>
-              )}
+              <Button appearance="secondary" onClick={onClose} disabled={submitting}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                appearance="primary"
+                disabled={
+                  cargando ||
+                  cargandoOcupados ||
+                  Boolean(errorOcupados) ||
+                  disponibilidad.length === 0
+                }
+                // Inactivo pero con el foco: si falla, Esc y Tab siguen dentro del diálogo.
+                disabledFocusable={submitting}
+                icon={submitting ? <Spinner size="tiny" /> : undefined}
+              >
+                {submitting ? "Agendando…" : "Confirmar cita"}
+              </Button>
             </DialogActions>
           </DialogBody>
         </form>

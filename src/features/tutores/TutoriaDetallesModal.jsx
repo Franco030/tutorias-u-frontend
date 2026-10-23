@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Body1,
   Button,
@@ -24,7 +24,6 @@ import {
   BookOpen20Regular,
   CalendarLtr20Regular,
   Clock20Regular,
-  Dismiss24Regular,
   Lightbulb20Regular,
   Notepad20Regular,
   Person20Regular,
@@ -112,6 +111,9 @@ export default function TutoriaDetallesModal({
   const [motivo, setMotivo] = useState("");
   const [cancelando, setCancelando] = useState(false);
   const [errorCancelacion, setErrorCancelacion] = useState("");
+  // El botón que se pulsa desaparece al cambiar de paso: el foco se lleva al
+  // siguiente control para que Tab y Esc sigan dentro del diálogo.
+  const botonCancelar = useRef(null);
 
   if (!isOpen || !tutoria) {
     return null;
@@ -165,17 +167,7 @@ export default function TutoriaDetallesModal({
     >
       <DialogSurface className={styles.surface}>
         <DialogBody>
-          <DialogTitle
-            action={
-              <Button
-                appearance="subtle"
-                aria-label="Cerrar detalles"
-                icon={<Dismiss24Regular />}
-                onClick={handleClose}
-                disabled={cancelando}
-              />
-            }
-          >
+          <DialogTitle>
             {tutoria.materia}
           </DialogTitle>
 
@@ -228,6 +220,7 @@ export default function TutoriaDetallesModal({
                 <Field label="Motivo (opcional)">
                   <Textarea
                     id="motivo-cancelacion"
+                    autoFocus
                     value={motivo}
                     onChange={(_, data) => setMotivo(data.value)}
                     maxLength={1000}
@@ -254,6 +247,7 @@ export default function TutoriaDetallesModal({
                     setConfirmandoCancelacion(false);
                     setMotivo("");
                     setErrorCancelacion("");
+                    requestAnimationFrame(() => botonCancelar.current?.focus());
                   }}
                   disabled={cancelando}
                 >
@@ -261,7 +255,7 @@ export default function TutoriaDetallesModal({
                 </Button>
                 <DangerButton
                   onClick={handleCancelar}
-                  disabled={cancelando}
+                  disabledFocusable={cancelando}
                   icon={cancelando ? <Spinner size="tiny" /> : undefined}
                 >
                   {cancelando ? "Cancelando…" : "Confirmar cancelación"}
@@ -270,7 +264,7 @@ export default function TutoriaDetallesModal({
             ) : (
               <>
                 {puedeCancelar && (
-                  <DangerButton variant="outline" onClick={() => setConfirmandoCancelacion(true)}>
+                  <DangerButton ref={botonCancelar} variant="outline" onClick={() => setConfirmandoCancelacion(true)}>
                     Cancelar tutoría
                   </DangerButton>
                 )}
