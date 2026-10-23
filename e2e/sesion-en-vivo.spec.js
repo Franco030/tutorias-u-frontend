@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { iniciarSesion, simularApi, tutores, usuarios } from './helpers';
 
 // Reloj controlado: jueves 22 de octubre de 2026 en la hora de la plataforma.
@@ -30,11 +30,8 @@ async function abrirInicio(page, usuario, proximas, extra = {}) {
 const filas = (page) => page.getByRole('list', { name: 'Próximas sesiones' }).getByRole('listitem');
 
 test.describe('Sesión en vivo en el inicio', () => {
-  test('cuenta regresiva, unirse, en curso y calificar al terminar en la misma fila', async ({ page }) => {
-    const recibidas = await abrirInicio(page, usuarios.estudiante, [sesion], {
-      '/api/citas/historial': [{ ...sesion, estado: 'Completada', puntuacion: null }],
-      'POST /api/resenas': { resena: { id: 1 }, calificacionPromedio: 4.5 },
-    });
+  test('cuenta regresiva, unirse y en curso en la misma fila', async ({ page }) => {
+    await abrirInicio(page, usuarios.estudiante, [sesion]);
     const fila = filas(page).first();
     const unirse = fila.getByRole('link', { name: 'Unirse' });
 
@@ -54,22 +51,37 @@ test.describe('Sesión en vivo en el inicio', () => {
     await expect(fila.getByText('Termina en 55 min · con Mateo Herrera')).toBeVisible();
     await expect(unirse).toBeVisible();
 
-    // 18:15: terminó; se califica ahí mismo.
+    // 18:15: terminó. El estudiante no tiene nada que hacer ahí: califica
+    // cuando el tutor confirme que se impartió.
     await page.clock.fastForward('55:00');
     await expect(fila.getByText('Terminó · con Mateo Herrera')).toBeVisible();
     await expect(unirse).toHaveCount(0);
-    await fila.getByRole('button', { name: 'Calificar' }).click();
+    await expect(fila.getByRole('button')).toHaveCount(0);
+  });
 
-    const dialogo = page.getByRole('dialog', { name: 'Calificar tutoría' });
-    await dialogo.getByRole('radio', { name: '4 de 5 estrellas' }).check();
-    await dialogo.getByRole('button', { name: /Enviar/ }).click();
-    await expect(page.getByText('Gracias por tu reseña', { exact: true })).toBeVisible();
-    await expect(page.getByText('No tienes sesiones programadas')).toBeVisible();
+  test('al terminar, el tutor confirma la sesión desde su fila', async ({ page }) => {
+    const recibidas = await abrirInicio(
+      page,
+      usuarios.tutor,
+      [
+        { ...sesion, rolOpuestoNombre: 'Ana Ruiz', fechaHoraInicio: '2026-10-22T13:30:00' },
+        { ...sesion, id: 62, rolOpuestoNombre: 'Luis Mora', fechaHoraInicio: '2026-10-22T13:00:00' },
+      ],
+      { 'PUT /api/citas/61/completar': { mensaje: 'ok' }, 'PUT /api/citas/62/no-asistio': { mensaje: 'ok' } }
+    );
+    const ana = filas(page).filter({ hasText: 'Ana Ruiz' });
+    await expect(ana.getByText('Terminó · con Ana Ruiz')).toBeVisible();
 
-    // Antes de calificar se pidió el historial (completa la sesión en el backend).
-    const rutas = recibidas.map((r) => `${r.metodo} ${r.ruta}`);
-    expect(rutas.indexOf('GET /api/citas/historial')).toBeLessThan(rutas.indexOf('POST /api/resenas'));
-    expect(recibidas.find((r) => r.ruta === '/api/resenas').cuerpo).toMatchObject({ citaId: 61, puntuacion: 4 });
+    await ana.getByRole('button', { name: 'Se impartió' }).click();
+    await expect(page.getByText('Sesión confirmada', { exact: true })).toBeVisible();
+    await expect(ana).toHaveCount(0);
+
+    await filas(page).filter({ hasText: 'Luis Mora' }).getByRole('button', { name: 'No asistió' }).click();
+    await expect(page.getByText('Inasistencia registrada', { exact: true })).toBeVisible();
+    expect(recibidas.filter((r) => r.metodo === 'PUT').map((r) => r.ruta)).toEqual([
+      '/api/citas/61/completar',
+      '/api/citas/62/no-asistio',
+    ]);
   });
 
   test('sin enlace no hay botón para unirse: la fila abre los detalles', async ({ page }) => {

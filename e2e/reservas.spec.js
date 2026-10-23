@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { enDias, iniciarSesion, materias, rutasTutorReservas, simularApi, tutores, usuarios } from './helpers';
 
 // Fecha local "AAAA-MM-DD" a n días de hoy (el navegador corre en la zona de la plataforma).

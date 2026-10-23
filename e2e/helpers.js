@@ -147,10 +147,10 @@ export async function simularApi(page, rutas) {
     if (respuesta === undefined) {
       return problema(404, { title: `Sin simular: ${clave}`, status: 404 });
     }
-    if (respuesta?.status) {
-      return problema(respuesta.status, respuesta.json);
-    }
     const json = typeof respuesta === 'function' ? respuesta(request) : respuesta;
+    if (json?.status) {
+      return problema(json.status, json.json);
+    }
     return json === null ? route.fulfill({ status: 204 }) : route.fulfill({ json });
   });
   return recibidas;

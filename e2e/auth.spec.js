@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Flujo de Autenticación Local y Roles', () => {
   test('debe iniciar sesión, seleccionar rol, pasar por intereses y llegar al Dashboard', async ({ page }) => {
@@ -35,6 +35,11 @@ test.describe('Flujo de Autenticación Local y Roles', () => {
         {id: 2, nombre: 'Física', categoriaId: 1, categoria: 'Ciencias Exactas'}
       ];
       await route.fulfill({ json });
+    });
+
+    // "Omitir por ahora" también lo registra el servidor
+    await page.route('**/api/estudiantes/intereses/omitir', async route => {
+      await route.fulfill({ status: 204 });
     });
 
     // Interceptar las secciones del panel del estudiante (sin datos)

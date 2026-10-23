@@ -66,6 +66,7 @@ La aplicación queda disponible en `http://localhost:5173`.
 | `npm test` | Pruebas unitarias con Vitest. |
 | `npm run coverage` | Pruebas unitarias con reporte de cobertura. |
 | `npm run e2e` | Pruebas de extremo a extremo con Playwright. |
+| `npm run e2e:cobertura` | Pruebas de extremo a extremo con cobertura del código de `src/` (reporte en `coverage-e2e/`). |
 
 ## Estructura del proyecto
 
