@@ -130,7 +130,9 @@ test.describe('Estudiante', () => {
     await dialogo.getByRole('radio', { name: /23:00/ }).check();
     await dialogo.getByRole('button', { name: 'Confirmar cita' }).click();
 
-    await expect(dialogo.getByText('Solicitud enviada')).toBeVisible();
+    // Éxito discreto: el diálogo se cierra y lo confirma un aviso.
+    await expect(dialogo).toBeHidden();
+    await expect(page.getByText('Solicitud enviada', { exact: true })).toBeVisible();
     const peticion = recibidas.find((r) => r.metodo === 'POST' && r.ruta === '/api/citas/agendar');
     expect(peticion?.cuerpo).toMatchObject({ tutorId: 11, materiaId: 1 });
   });

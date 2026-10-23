@@ -165,7 +165,10 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 - Formularios · `Field` con etiqueta visible arriba; error del campo en
   `validationMessage`. Nunca placeholder como etiqueta.
 - Selección de materias · `ToggleButton` o `Checkbox`, nunca chips hechos a mano.
-- Diálogos · `Dialog` de Fluent (foco, Escape y backdrop resueltos).
+- Diálogos · `Dialog` de Fluent (foco, Escape y backdrop resueltos). Sin tacha
+  en el título cuando el pie ya tiene Cancelar o Cerrar (guía de Fluent 2);
+  al terminar una acción el diálogo se cierra y lo confirma un aviso, sin
+  pantalla de éxito.
 - Páginas de información · sin pie de página, ni fijo ni al final del
   contenido (las apps de Microsoft no lo usan). "Ayuda y soporte" (`/ayuda`)
   va anclada al pie del menú lateral para todos los roles, como

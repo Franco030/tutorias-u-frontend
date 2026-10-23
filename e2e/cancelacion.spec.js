@@ -37,11 +37,16 @@ test.describe('Cancelar una tutoría', () => {
     );
     await expect(dialogo.getByText('Límites laterales')).toBeVisible();
     await expect(dialogo.getByText('Llevar ejercicios del capítulo 3.')).toBeVisible();
+    // Fluent 2: sin tacha cuando el pie ya tiene con qué cerrar.
+    await expect(dialogo.getByRole('button', { name: /^Cerrar/ })).toHaveCount(1);
 
     // "Volver" deshace la intención sin cancelar nada.
+    // El foco pasa al motivo y, con "Volver", regresa al botón: no se pierde.
     await dialogo.getByRole('button', { name: 'Cancelar tutoría' }).click();
+    await expect(dialogo.getByLabel('Motivo (opcional)')).toBeFocused();
     await dialogo.getByRole('button', { name: 'Volver' }).click();
     await expect(dialogo.getByText('¿Cancelar esta tutoría?')).toHaveCount(0);
+    await expect(dialogo.getByRole('button', { name: 'Cancelar tutoría' })).toBeFocused();
 
     await dialogo.getByRole('button', { name: 'Cancelar tutoría' }).click();
     await dialogo.getByLabel('Motivo (opcional)').fill('  Me surgió un examen.  ');
@@ -66,7 +71,7 @@ test.describe('Cancelar una tutoría', () => {
     await dialogo.getByRole('button', { name: 'Confirmar cancelación' }).click();
 
     await expect(dialogo.getByText('La sesión ya empezó.')).toBeVisible();
-    await dialogo.getByRole('button', { name: 'Cerrar detalles' }).click();
+    await page.keyboard.press('Escape');
     await expect(dialogo).toBeHidden();
   });
 
