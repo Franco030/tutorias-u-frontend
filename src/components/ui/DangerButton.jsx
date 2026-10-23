@@ -14,14 +14,16 @@ const useStyles = makeStyles({
       color: tokens.colorNeutralForegroundOnBrand,
     },
   },
+  // colorPaletteRedForeground1 llega a 4.5:1 sobre las tarjetas en claro y en
+  // oscuro; colorStatusDangerForeground1 se queda en 4.16:1 en oscuro.
   outline: {
-    color: tokens.colorStatusDangerForeground1,
+    color: tokens.colorPaletteRedForeground1,
     ":hover": {
-      color: tokens.colorStatusDangerForeground1,
+      color: tokens.colorPaletteRedForeground1,
       backgroundColor: tokens.colorStatusDangerBackground1,
     },
     ":hover:active": {
-      color: tokens.colorStatusDangerForeground1,
+      color: tokens.colorPaletteRedForeground1,
       backgroundColor: tokens.colorStatusDangerBackground2,
     },
   },

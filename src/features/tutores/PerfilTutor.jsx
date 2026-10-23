@@ -32,7 +32,7 @@ const useStyles = makeStyles({
   // Tarjeta de perfil en capas: banda de marca, avatar superpuesto con anillo.
   banner: {
     height: "96px",
-    background: `linear-gradient(120deg, ${tokens.colorBrandBackground2}, color-mix(in srgb, ${tokens.colorBrandBackground} 22%, ${tokens.colorNeutralBackground1}))`,
+    backgroundColor: tokens.colorBrandBackground2,
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
   hero: {

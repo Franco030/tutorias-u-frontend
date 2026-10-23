@@ -243,7 +243,7 @@ export default function AprobacionTutores() {
                   <li key={solicitud.id} className={styles.row}>
                     <Avatar name={solicitud.nombre} color="colorful" />
                     <div className={styles.identity}>
-                      <Text weight="semibold" className={styles.truncate}>
+                      <Text weight="semibold" className={styles.truncate} id={`aspirante-${solicitud.id}`}>
                         {solicitud.nombre}
                       </Text>
                       <Caption1 className={styles.truncate}>
@@ -254,7 +254,7 @@ export default function AprobacionTutores() {
                         </span>
                       </Caption1>
                       {solicitud.materias?.length > 0 && (
-                        <div className={styles.tags} aria-label="Materias solicitadas">
+                        <div className={styles.tags} role="group" aria-label="Materias solicitadas">
                           {solicitud.materias.map((materia) => (
                             <Tag key={materia} size="small" appearance="outline" shape="rounded">
                               {materia}
@@ -280,16 +280,15 @@ export default function AprobacionTutores() {
                         variant="outline"
                         onClick={() => setPorRechazar(solicitud)}
                         disabled={approvingId !== null}
-                        aria-label={`Rechazar a ${solicitud.nombre}`}
+                        aria-describedby={`aspirante-${solicitud.id}`}
                       >
                         Rechazar
                       </DangerButton>
                       <Button
-                        appearance="primary"
                         onClick={() => handleAprobar(solicitud.id)}
                         disabled={approvingId !== null}
                         icon={aprobando ? <Spinner size="tiny" /> : <Checkmark20Regular />}
-                        aria-label={`Aprobar a ${solicitud.nombre}`}
+                        aria-describedby={`aspirante-${solicitud.id}`}
                       >
                         {aprobando ? 'Aprobando…' : 'Aprobar'}
                       </Button>
@@ -323,7 +322,7 @@ export default function AprobacionTutores() {
                 <Textarea
                   value={motivoRechazo}
                   onChange={(_, data) => setMotivoRechazo(data.value)}
-                  placeholder="Escribe el motivo del rechazo..."
+                  placeholder="Escribe el motivo del rechazo…"
                   maxLength={500}
                   resize="vertical"
                   rows={3}

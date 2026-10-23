@@ -131,7 +131,9 @@ test.describe('Estudiante', () => {
     });
 
     await page.goto('/mis-tutorias');
-    const unirse = page.getByRole('link', { name: 'Unirse a Cálculo con Mateo Herrera' });
+    const unirse = page.getByRole('listitem').filter({ hasText: 'Cálculo' }).getByRole('link', { name: 'Unirse' });
+    // El contexto de la fila va como descripción, no en el nombre del botón.
+    await expect(unirse).toHaveAccessibleDescription(/Cálculo.*con Mateo Herrera/);
     await expect(unirse).toHaveAttribute('href', 'https://meet.example.com/abc');
     await expect(unirse).toHaveAttribute('target', '_blank');
   });
@@ -147,8 +149,8 @@ test.describe('Estudiante', () => {
     await page.goto('/mis-tutorias');
     await page.getByRole('tab', { name: 'Historial' }).click();
     // La sesión ya calificada no ofrece calificar otra vez.
-    await expect(page.getByRole('button', { name: /Calificar Álgebra/ })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Calificar Cálculo con Mateo Herrera' }).click();
+    await expect(page.getByRole('listitem').filter({ hasText: 'Álgebra' }).getByRole('button', { name: 'Calificar' })).toHaveCount(0);
+    await page.getByRole('listitem').filter({ hasText: 'Cálculo' }).getByRole('button', { name: 'Calificar' }).click();
 
     const dialogo = page.getByRole('dialog', { name: 'Calificar tutoría' });
     const enviar = dialogo.getByRole('button', { name: 'Enviar reseña' });
@@ -188,7 +190,7 @@ test.describe('Estudiante', () => {
     });
 
     await page.goto('/mis-tutorias');
-    await page.getByRole('button', { name: 'Ver detalles de Cálculo con Mateo Herrera' }).click();
+    await page.getByRole('button', { name: /Cálculo.*con Mateo Herrera/ }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
 
     for (const tecla of ['Meta', 'Alt', 'Control', 'Shift']) await page.keyboard.press(tecla);

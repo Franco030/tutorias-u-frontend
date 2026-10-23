@@ -179,7 +179,7 @@ test.describe('Flujo de reservas', () => {
     await page.goto('/tutor/mis-tutorias');
     await expect(page.getByText(/“Límites laterales”/)).toBeVisible();
 
-    await page.getByRole('button', { name: 'Aceptar solicitud de Ana Ruiz' }).click();
+    await page.getByRole('listitem').filter({ hasText: 'Ana Ruiz' }).getByRole('button', { name: 'Aceptar' }).click();
     const dialogo = page.getByRole('dialog');
     await expect(dialogo.getByText('Límites laterales')).toBeVisible();
     await expect(dialogo.getByRole('textbox', { name: 'Enlace de reunión' })).toHaveValue('https://meet.example.com/mateo');

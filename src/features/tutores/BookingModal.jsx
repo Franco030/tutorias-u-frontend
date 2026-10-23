@@ -54,8 +54,8 @@ const fechaComoClave = (fecha) =>
 
 const useStyles = makeStyles({
   surface: {
-    width: "min(720px, calc(100vw - 32px))",
-    maxWidth: "none",
+    width: "100%",
+    maxWidth: "720px",
   },
   // Calendario y horarios lado a lado; apilados en pantallas angostas.
   schedule: {
@@ -408,15 +408,8 @@ export default function BookingModal({
                   </Field>
 
                   <div className={styles.schedule}>
-                    <Field
-                      label="Fecha"
-                      required
-                      hint={
-                        !cargando && disponibilidad.length > 0
-                          ? "Solo puedes elegir los días en que el tutor atiende."
-                          : undefined
-                      }
-                    >
+                    {/* Texto fijo: si apareciera al terminar la carga, el diálogo cambiaría de alto. */}
+                    <Field label="Fecha" required hint="Solo puedes elegir los días en que el tutor atiende.">
                       <div className={styles.calendar}>
                         <Calendario
                           minDate={limitesFecha.min}
@@ -441,9 +434,16 @@ export default function BookingModal({
                       validationState={errorOcupados ? "error" : "none"}
                       validationMessage={errorOcupados || undefined}
                     >
-                      {!fecha ? (
+                      {/* La carga se indica en este mismo lugar (y no en una fila aparte) para
+                          que el diálogo no cambie de alto al terminar: con poca altura, eso
+                          hacía aparecer y desaparecer la barra de desplazamiento. */}
+                      {!fecha && cargando ? (
+                        <Diferido>
+                          <Spinner size="tiny" label="Cargando horarios…" labelPosition="after" />
+                        </Diferido>
+                      ) : !fecha ? (
                         <Caption1 className={styles.muted}>
-                          {fechasDisponibles.length === 0 && !cargando
+                          {fechasDisponibles.length === 0
                             ? "No hay días disponibles en los próximos 90 días."
                             : "Elige un día en el calendario para ver sus horarios."}
                         </Caption1>
@@ -492,12 +492,6 @@ export default function BookingModal({
                       disabled={submitting}
                     />
                   </Field>
-
-                  {cargando && (
-                    <Diferido>
-                      <Spinner size="tiny" label="Cargando horarios…" labelPosition="after" />
-                    </Diferido>
-                  )}
 
                   {!cargando && disponibilidad.length === 0 && !error && (
                     <MessageBar intent="info" layout="multiline">

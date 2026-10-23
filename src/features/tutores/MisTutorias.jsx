@@ -35,6 +35,7 @@ import {
   SessionListSkeleton,
   SessionRow,
 } from "../../components/ui/SessionList";
+import { descripcionDeFila } from "../../lib/filas";
 
 const useStyles = makeStyles({
   rechazo: {
@@ -193,6 +194,7 @@ export default function MisTutorias() {
               return (
                 <SessionRow
                   key={cita.id}
+                  id={`solicitud-${cita.id}`}
                   fecha={fecha}
                   title={cita.materiaNombre}
                   meta={`${formatoSesion.format(fecha)} · ${cita.estudianteNombre}${cita.tema ? ` · “${cita.tema}”` : ""}`}
@@ -202,16 +204,15 @@ export default function MisTutorias() {
                         variant="outline"
                         onClick={() => handleRechazar(cita)}
                         disabled={rechazando}
-                        aria-label={`Rechazar solicitud de ${cita.estudianteNombre}`}
+                        aria-describedby={descripcionDeFila(`solicitud-${cita.id}`)}
                       >
                         {rechazando ? "Rechazando…" : "Rechazar"}
                       </DangerButton>
                       <Button
-                        appearance="primary"
                         icon={<Checkmark20Regular />}
                         onClick={() => handleAceptar(cita)}
                         disabled={rechazando}
-                        aria-label={`Aceptar solicitud de ${cita.estudianteNombre}`}
+                        aria-describedby={descripcionDeFila(`solicitud-${cita.id}`)}
                       >
                         Aceptar
                       </Button>

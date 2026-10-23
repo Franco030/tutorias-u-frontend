@@ -97,8 +97,9 @@ enmienda aquí, no con un estilo suelto en el componente.
   de correo van sin shell.
 - Tema · se cambia con el interruptor "Tema oscuro" del menú de usuario; fuera
   de la app, solo en el acceso (interruptor sin etiqueta, con tooltip, abajo
-  a la izquierda). No hay botón suelto de tema en las páginas. El acceso no
-  lleva textos sueltos sobre la foto: solo la tarjeta y ese interruptor.
+  a la izquierda). No hay botón suelto de tema en las páginas. Sobre la foto
+  del acceso solo van la tarjeta, ese interruptor y, abajo a la derecha, los
+  enlaces Ayuda · Términos · Privacidad en una placa sólida (sin vidrio).
 
 ## Componentes compartidos (`src/components`)
 - `shell/AppShell` · ventana con barra, navegación por rol (`shell/navigation.js`).
@@ -147,6 +148,10 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 ## Controles
 - Botón primario · `appearance="primary"`, uno por vista. Secundario por
   defecto, `subtle` para acciones terciarias. Verbo concreto en la etiqueta.
+  En listas, las acciones de cada fila (Aceptar, Aprobar, Unirse, Calificar)
+  son secundarias. Única excepción: en el inicio, "Unirse" de la sesión que
+  está por empezar o en curso es el primario de la vista y el botón del
+  encabezado baja a secundario mientras tanto.
 - Formularios · `Field` con etiqueta visible arriba; error del campo en
   `validationMessage`. Nunca placeholder como etiqueta.
 - Selección de materias · `ToggleButton` o `Checkbox`, nunca chips hechos a mano.
@@ -164,10 +169,20 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 - Desplazamiento · el lienzo del shell reserva siempre el espacio de la barra
   de desplazamiento (`scrollbar-gutter: stable`): cuando una página pasa a
   necesitar scroll, nada se recorre de lado.
-- Página no encontrada · cualquier ruta desconocida muestra el pato
-  (`assets/pato-perdido.png`, recortado sin fondo), "Error 404", un título,
-  una línea y un único botón primario "Volver al inicio". Con sesión va
-  dentro del shell; sin sesión, sola.
+- Sesión en vivo (inicio) · sin tarjeta aparte: la sesión cercana es una fila
+  más de "Próximas sesiones" (`SessionRow`). En las próximas 24 h su segunda
+  línea es la cuenta regresiva ("Empieza en 2 h 15 min · con …", "Termina en
+  55 min · con …"). Desde 10 minutos antes y durante su hora, la fila lleva
+  "Unirse" (primario); al terminar, "Calificar" para el estudiante. "En curso"
+  es un `Badge` tint de peligro solo con texto, oculto en móvil como las demás
+  insignias. Nada de franjas de color ni fondos teñidos para destacar: en
+  Fluent la jerarquía la dan el texto y el tipo de botón. La hora se cuenta
+  en la zona de la plataforma (`lib/sesion.js`) y se refresca cada 30 s.
+- Página no encontrada · como toda pantalla de un solo mensaje:
+  `PageHeader` ("Esta página no existe", con "Error 404" en la descripción) y
+  `TarjetaIlustrada` con el pato (`assets/pato-perdido.png`, recortado sin
+  fondo) y un único primario "Volver al inicio". Con sesión va dentro del
+  shell; sin sesión, sola.
 - Cambios sin guardar · al salir a otra página se pregunta "¿Guardar los
   cambios?" con Cancelar, No guardar y Guardar (primario), como en Windows.
   Recargar o cerrar la pestaña usa el aviso nativo del navegador.
@@ -275,6 +290,9 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 - Si un elemento tiene texto visible, su nombre accesible sale de ese texto:
   nada de `aria-label` distinto a lo que se ve (falla
   `label-content-name-mismatch`). `aria-label` solo en botones de ícono.
+  Si varias filas repiten un botón ("Aceptar"), el contexto va en
+  `aria-describedby` (título y datos de la fila: `id` de `SessionRow` +
+  `lib/filas.js`), no en el nombre.
 - Anillo de foco · aparece al navegar con teclado (Tab, flechas…), no al
   pulsar una tecla modificadora sola (Windows, Alt, Ctrl, Shift):
   `lib/teclasModificadoras.js` las detiene antes de keyborg.

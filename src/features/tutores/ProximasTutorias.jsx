@@ -29,6 +29,7 @@ import {
   SessionListSkeleton,
   SessionRow,
 } from "../../components/ui/SessionList";
+import { descripcionDeFila } from "../../lib/filas";
 
 const useStyles = makeStyles({
   tabs: {
@@ -154,18 +155,23 @@ export default function ProximasTutorias() {
               return (
                 <SessionRow
                   key={tutoria.id}
+                  id={`tutoria-${tutoria.id}`}
                   fecha={fecha}
                   muted
                   title={tutoria.materia}
                   meta={meta}
                   actions={
                     <>
-                      <Button onClick={() => abrirDetalles(tutoria)}>Detalles</Button>
                       <Button
-                        appearance="primary"
+                        onClick={() => abrirDetalles(tutoria)}
+                        aria-describedby={descripcionDeFila(`tutoria-${tutoria.id}`)}
+                      >
+                        Detalles
+                      </Button>
+                      <Button
                         icon={<Star20Regular />}
                         onClick={() => setTutoriaPorCalificar(tutoria)}
-                        aria-label={`Calificar ${tutoria.materia} con ${tutoria.rolOpuestoNombre}`}
+                        aria-describedby={descripcionDeFila(`tutoria-${tutoria.id}`)}
                       >
                         Calificar
                       </Button>
@@ -181,20 +187,25 @@ export default function ProximasTutorias() {
               return (
                 <SessionRow
                   key={tutoria.id}
+                  id={`tutoria-${tutoria.id}`}
                   fecha={fecha}
                   title={tutoria.materia}
                   meta={meta}
                   actions={
                     <>
-                      <Button onClick={() => abrirDetalles(tutoria)}>Detalles</Button>
+                      <Button
+                        onClick={() => abrirDetalles(tutoria)}
+                        aria-describedby={descripcionDeFila(`tutoria-${tutoria.id}`)}
+                      >
+                        Detalles
+                      </Button>
                       <Button
                         as="a"
                         href={tutoria.linkReunion}
                         target="_blank"
                         rel="noopener noreferrer"
-                        appearance="primary"
                         icon={<Video20Regular />}
-                        aria-label={`Unirse a ${tutoria.materia} con ${tutoria.rolOpuestoNombre}`}
+                        aria-describedby={descripcionDeFila(`tutoria-${tutoria.id}`)}
                       >
                         Unirse
                       </Button>
@@ -225,7 +236,6 @@ export default function ProximasTutorias() {
                   </>
                 }
                 onClick={() => abrirDetalles(tutoria)}
-                ariaLabel={`Ver detalles de ${tutoria.materia} con ${tutoria.rolOpuestoNombre}`}
               />
             );
           })}

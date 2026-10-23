@@ -36,7 +36,8 @@ import { DangerButton } from "../../components/ui/DangerButton";
 
 const useStyles = makeStyles({
   surface: {
-    width: "min(520px, calc(100vw - 32px))",
+    width: "100%",
+    maxWidth: "520px",
   },
   details: {
     display: "flex",

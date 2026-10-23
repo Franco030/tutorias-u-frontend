@@ -17,12 +17,14 @@ test.describe('Tutor', () => {
 
     await page.goto('/tutor/mis-tutorias');
 
-    await page.getByRole('button', { name: 'Aceptar solicitud de Ana Ruiz' }).click();
+    const aceptar = page.getByRole('listitem').filter({ hasText: 'Ana Ruiz' }).getByRole('button', { name: 'Aceptar' });
+    await expect(aceptar).toHaveAccessibleDescription(/Cálculo.*Ana Ruiz/);
+    await aceptar.click();
     await page.getByRole('textbox', { name: 'Enlace de reunión' }).fill('https://meet.example.com/xyz');
     await page.getByRole('button', { name: 'Confirmar tutoría' }).click();
     await expect(page.getByText('Tutoría aceptada', { exact: true })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Rechazar solicitud de Carlos Méndez' }).click();
+    await page.getByRole('listitem').filter({ hasText: 'Carlos Méndez' }).getByRole('button', { name: 'Rechazar' }).click();
     await page.getByLabel('Motivo (opcional)').fill('Ese día tengo examen.');
     await page.getByRole('button', { name: 'Rechazar solicitud', exact: true }).click();
     await expect(page.getByText('Solicitud rechazada', { exact: true })).toBeVisible();
@@ -220,7 +222,9 @@ test.describe('Administración', () => {
     );
     await expect(page.getByText('Álgebra')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Rechazar a Sofía Treviño' }).click();
+    const rechazarFila = page.getByRole('listitem').filter({ hasText: 'Sofía Treviño' }).getByRole('button', { name: 'Rechazar' });
+    await expect(rechazarFila).toHaveAccessibleDescription('Sofía Treviño');
+    await rechazarFila.click();
     const rechazar = page.getByRole('button', { name: 'Rechazar solicitud' });
     // El motivo es obligatorio: sin él no se puede rechazar.
     await expect(rechazar).toBeDisabled();
