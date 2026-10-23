@@ -183,11 +183,17 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   más de "Próximas sesiones" (`SessionRow`). En las próximas 24 h su segunda
   línea es la cuenta regresiva ("Empieza en 2 h 15 min · con …", "Termina en
   55 min · con …"). Desde 10 minutos antes y durante su hora, la fila lleva
-  "Unirse" (primario); al terminar, "Calificar" para el estudiante. "En curso"
+  "Unirse" (primario); al terminar, el tutor la confirma ahí mismo ("No
+  asistió" / "Se impartió", secundarios). "En curso"
   es un `Badge` tint de peligro solo con texto, oculto en móvil como las demás
   insignias. Nada de franjas de color ni fondos teñidos para destacar: en
   Fluent la jerarquía la dan el texto y el tipo de botón. La hora se cuenta
   en la zona de la plataforma (`lib/sesion.js`) y se refresca cada 30 s.
+- Cierre de la sesión · al terminar su hora, una cita aceptada queda "Por
+  confirmar" (insignia de aviso) hasta que el tutor elige "Se impartió"
+  (pasa a Completada y el estudiante recibe la invitación a calificar) o "No
+  asistió" (insignia neutra "No asistió", no se califica). Sin confirmar en
+  3 días, se completa sola. El estudiante solo califica sesiones completadas.
 - Página no encontrada · como toda pantalla de un solo mensaje:
   `PageHeader` ("Esta página no existe", con "Error 404" en la descripción) y
   `TarjetaIlustrada` con el pato (`assets/pato-perdido.png`, recortado sin

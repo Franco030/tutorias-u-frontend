@@ -19,14 +19,20 @@ import {
 import {
   CalendarEmpty24Regular,
   LockClosed20Regular,
+  Checkmark20Regular,
   PeopleSearch24Regular,
-  Star20Regular,
+  PersonProhibited20Regular,
   TaskListSquareLtr24Regular,
   Video20Regular,
 } from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
 import { useCargaDePagina } from "../../hooks/useCargaDePagina";
-import { getCitasPendientes, getHistorialTutorias, getProximasTutorias } from "../../services/citaService";
+import {
+  confirmarSesionImpartida,
+  getCitasPendientes,
+  getProximasTutorias,
+  registrarInasistencia,
+} from "../../services/citaService";
 import { getTutoresRecomendados } from "../../services/tutorService";
 import TutorCard from "../../components/TutorCard";
 import { IlustracionCalendario, IlustracionComunidad, IlustracionRevision } from "../../components/illustrations/Ilustraciones";
@@ -45,7 +51,6 @@ import { esTutorAprobado, tieneSolicitudTutor } from "../../components/shell/nav
 import { useAhora } from "../../hooks/useAhora";
 import { useNotificar } from "../../hooks/useNotificar";
 import { duracionLegible, faseDeSesion } from "../../lib/sesion";
-import CalificarTutoriaModal from "../tutores/CalificarTutoriaModal";
 
 const MAX_FILAS = 3;
 
@@ -154,12 +159,6 @@ function metaDeSesion(sesion, estado) {
   return `Empieza en ${duracionLegible(estado.minutos)} · ${con}`;
 }
 
-/*
- * Próximas sesiones. Las cercanas llevan cuenta regresiva en la misma fila;
- * desde 10 minutos antes y durante su hora, la fila ofrece "Unirse"; al
- * terminar, el estudiante la califica ahí mismo. La hora se cuenta en la zona
- * de la plataforma y se refresca cada 30 s.
- */
 const sePuedeUnir = (sesion, ahora) => {
   const fase = faseDeSesion(sesion, ahora)?.fase;
   return (fase === "unirse" || fase === "en-curso") && Boolean(sesion.linkReunion);
@@ -175,28 +174,35 @@ function useProximas() {
   return { ...carga, ahora, unirseId };
 }
 
+/*
+ * Próximas sesiones. Las cercanas llevan cuenta regresiva en la misma fila;
+ * desde 10 minutos antes y durante su hora, la fila ofrece "Unirse". Al
+ * terminar, el tutor confirma ahí mismo si se impartió o si el estudiante no
+ * asistió (el estudiante califica después, cuando el tutor la confirma). La
+ * hora se cuenta en la zona de la plataforma y se refresca cada 30 s.
+ */
 function ProximasSesiones({ proximas, to = "/mis-tutorias", esEstudiante = false }) {
   const styles = useStyles();
-  const navigate = useNavigate();
   const notificar = useNotificar();
   const { datos, cargando, error, ahora, unirseId } = proximas;
-  const [porCalificar, setPorCalificar] = useState(null);
-  const [preparando, setPreparando] = useState(null);
-  const [calificadas, setCalificadas] = useState([]);
+  const [confirmando, setConfirmando] = useState(null);
+  const [cerradas, setCerradas] = useState([]);
 
-  const filas = datos.filter((sesion) => !calificadas.includes(sesion.id)).slice(0, MAX_FILAS);
+  const filas = datos.filter((sesion) => !cerradas.includes(sesion.id)).slice(0, MAX_FILAS);
 
-  // El historial completa en el backend la sesión que terminó; solo entonces se califica.
-  const calificar = async (sesion) => {
-    setPreparando(sesion.id);
+  // La sesión confirmada sale de "próximas": su resultado se ve en "Mis tutorías".
+  const confirmar = async (sesion, impartida) => {
+    setConfirmando(sesion.id);
     try {
-      await getHistorialTutorias();
-      setPorCalificar(sesion);
+      await (impartida ? confirmarSesionImpartida(sesion.id) : registrarInasistencia(sesion.id));
+      setCerradas((ids) => [...ids, sesion.id]);
+      notificar(impartida ? "Sesión confirmada" : "Inasistencia registrada", {
+        cuerpo: `${sesion.materia} con ${sesion.rolOpuestoNombre}`,
+      });
     } catch (err) {
-      console.error("No se pudo preparar la calificación:", err);
-      navigate(to);
+      notificar("No se pudo confirmar la sesión", { cuerpo: err.message, intent: "error" });
     } finally {
-      setPreparando(null);
+      setConfirmando(null);
     }
   };
 
@@ -227,7 +233,7 @@ function ProximasSesiones({ proximas, to = "/mis-tutorias", esEstudiante = false
             const fase = estado?.fase;
             const enCurso = fase === "en-curso";
             const puedeUnirse = sePuedeUnir(sesion, ahora);
-            const puedeCalificar = fase === "terminada" && esEstudiante;
+            const porConfirmar = fase === "terminada" && !esEstudiante;
             const filaId = `proxima-${sesion.id}`;
             const comunes = {
               id: filaId,
@@ -237,7 +243,7 @@ function ProximasSesiones({ proximas, to = "/mis-tutorias", esEstudiante = false
               muted: fase === "terminada",
             };
 
-            if (puedeUnirse || puedeCalificar) {
+            if (puedeUnirse || porConfirmar) {
               return (
                 <SessionRow
                   key={sesion.id}
@@ -265,14 +271,24 @@ function ProximasSesiones({ proximas, to = "/mis-tutorias", esEstudiante = false
                           Unirse
                         </Button>
                       ) : (
-                        <Button
-                          icon={preparando === sesion.id ? <Spinner size="tiny" /> : <Star20Regular />}
-                          disabled={preparando === sesion.id}
-                          onClick={() => calificar(sesion)}
-                          aria-describedby={descripcionDeFila(filaId)}
-                        >
-                          Calificar
-                        </Button>
+                        <>
+                          <Button
+                            icon={<PersonProhibited20Regular />}
+                            disabled={confirmando !== null}
+                            onClick={() => confirmar(sesion, false)}
+                            aria-describedby={descripcionDeFila(filaId)}
+                          >
+                            No asistió
+                          </Button>
+                          <Button
+                            icon={confirmando === sesion.id ? <Spinner size="tiny" /> : <Checkmark20Regular />}
+                            disabled={confirmando !== null}
+                            onClick={() => confirmar(sesion, true)}
+                            aria-describedby={descripcionDeFila(filaId)}
+                          >
+                            Se impartió
+                          </Button>
+                        </>
                       )}
                     </>
                   }
@@ -301,14 +317,6 @@ function ProximasSesiones({ proximas, to = "/mis-tutorias", esEstudiante = false
           })}
         </SessionList>
       )}
-      <CalificarTutoriaModal
-        tutoria={porCalificar}
-        onClose={() => setPorCalificar(null)}
-        onCalificada={(tutoria) => {
-          setCalificadas((ids) => [...ids, tutoria.id]);
-          notificar("Gracias por tu reseña", { cuerpo: `${tutoria.materia} con ${tutoria.rolOpuestoNombre}` });
-        }}
-      />
     </PageSection>
   );
 }

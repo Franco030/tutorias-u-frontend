@@ -43,6 +43,15 @@ export const getHorasOcupadas = (tutorId, fecha) => {
   return apiClient.get(`/api/citas/ocupadas?${params.toString()}`);
 };
 
+// El tutor confirma, al terminar la sesión, si se impartió o si el estudiante no asistió.
+export const confirmarSesionImpartida = (id) => {
+  return apiClient.put(`/api/citas/${id}/completar`, {});
+};
+
+export const registrarInasistencia = (id) => {
+  return apiClient.put(`/api/citas/${id}/no-asistio`, {});
+};
+
 export const cancelarCita = (id, motivo = "") => {
   return apiClient.put(`/api/citas/${id}/cancelar`, { motivo });
 };
