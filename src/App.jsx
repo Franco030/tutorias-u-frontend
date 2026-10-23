@@ -5,6 +5,7 @@ import { AppShell } from "./components/shell/AppShell";
 import { PageLoading } from "./components/ui/Page";
 import { AuthView } from "./features/auth/AuthView";
 import PaginaNoEncontrada from "./features/PaginaNoEncontrada";
+import { LimiteErrores } from "./components/ui/LimiteErrores";
 import { Suspense, useEffect, useState } from "react";
 import { pantallaDiferida } from "./lib/pantallaDiferida";
 
@@ -12,6 +13,7 @@ import { pantallaDiferida } from "./lib/pantallaDiferida";
 // el resto se carga por ruta para aligerar la carga inicial.
 const pantallas = {
   VerifyEmailPage: () => import("./features/auth/VerifyEmailPage"),
+  RestablecerContrasenaPage: () => import("./features/auth/RestablecerContrasenaPage"),
   AprobacionTutores: () => import("./features/admin/AprobacionTutores"),
   SelectorIntereses: () => import("./features/onboarding/SelectorIntereses"),
   AplicacionTutor: () => import("./features/onboarding/AplicacionTutor"),
@@ -30,6 +32,7 @@ const pantallas = {
 };
 
 const VerifyEmailPage = pantallaDiferida(pantallas.VerifyEmailPage);
+const RestablecerContrasenaPage = pantallaDiferida(pantallas.RestablecerContrasenaPage);
 const AprobacionTutores = pantallaDiferida(pantallas.AprobacionTutores);
 const SelectorIntereses = pantallaDiferida(pantallas.SelectorIntereses);
 const AplicacionTutor = pantallaDiferida(pantallas.AplicacionTutor);
@@ -52,7 +55,7 @@ function usePrecargarPantallas() {
   useEffect(() => {
     const precargar = () =>
       [
-        VerifyEmailPage, AprobacionTutores, SelectorIntereses, AplicacionTutor, MisIntereses,
+        VerifyEmailPage, RestablecerContrasenaPage, AprobacionTutores, SelectorIntereses, AplicacionTutor, MisIntereses,
         EstadoSolicitud, PerfilTutor, CatalogoTutores, MisMateriasTutor,
         ConfiguracionDisponibilidad, MisTutorias, ProximasTutorias,
         Ayuda, AcercaDe, TerminosUso, AvisoPrivacidad,
@@ -256,15 +259,22 @@ function ShellLayout() {
     pathname === "/intereses" && rol === "estudiante" && !user?.onboardingCompleto;
 
   if (!tieneRol || enOnboarding) {
-    return <Outlet />;
+    return (
+      <LimiteErrores>
+        <Outlet />
+      </LimiteErrores>
+    );
   }
 
   return (
     <AppShell>
-      {/* Suspense dentro del shell: la barra y la navegación no parpadean. */}
-      <Suspense fallback={<PageLoading />}>
-        <Outlet />
-      </Suspense>
+      {/* Suspense y el límite de errores dentro del shell: la barra y la
+          navegación no parpadean y siguen disponibles si una pantalla falla. */}
+      <LimiteErrores>
+        <Suspense fallback={<PageLoading />}>
+          <Outlet />
+        </Suspense>
+      </LimiteErrores>
     </AppShell>
   );
 }
@@ -273,11 +283,17 @@ export function App() {
   usePrecargarPantallas();
 
   return (
+    <LimiteErrores>
     <Suspense fallback={<PageLoading />}>
     <Routes>
       <Route
         path="/verificar-correo"
         element={<VerifyEmailPage />}
+      />
+
+      <Route
+        path="/restablecer-contrasena"
+        element={<RestablecerContrasenaPage />}
       />
 
       <Route element={<ShellLayout />}>
@@ -367,6 +383,7 @@ export function App() {
       </Route>
     </Routes>
     </Suspense>
+    </LimiteErrores>
   );
 }
 

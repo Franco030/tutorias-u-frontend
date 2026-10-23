@@ -212,14 +212,20 @@ function AccesoPanel() {
   // Errores que no vienen de un formulario: sesión expirada (401) o el
   // regreso de Microsoft con un error del servidor.
   const { error, clearError } = useAuth();
+  const [modo, setModo] = useState("acceso");
+  const recuperando = modo === "recuperar";
 
   return (
     <>
       <div className={styles.heading}>
         <Title2 as="h1" className={styles.title}>
-          Inicia sesión
+          {recuperando ? "Restablece tu contraseña" : "Inicia sesión"}
         </Title2>
-        <Body1 className={styles.muted}>Con tu correo registrado o tu cuenta institucional.</Body1>
+        <Body1 className={styles.muted}>
+          {recuperando
+            ? "Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva."
+            : "Con tu correo registrado o tu cuenta institucional."}
+        </Body1>
       </div>
 
       {error && (
@@ -239,14 +245,19 @@ function AccesoPanel() {
         </MessageBar>
       )}
 
-      <LocalAuthForm />
+      <LocalAuthForm modo={modo} onModo={setModo} />
 
-      <Divider>o continúa con</Divider>
+      {/* Las cuentas de Microsoft o Google no tienen contraseña que restablecer. */}
+      {!recuperando && (
+        <>
+          <Divider>o continúa con</Divider>
 
-      <div className={styles.providers}>
-        <MicrosoftLoginButton />
-        <GoogleLoginButton />
-      </div>
+          <div className={styles.providers}>
+            <MicrosoftLoginButton />
+            <GoogleLoginButton />
+          </div>
+        </>
+      )}
     </>
   );
 }

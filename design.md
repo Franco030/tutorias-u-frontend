@@ -142,8 +142,18 @@ y formas que se superponen, con **una sola metáfora por imagen**.
 ## Inicio de sesión
 - Patrón de cuenta Microsoft: foto a pantalla completa con velo de marca y
   una tarjeta centrada de 440 px (logo, título, formulario). Orden: correo,
-  contraseña, "Iniciar sesión", registro; después "o continúa con" y los
-  proveedores (Microsoft, Google).
+  contraseña, "¿Olvidaste tu contraseña?" (enlace bajo la contraseña),
+  "Iniciar sesión", registro; después "o continúa con" y los proveedores
+  (Microsoft, Google).
+- Recuperar la cuenta · "¿Olvidaste tu contraseña?" cambia la misma tarjeta a
+  "Restablece tu contraseña" (solo el correo, sin proveedores). Si el correo
+  falta por verificar, el acceso lo dice tal cual (aviso, no error) y ofrece
+  "Reenviar el correo de verificación". Los mensajes de envío son neutros
+  ("Si hay una cuenta con ese correo…"): nunca revelan qué correos existen.
+- Pantallas que se abren desde un enlace del correo (verificar el correo,
+  restablecer la contraseña) · `features/auth/CuentaLayout`: marca arriba y
+  tarjeta centrada de 440 px, sin shell. Si el enlace venció, ofrecen pedir
+  otro ahí mismo.
 
 ## Controles
 - Botón primario · `appearance="primary"`, uno por vista. Secundario por
@@ -183,6 +193,14 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   `TarjetaIlustrada` con el pato (`assets/pato-perdido.png`, recortado sin
   fondo) y un único primario "Volver al inicio". Con sesión va dentro del
   shell; sin sesión, sola.
+- Errores de pantalla · si una pantalla falla al dibujarse, `LimiteErrores`
+  (`components/ui`) muestra en su lugar "Algo salió mal" con la misma
+  estructura que la 404 (`PageHeader` + `TarjetaIlustrada` con
+  `IlustracionRevision` rechazada), "Recargar la página" como primario y "Ir al
+  inicio" como enlace. Dentro del shell la navegación sigue disponible y, al
+  cambiar de ruta, el límite se reinicia. Si lo que falló fue descargar una
+  pantalla tras publicar una versión nueva, el texto pide recargar para usar
+  la versión actual.
 - Cambios sin guardar · al salir a otra página se pregunta "¿Guardar los
   cambios?" con Cancelar, No guardar y Guardar (primario), como en Windows.
   Recargar o cerrar la pestaña usa el aviso nativo del navegador.
