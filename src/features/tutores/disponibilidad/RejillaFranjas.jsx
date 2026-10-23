@@ -141,9 +141,13 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase100,
     lineHeight: tokens.lineHeightBase100,
     fontVariantNumeric: "tabular-nums",
+    // Con mouse aparecen al pasar por la franja; en pantallas táctiles, siempre.
     "& .grip": { opacity: 0 },
     "@media (hover: hover)": {
       ":hover .grip": { opacity: 1 },
+    },
+    "@media (hover: none)": {
+      "& .grip": { opacity: 1 },
     },
   },
   franjaTexto: {

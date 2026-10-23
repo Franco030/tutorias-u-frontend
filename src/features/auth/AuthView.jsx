@@ -84,9 +84,9 @@ const useStyles = makeStyles({
     paddingInline: tokens.spacingHorizontalS,
     paddingBlock: tokens.spacingVerticalXXS,
     borderRadius: tokens.borderRadiusMedium,
-    // Velo para el contraste del texto sobre la foto.
-    backgroundColor: `color-mix(in srgb, ${tokens.colorNeutralBackground1} 70%, transparent)`,
-    backdropFilter: "blur(8px)",
+    // Fondo sólido para el contraste del texto sobre la foto (sin vidrio).
+    backgroundColor: tokens.colorNeutralBackground1,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     fontSize: tokens.fontSizeBase200,
     lineHeight: tokens.lineHeightBase200,
   },

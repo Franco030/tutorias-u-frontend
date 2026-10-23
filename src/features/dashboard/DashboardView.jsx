@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Badge,
   Button,
   Caption1,
   Link,
@@ -11,6 +12,7 @@ import {
   MessageBarTitle,
   Skeleton,
   SkeletonItem,
+  Spinner,
   Text,
   tokens,
 } from "@fluentui/react-components";
@@ -18,11 +20,13 @@ import {
   CalendarEmpty24Regular,
   LockClosed20Regular,
   PeopleSearch24Regular,
+  Star20Regular,
   TaskListSquareLtr24Regular,
+  Video20Regular,
 } from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
 import { useCargaDePagina } from "../../hooks/useCargaDePagina";
-import { getCitasPendientes, getProximasTutorias } from "../../services/citaService";
+import { getCitasPendientes, getHistorialTutorias, getProximasTutorias } from "../../services/citaService";
 import { getTutoresRecomendados } from "../../services/tutorService";
 import TutorCard from "../../components/TutorCard";
 import { IlustracionCalendario, IlustracionComunidad, IlustracionRevision } from "../../components/illustrations/Ilustraciones";
@@ -36,7 +40,12 @@ import {
   SessionListSkeleton,
   SessionRow,
 } from "../../components/ui/SessionList";
+import { descripcionDeFila } from "../../lib/filas";
 import { esTutorAprobado, tieneSolicitudTutor } from "../../components/shell/navigation";
+import { useAhora } from "../../hooks/useAhora";
+import { useNotificar } from "../../hooks/useNotificar";
+import { duracionLegible, faseDeSesion } from "../../lib/sesion";
+import CalificarTutoriaModal from "../tutores/CalificarTutoriaModal";
 
 const MAX_FILAS = 3;
 
@@ -131,10 +140,65 @@ function EnlaceSeccion({ to, children }) {
   );
 }
 
-function ProximasSesiones({ to = "/mis-tutorias" }) {
+// La cuenta regresiva aparece para las sesiones aceptadas de las próximas 24 h.
+const HORIZONTE_CUENTA_MIN = 24 * 60;
+
+// Segunda línea de la fila: la cuenta regresiva cuando la sesión está cerca o en curso.
+function metaDeSesion(sesion, estado) {
+  const con = `con ${sesion.rolOpuestoNombre}`;
+  if (!estado || (estado.fase === "pronto" && estado.minutos > HORIZONTE_CUENTA_MIN)) {
+    return `${formatoSesion.format(new Date(sesion.fechaHoraInicio))} · ${con}`;
+  }
+  if (estado.fase === "en-curso") return `Termina en ${duracionLegible(estado.minutos)} · ${con}`;
+  if (estado.fase === "terminada") return `Terminó · ${con}`;
+  return `Empieza en ${duracionLegible(estado.minutos)} · ${con}`;
+}
+
+/*
+ * Próximas sesiones. Las cercanas llevan cuenta regresiva en la misma fila;
+ * desde 10 minutos antes y durante su hora, la fila ofrece "Unirse"; al
+ * terminar, el estudiante la califica ahí mismo. La hora se cuenta en la zona
+ * de la plataforma y se refresca cada 30 s.
+ */
+const sePuedeUnir = (sesion, ahora) => {
+  const fase = faseDeSesion(sesion, ahora)?.fase;
+  return (fase === "unirse" || fase === "en-curso") && Boolean(sesion.linkReunion);
+};
+
+// Próximas sesiones del panel. Se cargan a nivel de panel: si hay una sesión a
+// la que unirse, su botón es el primario de la vista y el del encabezado baja a
+// secundario (un solo primario por vista).
+function useProximas() {
+  const carga = useCarga(getProximasTutorias);
+  const ahora = useAhora();
+  const unirseId = carga.datos.find((sesion) => sePuedeUnir(sesion, ahora))?.id ?? null;
+  return { ...carga, ahora, unirseId };
+}
+
+function ProximasSesiones({ proximas, to = "/mis-tutorias", esEstudiante = false }) {
   const styles = useStyles();
-  const { datos, cargando, error } = useCarga(getProximasTutorias);
-  const filas = datos.slice(0, MAX_FILAS);
+  const navigate = useNavigate();
+  const notificar = useNotificar();
+  const { datos, cargando, error, ahora, unirseId } = proximas;
+  const [porCalificar, setPorCalificar] = useState(null);
+  const [preparando, setPreparando] = useState(null);
+  const [calificadas, setCalificadas] = useState([]);
+
+  const filas = datos.filter((sesion) => !calificadas.includes(sesion.id)).slice(0, MAX_FILAS);
+
+  // El historial completa en el backend la sesión que terminó; solo entonces se califica.
+  const calificar = async (sesion) => {
+    setPreparando(sesion.id);
+    try {
+      await getHistorialTutorias();
+      setPorCalificar(sesion);
+    } catch (err) {
+      console.error("No se pudo preparar la calificación:", err);
+      navigate(to);
+    } finally {
+      setPreparando(null);
+    }
+  };
 
   return (
     <PageSection
@@ -159,23 +223,92 @@ function ProximasSesiones({ to = "/mis-tutorias" }) {
         <SessionList label="Próximas sesiones">
           {filas.map((sesion) => {
             const fecha = new Date(sesion.fechaHoraInicio);
+            const estado = faseDeSesion(sesion, ahora);
+            const fase = estado?.fase;
+            const enCurso = fase === "en-curso";
+            const puedeUnirse = sePuedeUnir(sesion, ahora);
+            const puedeCalificar = fase === "terminada" && esEstudiante;
+            const filaId = `proxima-${sesion.id}`;
+            const comunes = {
+              id: filaId,
+              fecha,
+              title: sesion.materia,
+              meta: metaDeSesion(sesion, estado),
+              muted: fase === "terminada",
+            };
+
+            if (puedeUnirse || puedeCalificar) {
+              return (
+                <SessionRow
+                  key={sesion.id}
+                  {...comunes}
+                  actions={
+                    <>
+                      {/* En móvil lo dice la segunda línea ("Termina en…"), como las demás insignias. */}
+                      {enCurso && (
+                        <span className={styles.badgeDesktop}>
+                          <Badge appearance="tint" color="danger" shape="rounded">
+                            En curso
+                          </Badge>
+                        </span>
+                      )}
+                      {puedeUnirse ? (
+                        <Button
+                          as="a"
+                          href={sesion.linkReunion}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          appearance={sesion.id === unirseId ? "primary" : "secondary"}
+                          icon={<Video20Regular />}
+                          aria-describedby={descripcionDeFila(filaId)}
+                        >
+                          Unirse
+                        </Button>
+                      ) : (
+                        <Button
+                          icon={preparando === sesion.id ? <Spinner size="tiny" /> : <Star20Regular />}
+                          disabled={preparando === sesion.id}
+                          onClick={() => calificar(sesion)}
+                          aria-describedby={descripcionDeFila(filaId)}
+                        >
+                          Calificar
+                        </Button>
+                      )}
+                    </>
+                  }
+                />
+              );
+            }
+
             return (
               <SessionRow
                 key={sesion.id}
                 to={to}
-                fecha={fecha}
-                title={sesion.materia}
-                meta={`${formatoSesion.format(fecha)} · con ${sesion.rolOpuestoNombre}`}
+                {...comunes}
                 end={
-                  <span className={styles.badgeDesktop}>
-                    <EstadoBadge estado={sesion.estado} />
-                  </span>
+                  enCurso ? (
+                    <Badge appearance="tint" color="danger" shape="rounded">
+                      En curso
+                    </Badge>
+                  ) : (
+                    <span className={styles.badgeDesktop}>
+                      <EstadoBadge estado={sesion.estado} />
+                    </span>
+                  )
                 }
               />
             );
           })}
         </SessionList>
       )}
+      <CalificarTutoriaModal
+        tutoria={porCalificar}
+        onClose={() => setPorCalificar(null)}
+        onCalificada={(tutoria) => {
+          setCalificadas((ids) => [...ids, tutoria.id]);
+          notificar("Gracias por tu reseña", { cuerpo: `${tutoria.materia} con ${tutoria.rolOpuestoNombre}` });
+        }}
+      />
     </PageSection>
   );
 }
@@ -275,6 +408,7 @@ function TutoresRecomendados() {
 function PanelEstudiante({ user }) {
   const navigate = useNavigate();
   const solicitudEnviada = tieneSolicitudTutor(user);
+  const proximas = useProximas();
 
   return (
     <>
@@ -282,12 +416,15 @@ function PanelEstudiante({ user }) {
         title="Panel de control"
         description="Tus próximas sesiones y tutores para las materias que te interesan."
         actions={
-          <Button appearance="primary" icon={<PeopleSearch24Regular />} onClick={() => navigate("/tutores")}>
+          <Button
+            appearance={proximas.unirseId ? "secondary" : "primary"}
+            onClick={() => navigate("/tutores")}
+          >
             Buscar tutores
           </Button>
         }
       />
-      <ProximasSesiones />
+      <ProximasSesiones proximas={proximas} esEstudiante />
       <TutoresRecomendados />
       <TarjetaIlustrada
         ilustracion={<IlustracionComunidad />}
@@ -320,6 +457,7 @@ function PanelTutorPendiente({ user }) {
   const styles = useStyles();
   const navigate = useNavigate();
   const solicitudEnviada = tieneSolicitudTutor(user);
+  const proximas = useProximas();
 
   return (
     <>
@@ -360,13 +498,14 @@ function PanelTutorPendiente({ user }) {
         </ul>
       </PageSection>
 
-      <ProximasSesiones />
+      <ProximasSesiones proximas={proximas} />
     </>
   );
 }
 
 function PanelTutor() {
   const navigate = useNavigate();
+  const proximas = useProximas();
 
   return (
     <>
@@ -378,14 +517,17 @@ function PanelTutor() {
             <Button appearance="secondary" onClick={() => navigate("/tutor/disponibilidad")}>
               Disponibilidad
             </Button>
-            <Button appearance="primary" onClick={() => navigate("/tutor/mis-tutorias")}>
+            <Button
+              appearance={proximas.unirseId ? "secondary" : "primary"}
+              onClick={() => navigate("/tutor/mis-tutorias")}
+            >
               Ver solicitudes
             </Button>
           </>
         }
       />
       <SolicitudesPendientes />
-      <ProximasSesiones />
+      <ProximasSesiones proximas={proximas} />
     </>
   );
 }

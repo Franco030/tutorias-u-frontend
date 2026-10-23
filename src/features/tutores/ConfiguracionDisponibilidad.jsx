@@ -117,10 +117,8 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground2,
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
-  eyebrow: {
+  etiquetaResumen: {
     color: tokens.colorNeutralForeground3,
-    textTransform: "uppercase",
-    letterSpacing: "0.04em",
     fontWeight: tokens.fontWeightSemibold,
   },
   herramientas: {
@@ -452,7 +450,7 @@ export default function ConfiguracionDisponibilidad() {
             </div>
 
             <div className={styles.palabras}>
-              <Caption1 className={styles.eyebrow}>En palabras</Caption1>
+              <Caption1 className={styles.etiquetaResumen}>En palabras</Caption1>
               <Body1 aria-live="polite">{resumenEnPalabras(celdas)}</Body1>
             </div>
 

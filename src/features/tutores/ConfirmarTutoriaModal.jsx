@@ -21,7 +21,8 @@ import { Dismiss24Regular } from "@fluentui/react-icons";
 
 const useStyles = makeStyles({
   surface: {
-    width: "min(520px, calc(100vw - 32px))",
+    width: "100%",
+    maxWidth: "520px",
   },
   form: {
     display: "flex",

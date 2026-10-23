@@ -29,7 +29,8 @@ const ETIQUETAS_PUNTUACION = ["", "Muy mala", "Mala", "Regular", "Buena", "Excel
 
 const useStyles = makeStyles({
   surface: {
-    width: "min(520px, calc(100vw - 32px))",
+    width: "100%",
+    maxWidth: "520px",
   },
   content: {
     display: "flex",

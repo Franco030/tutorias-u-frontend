@@ -176,16 +176,23 @@ function DateBlock({ fecha, muted }) {
 /*
  * Fila de sesión: bloque de fecha, título y metadatos, y un extremo opcional.
  * Con `to` es un enlace, con `onClick` un botón; con `actions` muestra botones
- * propios (que en móvil pasan a una línea completa).
+ * propios (que en móvil pasan a una línea completa). Con `id`, el título y los
+ * metadatos llevan ids para `descripcionDeFila` (lib/filas.js).
  */
-export function SessionRow({ fecha, title, meta, end, actions, to, onClick, muted = false, ariaLabel }) {
+export function SessionRow({ id, fecha, title, meta, end, actions, to, onClick, muted = false }) {
   const styles = useStyles();
   const contenido = (
     <>
       <DateBlock fecha={fecha} muted={muted} />
       <span className={styles.text}>
-        <Text className={styles.title}>{title}</Text>
-        {meta && <Caption1 className={styles.meta}>{meta}</Caption1>}
+        <Text className={styles.title} id={id ? `${id}-titulo` : undefined}>
+          {title}
+        </Text>
+        {meta && (
+          <Caption1 className={styles.meta} id={id ? `${id}-meta` : undefined}>
+            {meta}
+          </Caption1>
+        )}
       </span>
       {(end || to || onClick) && !actions && (
         <span className={styles.end}>
@@ -199,7 +206,7 @@ export function SessionRow({ fecha, title, meta, end, actions, to, onClick, mute
   if (to) {
     return (
       <li className={styles.item}>
-        <Link to={to} className={mergeClasses(styles.row, styles.interactive)} aria-label={ariaLabel}>
+        <Link to={to} className={mergeClasses(styles.row, styles.interactive)}>
           {contenido}
         </Link>
       </li>
@@ -213,7 +220,6 @@ export function SessionRow({ fecha, title, meta, end, actions, to, onClick, mute
           type="button"
           onClick={onClick}
           className={mergeClasses(styles.row, styles.interactive)}
-          aria-label={ariaLabel}
         >
           {contenido}
         </button>

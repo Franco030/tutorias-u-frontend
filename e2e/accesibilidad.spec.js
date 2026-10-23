@@ -65,12 +65,54 @@ for (const tema of ['light', 'dark']) {
       });
     }
 
+    test('aprobación de tutores', async ({ page }) => {
+      await iniciarSesion(page, usuarios.admin, { tema });
+      await simularApi(page, {
+        '/api/admin/solicitudes': [
+          {
+            id: 40,
+            nombre: 'Sofía Treviño',
+            correo: 'sofia@universidad.edu',
+            urlCredencial: 'https://archivos.example.com/kardex.pdf',
+            fechaSolicitud: '2026-10-01T10:00:00',
+            materias: ['Álgebra', 'Cálculo'],
+          },
+        ],
+      });
+      await page.goto('/admin/aprobaciones');
+      await expect(page.getByText('Sofía Treviño')).toBeVisible();
+      await page.waitForTimeout(600);
+      await revisar(page);
+    });
+
+    test('sesión en curso en el inicio', async ({ page }) => {
+      await page.clock.install({ time: new Date('2026-10-22T16:20:00-06:00') });
+      await iniciarSesion(page, usuarios.estudiante, { tema });
+      await simularApi(page, {
+        ...rutas,
+        '/api/citas/proximas': [
+          {
+            id: 61,
+            rolOpuestoNombre: 'Mateo Herrera',
+            materia: 'Cálculo',
+            fechaHoraInicio: '2026-10-22T16:00:00',
+            linkReunion: 'https://meet.example.com/calculo',
+            estado: 'Aceptada',
+          },
+        ],
+      });
+      await page.goto('/');
+      await expect(page.getByText('En curso')).toBeVisible();
+      await page.waitForTimeout(600);
+      await revisar(page);
+    });
+
     test('calificar una tutoría', async ({ page }) => {
       await iniciarSesion(page, usuarios.estudiante, { tema });
       await simularApi(page, { ...rutas, '/api/citas/historial': historialPorCalificar });
       await page.goto('/mis-tutorias');
       await page.getByRole('tab', { name: 'Historial' }).click();
-      await page.getByRole('button', { name: 'Calificar Cálculo con Mateo Herrera' }).click();
+      await page.getByRole('listitem').filter({ hasText: 'Cálculo' }).getByRole('button', { name: 'Calificar' }).click();
       await page.getByRole('dialog', { name: 'Calificar tutoría' }).getByRole('radio', { name: '4 de 5 estrellas' }).check();
       await page.waitForTimeout(600);
       await revisar(page);
