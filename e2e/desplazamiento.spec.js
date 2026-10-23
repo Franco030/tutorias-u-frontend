@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { iniciarSesion, materias, simularApi, tutores, usuarios } from './helpers';
 
 // Chromium sin interfaz oculta las barras de desplazamiento; aquí se necesitan

@@ -93,7 +93,7 @@ const ESTUDIANTES = {
     ],
     [
       "¿Cómo califico una tutoría?",
-      "Cuando la sesión termina aparece en la pestaña «Historial» de «Mis tutorías» con el botón «Calificar». Cada tutoría se califica una vez y la reseña se publica de forma anónima.",
+      "Cuando la sesión termina, el tutor confirma que se impartió y te llega un correo para calificarla. También la verás en la pestaña «Historial» de «Mis tutorías» con el botón «Calificar». Si el tutor no la confirma en 3 días, se da por impartida. Cada tutoría se califica una vez y la reseña se publica de forma anónima.",
     ],
   ],
 };
@@ -121,6 +121,10 @@ const TUTORES = {
     [
       "¿Cómo acepto o rechazo una solicitud?",
       "En «Solicitudes» aparecen las citas pendientes con el tema que pide el estudiante. Al aceptar, confirma el enlace de la videollamada; al rechazar puedes escribir un motivo. El estudiante recibe un correo en ambos casos.",
+    ],
+    [
+      "¿Qué hago al terminar una sesión?",
+      "Confírmala desde su fila en el inicio o en el «Historial» de «Mis tutorías»: «Se impartió» invita al estudiante a calificarla; «No asistió» registra que no se conectó y la sesión no se califica. Si no la confirmas en 3 días, se da por impartida.",
     ],
   ],
 };

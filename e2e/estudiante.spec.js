@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import {
   enDias,
   historialPorCalificar,
@@ -20,10 +20,17 @@ const rutasEstudiante = {
 };
 
 test.describe('Estudiante', () => {
-  test('el onboarding completado se conserva al recargar', async ({ page }) => {
-    await simularApi(page, {
+  test('el onboarding omitido se conserva al recargar', async ({ page }) => {
+    // Al recargar, la app pide la sesión al servidor: el indicador debe venir de ahí.
+    let onboardingCompleto = false;
+    const recibidas = await simularApi(page, {
       ...rutasEstudiante,
-      'POST /api/auth/login': { ...usuarios.estudiante, onboardingCompleto: false },
+      'POST /api/auth/login': () => ({ ...usuarios.estudiante, onboardingCompleto }),
+      'GET /api/auth/sesion': () => ({ ...usuarios.estudiante, onboardingCompleto }),
+      'POST /api/estudiantes/intereses/omitir': () => {
+        onboardingCompleto = true;
+        return null;
+      },
     });
 
     await page.goto('/');
@@ -35,11 +42,25 @@ test.describe('Estudiante', () => {
     await expect(page.getByRole('heading', { name: '¿Qué materias te interesan?' })).toBeVisible();
     await page.getByRole('button', { name: 'Omitir por ahora' }).click();
     await expect(page).toHaveURL('/');
+    expect(recibidas.some((r) => r.ruta === '/api/estudiantes/intereses/omitir')).toBe(true);
 
-    // Antes el indicador se guardaba en otra clave y al recargar volvía el onboarding.
-    await page.reload();
     await page.goto('/intereses');
     await expect(page.getByRole('heading', { name: 'Mis intereses' })).toBeVisible();
+  });
+
+  test('si no se puede omitir, se queda en el onboarding con el error', async ({ page }) => {
+    await iniciarSesion(page, { ...usuarios.estudiante, onboardingCompleto: false });
+    await simularApi(page, {
+      ...rutasEstudiante,
+      'GET /api/auth/sesion': { ...usuarios.estudiante, onboardingCompleto: false },
+      'POST /api/estudiantes/intereses/omitir': { status: 500, json: { title: 'Servidor caído.', status: 500 } },
+    });
+
+    await page.goto('/intereses');
+    await page.getByRole('button', { name: 'Omitir por ahora' }).click();
+
+    await expect(page.getByText('Servidor caído.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '¿Qué materias te interesan?' })).toBeVisible();
   });
 
   test('una sesión expirada vuelve al acceso con un aviso', async ({ page }) => {
@@ -164,6 +185,52 @@ test.describe('Estudiante', () => {
     await expect(page.getByRole('button', { name: /Calificar Cálculo/ })).toHaveCount(0);
     const peticion = recibidas.find((r) => r.metodo === 'POST' && r.ruta === '/api/resenas');
     expect(peticion?.cuerpo).toEqual({ citaId: 5, puntuacion: 5, comentario: 'Explica con mucha paciencia.' });
+  });
+
+  test('si la reseña no se guarda, lo dice y conserva lo escrito', async ({ page }) => {
+    await iniciarSesion(page, usuarios.estudiante);
+    await simularApi(page, {
+      ...rutasEstudiante,
+      '/api/citas/historial': historialPorCalificar,
+      'POST /api/resenas': { status: 409, json: { title: 'Esta tutoría ya fue calificada.', status: 409 } },
+    });
+
+    await page.goto('/mis-tutorias');
+    await page.getByRole('tab', { name: 'Historial' }).click();
+    await page.getByRole('listitem').filter({ hasText: 'Cálculo' }).getByRole('button', { name: 'Calificar' }).click();
+    const dialogo = page.getByRole('dialog', { name: 'Calificar tutoría' });
+    await dialogo.getByRole('radio', { name: '3 de 5 estrellas' }).check();
+    await dialogo.getByLabel('Comentario (opcional)').fill('Bien.');
+    await dialogo.getByRole('button', { name: 'Enviar reseña' }).click();
+
+    await expect(dialogo.getByText('Esta tutoría ya fue calificada.')).toBeVisible();
+    await expect(dialogo.getByLabel('Comentario (opcional)')).toHaveValue('Bien.');
+    await dialogo.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(dialogo).toBeHidden();
+  });
+
+  test('en el onboarding guarda las materias elegidas; si falla, lo dice', async ({ page }) => {
+    let fallar = true;
+    await iniciarSesion(page, { ...usuarios.estudiante, onboardingCompleto: false });
+    const recibidas = await simularApi(page, {
+      ...rutasEstudiante,
+      'GET /api/auth/sesion': { ...usuarios.estudiante, onboardingCompleto: false },
+      'POST /api/estudiantes/intereses': () =>
+        fallar ? { status: 500, json: { title: 'No se pudo guardar.', status: 500 } } : { materiaIds: [2] },
+    });
+
+    await page.goto('/intereses');
+    const guardar = page.getByRole('button', { name: 'Guardar y continuar' });
+    await expect(guardar).toBeDisabled();
+    await page.locator('button[aria-pressed]', { hasText: 'Álgebra' }).click();
+    await guardar.click();
+    await expect(page.getByText('No se pudo guardar.')).toBeVisible();
+
+    fallar = false;
+    await guardar.click();
+    await expect(page).toHaveURL('/');
+    const guardado = recibidas.findLast((r) => r.ruta === '/api/estudiantes/intereses' && r.metodo === 'POST');
+    expect(guardado.cuerpo).toEqual({ materiaIds: [2] });
   });
 
   test('el perfil del tutor muestra promedio, total y reseñas', async ({ page }) => {

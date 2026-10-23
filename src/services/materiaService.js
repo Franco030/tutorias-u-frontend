@@ -10,6 +10,10 @@ export const guardarIntereses = (materiaIds) => {
   });
 };
 
+export const omitirIntereses = () => {
+  return apiClient.post("/api/estudiantes/intereses/omitir");
+};
+
 export const getMisIntereses = () => {
   return apiClient.get("/api/estudiantes/intereses");
 };

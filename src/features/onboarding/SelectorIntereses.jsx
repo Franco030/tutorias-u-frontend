@@ -17,6 +17,7 @@ import {
 import {
   getMaterias,
   guardarIntereses,
+  omitirIntereses,
 } from "../../services/materiaService";
 import { useAuth } from "../../context/AuthContext";
 import { BrandMark } from "../../components/shell/BrandMark";
@@ -213,8 +214,23 @@ export default function SelectorIntereses() {
     }
   };
 
-  const handleOmitir = () => {
-    finalizarOnboarding();
+  // También se guarda en el servidor: si no, al volver a entrar la sesión
+  // refrescada traía el onboarding pendiente otra vez.
+  const handleOmitir = async () => {
+    try {
+      setGuardando(true);
+      setError("");
+
+      await omitirIntereses();
+
+      finalizarOnboarding();
+    } catch (err) {
+      console.error("Error al omitir intereses:", err);
+
+      setError(err.message || "No se pudo continuar. Intenta nuevamente.");
+    } finally {
+      setGuardando(false);
+    }
   };
 
   return (

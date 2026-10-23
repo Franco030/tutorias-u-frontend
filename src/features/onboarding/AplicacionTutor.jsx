@@ -184,7 +184,6 @@ export default function AplicacionTutor() {
   const [respuestasExamen, setRespuestasExamen] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [mensajeExito, setMensajeExito] = useState("");
   const [cargandoMaterias, setCargandoMaterias] = useState(true);
 
   useEffect(() => {
@@ -224,7 +223,6 @@ export default function AplicacionTutor() {
     try {
       setLoading(true);
       setError("");
-      setMensajeExito("");
 
       const respuestaArchivo = await subirArchivo(archivo);
       let urlCredencial = "";
@@ -248,13 +246,9 @@ export default function AplicacionTutor() {
         materiaIds: materiasSeleccionadas.map(id => Number(id)),
       });
 
+      // Con la solicitud pendiente, el guard de la ruta ya lleva al estado.
       updateLocalUser({ estadoAprobacion: "Pendiente" });
-      setMensajeExito("Tu solicitud está en revisión");
-      
-      setTimeout(() => {
-        navigate("/estado-solicitud", { replace: true });
-      }, 1500);
-
+      navigate("/estado-solicitud", { replace: true });
     } catch (err) {
       console.error("Error al enviar la postulación:", err);
       setError(err.message || "No se pudo enviar la postulación. Intenta nuevamente.");
@@ -392,12 +386,6 @@ export default function AplicacionTutor() {
           {error && (
             <MessageBar intent="error" layout="multiline">
               <MessageBarBody>{error}</MessageBarBody>
-            </MessageBar>
-          )}
-
-          {mensajeExito && (
-            <MessageBar intent="success" layout="multiline">
-              <MessageBarBody>{mensajeExito}. Te llevamos al estado de tu solicitud…</MessageBarBody>
             </MessageBar>
           )}
 

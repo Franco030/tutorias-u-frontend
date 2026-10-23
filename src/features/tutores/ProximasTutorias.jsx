@@ -6,15 +6,25 @@ import {
   MessageBar,
   MessageBarBody,
   RatingDisplay,
+  Spinner,
   Tab,
   TabList,
   tokens,
 } from "@fluentui/react-components";
-import { CalendarEmpty24Regular, History24Regular, Star20Regular, Video20Regular } from "@fluentui/react-icons";
+import {
+  CalendarEmpty24Regular,
+  Checkmark20Regular,
+  History24Regular,
+  PersonProhibited20Regular,
+  Star20Regular,
+  Video20Regular,
+} from "@fluentui/react-icons";
 import { useAuth } from "../../context/AuthContext";
 import { getRol } from "../../components/shell/navigation";
 import {
+  confirmarSesionImpartida,
   getHistorialTutorias,
+  registrarInasistencia,
   getProximasTutorias,
 } from "../../services/citaService";
 import TutoriaDetallesModal from "./TutoriaDetallesModal";
@@ -49,6 +59,7 @@ export default function ProximasTutorias() {
   const [error, setError] = useState("");
   const [tutoriaSeleccionada, setTutoriaSeleccionada] = useState(null);
   const [tutoriaPorCalificar, setTutoriaPorCalificar] = useState(null);
+  const [confirmando, setConfirmando] = useState(null);
 
   useEffect(() => {
     const cargarTutorias = async () => {
@@ -104,6 +115,24 @@ export default function ProximasTutorias() {
     setHistorial((actuales) =>
       actuales.map((actual) => (actual.id === tutoria.id ? { ...actual, puntuacion } : actual))
     );
+  };
+
+  // El tutor cierra una sesión que terminó: se impartió o el estudiante no asistió.
+  // El resultado se ve en la propia fila (cambia su estado), así que no hay aviso.
+  const confirmar = async (tutoria, impartida) => {
+    setConfirmando(tutoria.id);
+    try {
+      await (impartida ? confirmarSesionImpartida(tutoria.id) : registrarInasistencia(tutoria.id));
+      setHistorial((actuales) =>
+        actuales.map((actual) =>
+          actual.id === tutoria.id ? { ...actual, estado: impartida ? "Completada" : "NoAsistio" } : actual
+        )
+      );
+    } catch (err) {
+      notificar("No se pudo confirmar la sesión", { cuerpo: err.message, intent: "error" });
+    } finally {
+      setConfirmando(null);
+    }
   };
 
   const esProximas = pestana === "proximas";
@@ -180,6 +209,40 @@ export default function ProximasTutorias() {
                 />
               );
             }
+            // Sesión que terminó sin confirmar: el tutor la cierra desde la fila.
+            const porConfirmar = !esProximas && tutoria.estado === "Aceptada";
+            if (porConfirmar && !esEstudiante) {
+              const ocupado = confirmando === tutoria.id;
+              return (
+                <SessionRow
+                  key={tutoria.id}
+                  id={`tutoria-${tutoria.id}`}
+                  fecha={fecha}
+                  title={tutoria.materia}
+                  meta={meta}
+                  actions={
+                    <>
+                      <Button
+                        icon={<PersonProhibited20Regular />}
+                        onClick={() => confirmar(tutoria, false)}
+                        disabled={confirmando !== null}
+                        aria-describedby={descripcionDeFila(`tutoria-${tutoria.id}`)}
+                      >
+                        No asistió
+                      </Button>
+                      <Button
+                        icon={ocupado ? <Spinner size="tiny" /> : <Checkmark20Regular />}
+                        onClick={() => confirmar(tutoria, true)}
+                        disabled={confirmando !== null}
+                        aria-describedby={descripcionDeFila(`tutoria-${tutoria.id}`)}
+                      >
+                        Se impartió
+                      </Button>
+                    </>
+                  }
+                />
+              );
+            }
             // Con enlace de reunión, la fila ofrece "Unirse" directo (sin abrir detalles).
             const puedeUnirse =
               esProximas && Boolean(tutoria.linkReunion) && (tutoria.estado || "Aceptada") === "Aceptada";
@@ -232,7 +295,7 @@ export default function ProximasTutorias() {
                         aria-label={`Calificaste con ${tutoria.puntuacion} de 5`}
                       />
                     )}
-                    <EstadoBadge estado={tutoria.estado || "Aceptada"} />
+                    <EstadoBadge estado={porConfirmar ? "PorConfirmar" : tutoria.estado || "Aceptada"} />
                   </>
                 }
                 onClick={() => abrirDetalles(tutoria)}

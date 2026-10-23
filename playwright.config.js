@@ -5,6 +5,9 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
+  // Con COBERTURA=1 (npm run e2e:cobertura) se mide qué código de src/ ejecutan las pruebas.
+  globalSetup: './e2e/cobertura.inicio.js',
+  globalTeardown: './e2e/cobertura.fin.js',
   /* Maximum time one test can run for. */
   timeout: 30 * 1000,
   expect: {
