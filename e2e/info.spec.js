@@ -18,7 +18,7 @@ test.describe('Ayuda e información', () => {
 
     await legales.getByRole('link', { name: 'Ayuda' }).click();
     await page.getByRole('button', { name: 'Olvidé mi contraseña' }).click();
-    await expect(page.getByText('Por ahora no hay recuperación automática', { exact: false })).toBeVisible();
+    await expect(page.getByText('En la pantalla de acceso elige «¿Olvidaste tu contraseña?»', { exact: false })).toBeVisible();
   });
 
   test('el registro avisa que se aceptan los términos', async ({ page }) => {

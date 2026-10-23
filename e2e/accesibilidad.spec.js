@@ -65,6 +65,33 @@ for (const tema of ['light', 'dark']) {
       });
     }
 
+    test('recuperar la contraseña en el acceso', async ({ page }) => {
+      await page.addInitScript((t) => localStorage.setItem('tutoriasu_theme', t), tema);
+      await page.goto('/');
+      await page.getByRole('button', { name: '¿Olvidaste tu contraseña?' }).click();
+      await expect(page.getByRole('heading', { name: 'Restablece tu contraseña' })).toBeVisible();
+      await page.waitForTimeout(600);
+      await revisar(page);
+    });
+
+    test('elegir una contraseña nueva', async ({ page }) => {
+      await page.addInitScript((t) => localStorage.setItem('tutoriasu_theme', t), tema);
+      await page.goto('/restablecer-contrasena?token=abc');
+      await page.getByLabel(/Contraseña nueva/).fill('abc');
+      await expect(page.getByText('Debe tener al menos 6 caracteres.')).toBeVisible();
+      await page.waitForTimeout(600);
+      await revisar(page);
+    });
+
+    test('pantalla con error', async ({ page }) => {
+      await iniciarSesion(page, usuarios.estudiante, { tema });
+      await simularApi(page, { ...rutas, '/api/tutores/11': { ...tutores[0], materias: 'Cálculo' } });
+      await page.goto('/tutor/11');
+      await expect(page.getByRole('heading', { name: 'Algo salió mal' })).toBeVisible();
+      await page.waitForTimeout(600);
+      await revisar(page);
+    });
+
     test('aprobación de tutores', async ({ page }) => {
       await iniciarSesion(page, usuarios.admin, { tema });
       await simularApi(page, {

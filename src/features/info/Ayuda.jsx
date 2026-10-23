@@ -131,11 +131,11 @@ const CUENTA = {
   preguntas: [
     [
       "No me llegó el correo de verificación",
-      "Revisa la carpeta de spam o correo no deseado. Si no está, escríbenos desde la dirección con la que te registraste.",
+      "Revisa la carpeta de spam o correo no deseado. Si no está, intenta iniciar sesión: te ofreceremos reenviar el correo. El enlace vence en 24 horas; si ya venció, la misma página del enlace te deja pedir uno nuevo.",
     ],
     [
       "Olvidé mi contraseña",
-      "Por ahora no hay recuperación automática de contraseña. Escríbenos desde el correo de tu cuenta y te ayudamos. Si tu cuenta es de Google o Microsoft, entra con ese botón: no necesitas contraseña de TutoriasU.",
+      "En la pantalla de acceso elige «¿Olvidaste tu contraseña?» y escribe tu correo. Te enviaremos un enlace para elegir una nueva; vence en una hora y sirve una sola vez. Si tu cuenta es de Google o Microsoft, entra con ese botón: no tiene contraseña de TutoriasU.",
     ],
     [
       "¿Cómo cambio entre tema claro y oscuro?",

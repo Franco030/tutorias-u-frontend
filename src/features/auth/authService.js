@@ -46,6 +46,19 @@ export const authService = {
     });
   },
 
+  // Responden igual exista o no la cuenta (el backend no revela qué correos hay).
+  async solicitarRestablecimiento(email) {
+    return apiClient.post('/api/auth/recuperar-contrasena', { email }, { skipAuth: true });
+  },
+
+  async restablecerContrasena(token, password) {
+    return apiClient.post('/api/auth/restablecer-contrasena', { token, password }, { skipAuth: true });
+  },
+
+  async reenviarVerificacion(email) {
+    return apiClient.post('/api/auth/reenviar-verificacion', { email }, { skipAuth: true });
+  },
+
   async asignarRol(nuevoRol) {
     return apiClient.post('/api/auth/asignar-rol', { nuevoRol });
   },
