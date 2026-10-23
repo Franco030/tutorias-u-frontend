@@ -49,6 +49,22 @@ test.describe('Ayuda e información', () => {
     await expect(page.getByRole('heading', { name: 'Quiénes somos' })).toBeVisible();
   });
 
+  test('en celular las preguntas largas conservan su flecha', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await iniciarSesion(page, usuarios.estudiante);
+    await simularApi(page, { '/api/citas/proximas': [], '/api/tutores/recomendados': tutores, '/api/materias': materias });
+    await page.goto('/ayuda');
+    const larga = page.getByRole('button', { name: '¿Por qué no puedo elegir ciertos días u horarios?' });
+    await expect(larga).toBeVisible();
+    // Ocupa dos líneas y aun así la flecha mide lo mismo que en las cortas.
+    expect((await larga.boundingBox()).height).toBeGreaterThan(50);
+    const anchos = await page
+      .locator('.fui-AccordionHeader__expandIcon')
+      .evaluateAll((iconos) => iconos.map((icono) => icono.getBoundingClientRect().width));
+    expect(anchos.length).toBeGreaterThan(10);
+    expect(Math.min(...anchos)).toBeGreaterThan(16);
+  });
+
   test('para un estudiante, sus preguntas van primero', async ({ page }) => {
     await iniciarSesion(page, usuarios.estudiante);
     await simularApi(page, { '/api/citas/proximas': [], '/api/tutores/recomendados': tutores, '/api/materias': materias });

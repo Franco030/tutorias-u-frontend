@@ -34,6 +34,19 @@ const useStyles = makeStyles({
     gap: tokens.spacingVerticalXXL,
     maxWidth: "80ch",
   },
+  // Preguntas largas en pantallas angostas: el texto pasa a dos líneas con su
+  // propio relleno, y la flecha conserva su tamaño al final (en Fluent el
+  // espacio de la flecha se encoge hasta desaparecer cuando el texto lo llena).
+  pregunta: {
+    paddingBlock: tokens.spacingVerticalS,
+    textAlign: "start",
+  },
+  flecha: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: "auto",
+    marginInlineStart: "auto",
+  },
   respuesta: {
     display: "block",
     paddingBlockEnd: tokens.spacingVerticalM,
@@ -139,7 +152,12 @@ function Preguntas({ seccion }) {
         <Accordion collapsible multiple>
           {seccion.preguntas.map(([pregunta, respuesta]) => (
             <AccordionItem key={pregunta} value={pregunta}>
-              <AccordionHeader size="large" expandIconPosition="end">
+              <AccordionHeader
+                size="large"
+                expandIconPosition="end"
+                button={{ className: styles.pregunta }}
+                expandIcon={{ className: styles.flecha }}
+              >
                 {pregunta}
               </AccordionHeader>
               <AccordionPanel>
