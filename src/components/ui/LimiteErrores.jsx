@@ -74,6 +74,15 @@ class Limite extends Component {
     console.error("Error al mostrar la pantalla:", error, info.componentStack);
   }
 
+  // Al cambiar de ruta se intenta otra vez. Sin `key`: una llave por ruta
+  // volvía a montar todo lo de adentro (también el shell) en cada navegación
+  // y el menú lateral perdía sus transiciones.
+  componentDidUpdate(anteriores) {
+    if (this.state.error && anteriores.pathname !== this.props.pathname) {
+      this.setState({ error: null });
+    }
+  }
+
   render() {
     return this.state.error ? <PantallaError error={this.state.error} /> : this.props.children;
   }
@@ -87,7 +96,7 @@ class Limite extends Component {
  */
 export function LimiteErrores({ children }) {
   const { pathname } = useLocation();
-  return <Limite key={pathname}>{children}</Limite>;
+  return <Limite pathname={pathname}>{children}</Limite>;
 }
 
 export default LimiteErrores;
