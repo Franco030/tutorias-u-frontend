@@ -144,7 +144,6 @@ export default function TutoriaDetallesModal({
   }
 
   const puedeCancelar = ["Pendiente", "Aceptada"].includes(tutoria.estado);
-  const esActiva = !["cancelada", "rechazada"].includes(tutoria.estado?.toLowerCase());
   const fecha = new Date(tutoria.fechaHoraInicio);
 
   const fechaFormateada = fecha.toLocaleDateString("es-MX", {
@@ -311,7 +310,8 @@ export default function TutoriaDetallesModal({
                     Cancelar tutoría
                   </DangerButton>
                 )}
-                {esActiva && <BotonAgregarCalendario tutoria={tutoria} />}
+                {/* Solo sesiones por venir: una completada ya no se agenda. */}
+                {puedeCancelar && <BotonAgregarCalendario tutoria={tutoria} />}
                 <Button appearance="primary" onClick={handleClose}>
                   Cerrar
                 </Button>

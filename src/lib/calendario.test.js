@@ -6,6 +6,7 @@ import {
   generarEnlaceOutlook,
   generarContenidoIcs,
   descargarArchivoIcs,
+  desfaseDeZona,
 } from "./calendario";
 
 describe("calendario", () => {
@@ -88,8 +89,8 @@ describe("calendario", () => {
       expect(url.origin).toBe("https://outlook.office.com");
       expect(url.searchParams.get("rru")).toBe("addevent");
       expect(url.searchParams.get("subject")).toBe("Tutoría: Cálculo Diferencial con Carlos Alumno");
-      expect(url.searchParams.get("startdt")).toBe("2026-11-10T14:00:00");
-      expect(url.searchParams.get("enddt")).toBe("2026-11-10T15:00:00");
+      expect(url.searchParams.get("startdt")).toBe("2026-11-10T14:00:00-06:00");
+      expect(url.searchParams.get("enddt")).toBe("2026-11-10T15:00:00-06:00");
     });
   });
 
@@ -101,6 +102,8 @@ describe("calendario", () => {
       expect(ics).toContain("VERSION:2.0");
       expect(ics).toContain("BEGIN:VEVENT");
       expect(ics).toContain("UID:tutoria-42@tutorias-u");
+      expect(ics).toContain("BEGIN:VTIMEZONE");
+      expect(ics).toContain("TZOFFSETTO:-0600");
       expect(ics).toContain("DTSTART;TZID=");
       expect(ics).toContain("20261110T140000");
       expect(ics).toContain("DTEND;TZID=");
@@ -117,6 +120,14 @@ describe("calendario", () => {
       };
       const ics = generarContenidoIcs(tutoriaConComas);
       expect(ics).toContain("Tema 1\\, Tema 2\\; y Tema 3\\nNueva línea");
+    });
+  });
+
+  describe("desfaseDeZona", () => {
+    it("da el desfase de la zona de la plataforma, no el del navegador", () => {
+      expect(desfaseDeZona(new Date("2026-11-10T20:00:00Z"), "America/Mexico_City")).toBe("-06:00");
+      expect(desfaseDeZona(new Date("2026-07-10T20:00:00Z"), "Europe/Madrid")).toBe("+02:00");
+      expect(desfaseDeZona(new Date("2026-07-10T20:00:00Z"), "UTC")).toBe("+00:00");
     });
   });
 

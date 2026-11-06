@@ -99,10 +99,28 @@ export function generarEnlaceGoogle(tutoria) {
 }
 
 /**
+ * Desfase UTC de la zona de la plataforma en la fecha indicada, como "-06:00".
+ * La hora de la tutoría es hora local de la plataforma, no la del navegador.
+ */
+export function desfaseDeZona(fecha, zona = ZONA_PLATAFORMA) {
+  const nombre = new Intl.DateTimeFormat("en-US", {
+    timeZone: zona,
+    timeZoneName: "longOffset",
+  })
+    .formatToParts(fecha)
+    .find((parte) => parte.type === "timeZoneName")?.value;
+  // "GMT-06:00" -> "-06:00"; "GMT" (UTC) -> "+00:00"
+  return nombre?.replace("GMT", "") || "+00:00";
+}
+
+/**
  * Genera el enlace profundo para añadir el evento a Outlook / Microsoft 365.
  */
 export function generarEnlaceOutlook(tutoria) {
-  const { startIso, endIso } = obtenerFechasEvento(tutoria);
+  const { dInicio, dFin, startIso: inicioLocal, endIso: finLocal } = obtenerFechasEvento(tutoria);
+  // Sin desfase, Outlook interpreta la hora en la zona de quien abre el enlace.
+  const startIso = `${inicioLocal}${desfaseDeZona(dInicio)}`;
+  const endIso = `${finLocal}${desfaseDeZona(dFin)}`;
   const { titulo, descripcion, ubicacion } = construirDatosEvento(tutoria);
 
   const params = new URLSearchParams({
@@ -133,8 +151,10 @@ function escaparTextoIcs(texto = "") {
  * Construye el contenido en texto del archivo .ics (iCalendar) para la tutoría.
  */
 export function generarContenidoIcs(tutoria) {
-  const { startCompact, endCompact } = obtenerFechasEvento(tutoria);
+  const { dInicio, startCompact, endCompact } = obtenerFechasEvento(tutoria);
   const { titulo, descripcion, ubicacion } = construirDatosEvento(tutoria);
+  // RFC 5545: todo TZID usado debe definirse en un VTIMEZONE del archivo.
+  const desfaseIcs = desfaseDeZona(dInicio).replace(":", "");
 
   const ahora = new Date();
   const pad = (n) => String(n).padStart(2, "0");
@@ -147,6 +167,14 @@ export function generarContenidoIcs(tutoria) {
     "PRODID:-//TutoriasU//TutoriasU Web//ES",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
+    "BEGIN:VTIMEZONE",
+    `TZID:${ZONA_PLATAFORMA}`,
+    "BEGIN:STANDARD",
+    "DTSTART:19700101T000000",
+    `TZOFFSETFROM:${desfaseIcs}`,
+    `TZOFFSETTO:${desfaseIcs}`,
+    "END:STANDARD",
+    "END:VTIMEZONE",
     "BEGIN:VEVENT",
     `UID:${uid}`,
     `DTSTAMP:${dtStamp}`,
