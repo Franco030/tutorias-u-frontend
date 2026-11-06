@@ -13,6 +13,7 @@ import {
 import { ArrowLeft20Regular } from "@fluentui/react-icons";
 import { delayedFade, pageFade } from "../../theme/motion";
 import { CargaDePaginaContext } from "../../hooks/useCargaDePagina";
+import { useTituloPagina } from "../../hooks/useTituloPagina";
 
 // Tiempo máximo que la página espera a sus datos antes de mostrarse con
 // esqueletos (mismo umbral que el spinner diferido).
@@ -236,9 +237,12 @@ export function Page({ children, className, cargando = false }) {
   );
 }
 
-export function PageHeader({ title, description, actions, backTo, backLabel = "Volver" }) {
+// `tituloPestana` cambia el título de la pestaña; por omisión es `title`, y con
+// `null` queda solo "TutoriasU" (inicio).
+export function PageHeader({ title, description, actions, backTo, backLabel = "Volver", tituloPestana }) {
   const styles = useStyles();
   const navigate = useNavigate();
+  useTituloPagina(tituloPestana === undefined ? (typeof title === "string" ? title : null) : tituloPestana);
 
   return (
     <header className={styles.header}>

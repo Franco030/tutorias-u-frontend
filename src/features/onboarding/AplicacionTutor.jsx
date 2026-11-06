@@ -22,6 +22,7 @@ import { Page, Surface } from "../../components/ui/Page";
 import { PageHero } from "../../components/ui/PageHero";
 import { fotos } from "../../assets/fotos";
 import { Stepper } from "../../components/ui/Stepper";
+import { useTituloPagina } from "../../hooks/useTituloPagina";
 
 const useStyles = makeStyles({
   layout: {
@@ -157,6 +158,7 @@ const TIPOS_ARCHIVO = /\.(pdf|png|jpe?g|webp)$/i;
 
 export default function AplicacionTutor() {
   const styles = useStyles();
+  useTituloPagina("Conviértete en tutor");
   const navigate = useNavigate();
   const { updateLocalUser } = useAuth();
   const inputArchivo = useRef(null);

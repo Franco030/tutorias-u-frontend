@@ -422,6 +422,7 @@ function PanelEstudiante({ user }) {
     <>
       <PageHeader
         title="Panel de control"
+        tituloPestana={null}
         description="Tus próximas sesiones y tutores para las materias que te interesan."
         actions={
           <Button
@@ -471,6 +472,7 @@ function PanelTutorPendiente({ user }) {
     <>
       <PageHeader
         title="Panel de control"
+        tituloPestana={null}
         description="Las herramientas de tutor se activan cuando la administración aprueba tu solicitud."
       />
       <MessageBar intent={solicitudEnviada ? "info" : "warning"} layout="multiline">
@@ -519,6 +521,7 @@ function PanelTutor() {
     <>
       <PageHeader
         title="Panel de control"
+        tituloPestana={null}
         description="Solicitudes por responder y tus próximas sesiones."
         actions={
           <>
@@ -545,6 +548,7 @@ function PanelAdministrador() {
   return (
     <PageHeader
       title="Panel de control"
+      tituloPestana={null}
       description="Revisa las solicitudes de estudiantes que quieren ser tutores."
       actions={
         <Button appearance="primary" onClick={() => navigate("/admin/aprobaciones")}>
