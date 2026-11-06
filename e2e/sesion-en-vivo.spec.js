@@ -93,7 +93,7 @@ test.describe('Sesión en vivo en el inicio', () => {
     await expect(fila.getByText('Termina en 30 min · con Ana Ruiz')).toBeVisible();
     await expect(fila.getByText('En curso', { exact: true })).toBeVisible();
     await expect(fila.getByRole('link', { name: /Unirse/ })).toHaveCount(0);
-    await expect(fila.getByRole('link')).toHaveAttribute('href', '/mis-tutorias');
+    await expect(fila.getByRole('link')).toHaveAttribute('href', '/mis-tutorias?cita=61');
   });
 
   test('las pendientes y las de más de un día muestran su fecha, sin cuenta regresiva', async ({ page }) => {
