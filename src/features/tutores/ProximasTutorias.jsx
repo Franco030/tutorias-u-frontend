@@ -19,6 +19,7 @@ import {
   Star20Regular,
   Video20Regular,
 } from "@fluentui/react-icons";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { getRol } from "../../components/shell/navigation";
 import {
@@ -60,6 +61,10 @@ export default function ProximasTutorias() {
   const [tutoriaSeleccionada, setTutoriaSeleccionada] = useState(null);
   const [tutoriaPorCalificar, setTutoriaPorCalificar] = useState(null);
   const [confirmando, setConfirmando] = useState(null);
+  // Desde el inicio se llega con ?cita=ID: al cargar se abren los detalles de esa
+  // sesión. Se lee una sola vez; si ya no existe, la página se muestra normal.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [citaPedida] = useState(() => Number(searchParams.get("cita")) || null);
 
   useEffect(() => {
     const cargarTutorias = async () => {
@@ -78,6 +83,8 @@ export default function ProximasTutorias() {
 
         setTutorias(data);
         setHistorial(dataHistorial);
+        const pedida = citaPedida && data.find((tutoria) => tutoria.id === citaPedida);
+        if (pedida) setTutoriaSeleccionada(pedida);
       } catch (err) {
         console.error("Error al cargar tutorías:", err);
         setError(
@@ -89,7 +96,7 @@ export default function ProximasTutorias() {
     };
 
     cargarTutorias();
-  }, []);
+  }, [citaPedida]);
 
   const abrirDetalles = (tutoria) => {
     setTutoriaSeleccionada(tutoria);
@@ -97,6 +104,16 @@ export default function ProximasTutorias() {
 
   const cerrarDetalles = () => {
     setTutoriaSeleccionada(null);
+    // Cerrar no vuelve a abrirla al recargar.
+    if (searchParams.has("cita")) {
+      setSearchParams(
+        (actuales) => {
+          actuales.delete("cita");
+          return actuales;
+        },
+        { replace: true }
+      );
+    }
   };
 
   const handleCancelled = (tutoria) => {
