@@ -18,6 +18,7 @@ import {
   tokens,
 } from "@fluentui/react-components";
 import { Checkmark20Regular, TaskListSquareLtr24Regular } from "@fluentui/react-icons";
+import { useSearchParams } from "react-router-dom";
 import {
   aceptarCita,
   getCitasPendientes,
@@ -48,6 +49,9 @@ const useStyles = makeStyles({
 export default function MisTutorias() {
   const styles = useStyles();
   const notificar = useNotificar();
+  // Desde el inicio se llega con ?cita=ID: esa solicitud se resalta y se lleva a la vista.
+  const [searchParams] = useSearchParams();
+  const citaResaltada = Number(searchParams.get("cita")) || null;
   const [citas, setCitas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
@@ -195,6 +199,7 @@ export default function MisTutorias() {
                 <SessionRow
                   key={cita.id}
                   id={`solicitud-${cita.id}`}
+                  resaltada={cita.id === citaResaltada}
                   fecha={fecha}
                   title={cita.materiaNombre}
                   meta={`${formatoSesion.format(fecha)} · ${cita.estudianteNombre}${cita.tema ? ` · “${cita.tema}”` : ""}`}

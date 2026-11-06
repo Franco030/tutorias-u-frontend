@@ -299,7 +299,7 @@ function ProximasSesiones({ proximas, to = "/mis-tutorias", esEstudiante = false
             return (
               <SessionRow
                 key={sesion.id}
-                to={to}
+                to={`${to}?cita=${sesion.id}`}
                 {...comunes}
                 end={
                   enCurso ? (
@@ -353,7 +353,7 @@ function SolicitudesPendientes() {
             return (
               <SessionRow
                 key={cita.id}
-                to={destino}
+                to={`${destino}?cita=${cita.id}`}
                 fecha={fecha}
                 title={cita.materiaNombre}
                 meta={`${formatoSesion.format(fecha)} · ${cita.estudianteNombre}`}

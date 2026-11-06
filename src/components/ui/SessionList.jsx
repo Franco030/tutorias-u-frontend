@@ -76,6 +76,11 @@ const useStyles = makeStyles({
       outlineOffset: "-2px",
     },
   },
+  // Fila a la que se llegó desde un enlace (por ejemplo, desde el inicio).
+  resaltada: {
+    backgroundColor: tokens.colorBrandBackground2,
+    boxShadow: `inset ${tokens.strokeWidthThickest} 0 0 ${tokens.colorBrandStroke1}`,
+  },
   stacked: {
     "@media (max-width: 639px)": {
       gridTemplateColumns: "56px minmax(0, 1fr)",
@@ -163,6 +168,13 @@ export function SessionList({ children, label }) {
   );
 }
 
+// Lleva la fila resaltada al centro de la vista al montarse.
+const llevarALaVista = (fila) => {
+  if (!fila) return;
+  const reducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  fila.scrollIntoView({ behavior: reducido ? "auto" : "smooth", block: "center" });
+};
+
 function DateBlock({ fecha, muted }) {
   const styles = useStyles();
   return (
@@ -177,9 +189,21 @@ function DateBlock({ fecha, muted }) {
  * Fila de sesión: bloque de fecha, título y metadatos, y un extremo opcional.
  * Con `to` es un enlace, con `onClick` un botón; con `actions` muestra botones
  * propios (que en móvil pasan a una línea completa). Con `id`, el título y los
- * metadatos llevan ids para `descripcionDeFila` (lib/filas.js).
+ * metadatos llevan ids para `descripcionDeFila` (lib/filas.js). Con `resaltada`
+ * la fila se marca (fondo de marca y `aria-current`) y se lleva a la vista.
  */
-export function SessionRow({ id, fecha, title, meta, end, actions, to, onClick, muted = false }) {
+export function SessionRow({
+  id,
+  fecha,
+  title,
+  meta,
+  end,
+  actions,
+  to,
+  onClick,
+  muted = false,
+  resaltada = false,
+}) {
   const styles = useStyles();
   const contenido = (
     <>
@@ -228,8 +252,8 @@ export function SessionRow({ id, fecha, title, meta, end, actions, to, onClick, 
   }
 
   return (
-    <li className={styles.item}>
-      <div className={mergeClasses(styles.row, actions && styles.stacked)}>
+    <li className={styles.item} ref={resaltada ? llevarALaVista : undefined} aria-current={resaltada || undefined}>
+      <div className={mergeClasses(styles.row, actions && styles.stacked, resaltada && styles.resaltada)}>
         {contenido}
         {actions && <span className={mergeClasses(styles.end, styles.endStacked)}>{actions}</span>}
       </div>
