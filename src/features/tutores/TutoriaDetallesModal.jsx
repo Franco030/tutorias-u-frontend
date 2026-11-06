@@ -32,6 +32,7 @@ import {
 import { cancelarCita } from "../../services/citaService";
 import { EstadoBadge } from "../../components/ui/EstadoBadge";
 import { DangerButton } from "../../components/ui/DangerButton";
+import { BotonAgregarCalendario } from "../../components/ui/BotonAgregarCalendario";
 
 const useStyles = makeStyles({
   surface: {
@@ -120,6 +121,7 @@ export default function TutoriaDetallesModal({
   }
 
   const puedeCancelar = ["Pendiente", "Aceptada"].includes(tutoria.estado);
+  const esActiva = !["cancelada", "rechazada"].includes(tutoria.estado?.toLowerCase());
   const fecha = new Date(tutoria.fechaHoraInicio);
 
   const fechaFormateada = fecha.toLocaleDateString("es-MX", {
@@ -268,6 +270,7 @@ export default function TutoriaDetallesModal({
                     Cancelar tutoría
                   </DangerButton>
                 )}
+                {esActiva && <BotonAgregarCalendario tutoria={tutoria} />}
                 <Button appearance="primary" onClick={handleClose}>
                   Cerrar
                 </Button>
