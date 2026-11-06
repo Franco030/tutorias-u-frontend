@@ -34,6 +34,7 @@ import { cancelarCita } from "../../services/citaService";
 import { useAuth } from "../../context/AuthContext";
 import { EstadoBadge } from "../../components/ui/EstadoBadge";
 import { DangerButton } from "../../components/ui/DangerButton";
+import { BotonAgregarCalendario } from "../../components/ui/BotonAgregarCalendario";
 import { useNotificar } from "../../hooks/useNotificar";
 
 const useStyles = makeStyles({
@@ -309,6 +310,8 @@ export default function TutoriaDetallesModal({
                     Cancelar tutoría
                   </DangerButton>
                 )}
+                {/* Solo sesiones por venir: una completada ya no se agenda. */}
+                {puedeCancelar && <BotonAgregarCalendario tutoria={tutoria} />}
                 <Button appearance="primary" onClick={handleClose}>
                   Cerrar
                 </Button>

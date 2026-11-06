@@ -169,6 +169,9 @@ y formas que se superponen, con **una sola metáfora por imagen**.
   en el título cuando el pie ya tiene Cancelar o Cerrar (guía de Fluent 2);
   al terminar una acción el diálogo se cierra y lo confirma un aviso, sin
   pantalla de éxito.
+- Exportación a calendarios · `Menu` de Fluent con opciones de Google Calendar,
+  Outlook y descarga `.ics` para sesiones activas (`BotonAgregarCalendario`). No
+  interfiere con el foco del diálogo modal y respeta la zona horaria institucional.
 - Páginas de información · sin pie de página, ni fijo ni al final del
   contenido (las apps de Microsoft no lo usan). "Ayuda y soporte" (`/ayuda`)
   va anclada al pie del menú lateral para todos los roles, como

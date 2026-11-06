@@ -135,6 +135,18 @@ test.describe('Cancelar una tutoría', () => {
     await expect(page.getByRole('listitem', { name: 'No se pudo copiar el enlace' })).toBeVisible();
   });
 
+  test('agregar al calendario ofrece Google, Outlook y descarga el .ics', async ({ page }) => {
+    const { dialogo } = await abrirDetalles(page);
+
+    await dialogo.getByRole('button', { name: 'Agregar tutoría al calendario' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Google Calendar' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: 'Outlook (Microsoft 365)' })).toBeVisible();
+
+    const descarga = page.waitForEvent('download');
+    await page.getByRole('menuitem', { name: 'Descargar archivo (.ics)' }).click();
+    expect((await descarga).suggestedFilename()).toBe('tutoria-calculo.ics');
+  });
+
   test('si no se puede cancelar, lo dice y el diálogo sigue abierto', async ({ page }) => {
     const { dialogo } = await abrirDetalles(page, {
       'PUT /api/citas/81/cancelar': { status: 409, json: { title: 'La sesión ya empezó.', status: 409 } },
