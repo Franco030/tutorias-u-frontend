@@ -28,6 +28,55 @@ async function abrirDetalles(page, extra = {}) {
 }
 
 test.describe('Cancelar una tutoría', () => {
+  
+  test('muestra la etiqueta Tutor cuando el usuario es estudiante', async ({ page }) => {
+    const { dialogo } = await abrirDetalles(page);
+
+    await expect(dialogo.locator('dt').filter({ hasText: /^Tutor$/ })).toBeVisible();
+
+    await expect(dialogo.getByText('Mateo Herrera')).toBeVisible();
+
+    await expect(dialogo.getByText('Tutor o estudiante')).toHaveCount(0);
+  });
+
+
+  test('muestra la etiqueta Estudiante cuando el usuario es tutor', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+
+    await simularApi(page, {
+      '/api/auth/sesion': usuarios.tutor,
+      '/api/citas/proximas': [
+        {
+          ...proxima,
+          rolOpuestoNombre: 'Ana López',
+        },
+      ],
+      '/api/citas/historial': [],
+    });
+
+    await page.goto('/mis-tutorias');
+
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Cálculo' })
+      .getByRole('button')
+      .first()
+      .click();
+
+    const dialogo = page.getByRole('dialog', { name: 'Cálculo' });
+
+    await expect(dialogo).toBeVisible();
+
+    await expect(
+      dialogo.locator('dt').filter({ hasText: /^Estudiante$/ })
+    ).toBeVisible();
+
+    await expect(dialogo.getByText('Ana López')).toBeVisible();
+
+    await expect(dialogo.getByText('Tutor o estudiante')).toHaveCount(0);
+  });
+
+
   test('los detalles muestran todo y la cancelación pide confirmar con motivo', async ({ page }) => {
     const { recibidas, dialogo } = await abrirDetalles(page, { 'PUT /api/citas/81/cancelar': null });
 
