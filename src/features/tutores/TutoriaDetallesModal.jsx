@@ -24,6 +24,7 @@ import {
   BookOpen20Regular,
   CalendarLtr20Regular,
   Clock20Regular,
+  Copy20Regular,
   Lightbulb20Regular,
   Notepad20Regular,
   Person20Regular,
@@ -32,6 +33,7 @@ import {
 import { cancelarCita } from "../../services/citaService";
 import { EstadoBadge } from "../../components/ui/EstadoBadge";
 import { DangerButton } from "../../components/ui/DangerButton";
+import { useNotificar } from "../../hooks/useNotificar";
 
 const useStyles = makeStyles({
   surface: {
@@ -66,6 +68,12 @@ const useStyles = makeStyles({
   value: {
     margin: 0,
     overflowWrap: "anywhere",
+  },
+  meetingActions: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: tokens.spacingHorizontalS,
   },
   notes: {
     margin: 0,
@@ -107,6 +115,7 @@ export default function TutoriaDetallesModal({
   onCancelled,
 }) {
   const styles = useStyles();
+  const notificar = useNotificar();
   const [confirmandoCancelacion, setConfirmandoCancelacion] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [cancelando, setCancelando] = useState(false);
@@ -133,6 +142,15 @@ export default function TutoriaDetallesModal({
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  const handleCopiarEnlace = async () => {
+    try {
+      await navigator.clipboard.writeText(tutoria.linkReunion);
+      notificar("Enlace copiado");
+    } catch (err) {
+      console.error("Error al copiar el enlace de la videollamada:", err);
+    }
+  };
 
   const handleCancelar = async () => {
     if (cancelando) return;
@@ -187,9 +205,17 @@ export default function TutoriaDetallesModal({
               </Dato>
               <Dato icon={<Video20Regular />} termino="Enlace de reunión">
                 {tutoria.linkReunion ? (
-                  <Link href={tutoria.linkReunion} target="_blank" rel="noopener noreferrer">
-                    Unirse a la videollamada
-                  </Link>
+                  <div className={styles.meetingActions}>
+                    <Link href={tutoria.linkReunion} target="_blank" rel="noopener noreferrer">
+                      Unirse a la videollamada
+                    </Link>
+                    <Button
+                      appearance="subtle"
+                      icon={<Copy20Regular />}
+                      aria-label="Copiar enlace de la videollamada"
+                      onClick={handleCopiarEnlace}
+                    />
+                  </div>
                 ) : (
                   <Text className={styles.muted}>Aún no disponible</Text>
                 )}
