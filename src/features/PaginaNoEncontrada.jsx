@@ -41,6 +41,7 @@ export default function PaginaNoEncontrada() {
   return (
     <Page>
       <PageHeader
+        tituloPestana="Página no encontrada"
         title="Esta página no existe"
         description="Error 404: la dirección no corresponde a ninguna página de TutoriasU."
       />

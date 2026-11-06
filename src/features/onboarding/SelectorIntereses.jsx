@@ -24,6 +24,7 @@ import { BrandMark } from "../../components/shell/BrandMark";
 import { MateriaSelector } from "../../components/ui/MateriaSelector";
 import { PageLoading } from "../../components/ui/Page";
 import { IlustracionAprender } from "../../components/illustrations/Ilustraciones";
+import { useTituloPagina } from "../../hooks/useTituloPagina";
 
 const useStyles = makeStyles({
   // Asistente de primera vez: el contenido (con sus acciones al final) se
@@ -139,6 +140,7 @@ const useStyles = makeStyles({
 });
 
 export default function SelectorIntereses() {
+  useTituloPagina("Elige tus intereses");
   const styles = useStyles();
   const navigate = useNavigate();
   const { markOnboardingAsComplete } = useAuth();

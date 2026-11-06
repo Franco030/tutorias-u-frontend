@@ -13,6 +13,7 @@ import { CheckmarkCircle48Regular, ErrorCircle48Regular } from '@fluentui/react-
 import authService from './authService';
 import { CuentaLayout } from './CuentaLayout';
 import { ReenviarVerificacion } from './ReenviarVerificacion';
+import { useTituloPagina } from "../../hooks/useTituloPagina";
 
 const useStyles = makeStyles({
   icon: { display: 'flex' },
@@ -24,6 +25,7 @@ const useStyles = makeStyles({
 
 export function VerifyEmailPage() {
   const styles = useStyles();
+  useTituloPagina("Verificar correo");
   const queryParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const token = queryParams.get('token');
 

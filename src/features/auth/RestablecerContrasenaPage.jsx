@@ -16,6 +16,7 @@ import {
 import { CheckmarkCircle48Regular, Eye20Regular, EyeOff20Regular } from "@fluentui/react-icons";
 import authService from "./authService";
 import { CuentaLayout } from "./CuentaLayout";
+import { useTituloPagina } from "../../hooks/useTituloPagina";
 
 const MINIMO = 6;
 
@@ -38,6 +39,7 @@ const useStyles = makeStyles({
  */
 export function RestablecerContrasenaPage() {
   const styles = useStyles();
+  useTituloPagina("Restablecer contraseña");
   const navigate = useNavigate();
   const token = new URLSearchParams(window.location.search).get("token") ?? "";
 

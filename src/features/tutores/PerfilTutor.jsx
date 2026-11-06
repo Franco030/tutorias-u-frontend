@@ -24,6 +24,7 @@ import { IlustracionComunidad } from "../../components/illustrations/Ilustracion
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Page, PageLoading, PageSection, Surface } from "../../components/ui/Page";
 import { opiniones } from "../../lib/formato";
+import { useTituloPagina } from "../../hooks/useTituloPagina";
 
 const useStyles = makeStyles({
   breadcrumb: {
@@ -110,6 +111,7 @@ export default function PerfilTutor() {
   const [tutor, setTutor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  useTituloPagina(error ? "Perfil no encontrado" : tutor?.nombre ?? "Perfil del tutor");
   const [bookingOpen, setBookingOpen] = useState(false);
   // Horario semanal: carga aparte para no bloquear el perfil si falla.
   const [horario, setHorario] = useState({ bloques: [], cargando: true, error: false });
