@@ -149,6 +149,7 @@ export default function TutoriaDetallesModal({
       notificar("Enlace copiado");
     } catch (err) {
       console.error("Error al copiar el enlace de la videollamada:", err);
+      notificar("No se pudo copiar el enlace", { intent: "error" });
     }
   };
 
