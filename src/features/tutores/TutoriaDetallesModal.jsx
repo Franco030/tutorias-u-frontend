@@ -24,15 +24,18 @@ import {
   BookOpen20Regular,
   CalendarLtr20Regular,
   Clock20Regular,
+  Copy20Regular,
   Lightbulb20Regular,
   Notepad20Regular,
   Person20Regular,
   Video20Regular,
 } from "@fluentui/react-icons";
 import { cancelarCita } from "../../services/citaService";
+import { useAuth } from "../../context/AuthContext";
 import { EstadoBadge } from "../../components/ui/EstadoBadge";
 import { DangerButton } from "../../components/ui/DangerButton";
 import { BotonAgregarCalendario } from "../../components/ui/BotonAgregarCalendario";
+import { useNotificar } from "../../hooks/useNotificar";
 
 const useStyles = makeStyles({
   surface: {
@@ -68,6 +71,12 @@ const useStyles = makeStyles({
     margin: 0,
     overflowWrap: "anywhere",
   },
+  meetingActions: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: tokens.spacingHorizontalS,
+  },
   notes: {
     margin: 0,
     whiteSpace: "pre-wrap",
@@ -84,8 +93,10 @@ const useStyles = makeStyles({
   },
 });
 
+
 function Dato({ icon, termino, children }) {
   const styles = useStyles();
+
   return (
     <div className={styles.row}>
       <span className={styles.icon} aria-hidden="true">
@@ -101,6 +112,7 @@ function Dato({ icon, termino, children }) {
   );
 }
 
+
 export default function TutoriaDetallesModal({
   isOpen,
   onClose,
@@ -108,6 +120,17 @@ export default function TutoriaDetallesModal({
   onCancelled,
 }) {
   const styles = useStyles();
+  const notificar = useNotificar();
+  const { user } = useAuth();
+
+  const rolUsuario = user?.rol?.trim().toLowerCase();
+
+  const etiquetaRol =
+    rolUsuario === "estudiante"
+      ? "Tutor"
+      : rolUsuario === "tutor"
+        ? "Estudiante"
+        : "Participante";
   const [confirmandoCancelacion, setConfirmandoCancelacion] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [cancelando, setCancelando] = useState(false);
@@ -135,6 +158,16 @@ export default function TutoriaDetallesModal({
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  const handleCopiarEnlace = async () => {
+    try {
+      await navigator.clipboard.writeText(tutoria.linkReunion);
+      notificar("Enlace copiado");
+    } catch (err) {
+      console.error("Error al copiar el enlace de la videollamada:", err);
+      notificar("No se pudo copiar el enlace", { intent: "error" });
+    }
+  };
 
   const handleCancelar = async () => {
     if (cancelando) return;
@@ -178,7 +211,7 @@ export default function TutoriaDetallesModal({
               <Dato icon={<BookOpen20Regular />} termino="Estado">
                 <EstadoBadge estado={tutoria.estado || "Aceptada"} />
               </Dato>
-              <Dato icon={<Person20Regular />} termino="Tutor o estudiante">
+              <Dato icon={<Person20Regular />} termino={etiquetaRol}>
                 <Text>{tutoria.rolOpuestoNombre}</Text>
               </Dato>
               <Dato icon={<CalendarLtr20Regular />} termino="Fecha">
@@ -189,9 +222,17 @@ export default function TutoriaDetallesModal({
               </Dato>
               <Dato icon={<Video20Regular />} termino="Enlace de reunión">
                 {tutoria.linkReunion ? (
-                  <Link href={tutoria.linkReunion} target="_blank" rel="noopener noreferrer">
-                    Unirse a la videollamada
-                  </Link>
+                  <div className={styles.meetingActions}>
+                    <Link href={tutoria.linkReunion} target="_blank" rel="noopener noreferrer">
+                      Unirse a la videollamada
+                    </Link>
+                    <Button
+                      appearance="subtle"
+                      icon={<Copy20Regular />}
+                      aria-label="Copiar enlace de la videollamada"
+                      onClick={handleCopiarEnlace}
+                    />
+                  </div>
                 ) : (
                   <Text className={styles.muted}>Aún no disponible</Text>
                 )}

@@ -28,6 +28,55 @@ async function abrirDetalles(page, extra = {}) {
 }
 
 test.describe('Cancelar una tutoría', () => {
+  
+  test('muestra la etiqueta Tutor cuando el usuario es estudiante', async ({ page }) => {
+    const { dialogo } = await abrirDetalles(page);
+
+    await expect(dialogo.locator('dt').filter({ hasText: /^Tutor$/ })).toBeVisible();
+
+    await expect(dialogo.getByText('Mateo Herrera')).toBeVisible();
+
+    await expect(dialogo.getByText('Tutor o estudiante')).toHaveCount(0);
+  });
+
+
+  test('muestra la etiqueta Estudiante cuando el usuario es tutor', async ({ page }) => {
+    await iniciarSesion(page, usuarios.tutor);
+
+    await simularApi(page, {
+      '/api/auth/sesion': usuarios.tutor,
+      '/api/citas/proximas': [
+        {
+          ...proxima,
+          rolOpuestoNombre: 'Ana López',
+        },
+      ],
+      '/api/citas/historial': [],
+    });
+
+    await page.goto('/mis-tutorias');
+
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Cálculo' })
+      .getByRole('button')
+      .first()
+      .click();
+
+    const dialogo = page.getByRole('dialog', { name: 'Cálculo' });
+
+    await expect(dialogo).toBeVisible();
+
+    await expect(
+      dialogo.locator('dt').filter({ hasText: /^Estudiante$/ })
+    ).toBeVisible();
+
+    await expect(dialogo.getByText('Ana López')).toBeVisible();
+
+    await expect(dialogo.getByText('Tutor o estudiante')).toHaveCount(0);
+  });
+
+
   test('los detalles muestran todo y la cancelación pide confirmar con motivo', async ({ page }) => {
     const { recibidas, dialogo } = await abrirDetalles(page, { 'PUT /api/citas/81/cancelar': null });
 
@@ -62,6 +111,30 @@ test.describe('Cancelar una tutoría', () => {
     await expect(page.getByRole('listitem').filter({ hasText: 'Cálculo' }).getByText('Cancelada', { exact: true })).toBeVisible();
   });
 
+  test('copiar el enlace de la videollamada muestra un aviso', async ({ page }) => {
+    const { dialogo } = await abrirDetalles(page);
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    await dialogo.getByRole('button', { name: 'Copiar enlace de la videollamada' }).click();
+
+    await expect(page.getByRole('listitem', { name: 'Enlace copiado' })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(proxima.linkReunion);
+  });
+
+  test('si el navegador rechaza la copia, muestra un aviso de error', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: { writeText: () => Promise.reject(new Error('Permiso denegado')) },
+      });
+    });
+    const { dialogo } = await abrirDetalles(page);
+
+    await dialogo.getByRole('button', { name: 'Copiar enlace de la videollamada' }).click();
+
+    await expect(page.getByRole('listitem', { name: 'No se pudo copiar el enlace' })).toBeVisible();
+  });
+
   test('si no se puede cancelar, lo dice y el diálogo sigue abierto', async ({ page }) => {
     const { dialogo } = await abrirDetalles(page, {
       'PUT /api/citas/81/cancelar': { status: 409, json: { title: 'La sesión ya empezó.', status: 409 } },
@@ -87,6 +160,7 @@ test.describe('Cancelar una tutoría', () => {
     await page.getByRole('listitem').filter({ hasText: 'Cálculo' }).getByRole('button').first().click();
     const dialogo = page.getByRole('dialog', { name: 'Cálculo' });
     await expect(dialogo.getByText('Aún no disponible')).toBeVisible();
+    await expect(dialogo.getByRole('button', { name: 'Copiar enlace de la videollamada' })).toHaveCount(0);
     await expect(dialogo.getByText('Quiere repasar')).toHaveCount(0);
     await dialogo.getByRole('button', { name: 'Cerrar', exact: true }).click();
 
