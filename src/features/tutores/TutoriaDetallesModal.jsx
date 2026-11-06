@@ -30,6 +30,7 @@ import {
   Video20Regular,
 } from "@fluentui/react-icons";
 import { cancelarCita } from "../../services/citaService";
+import { useAuth } from "../../context/AuthContext";
 import { EstadoBadge } from "../../components/ui/EstadoBadge";
 import { DangerButton } from "../../components/ui/DangerButton";
 
@@ -83,8 +84,10 @@ const useStyles = makeStyles({
   },
 });
 
+
 function Dato({ icon, termino, children }) {
   const styles = useStyles();
+
   return (
     <div className={styles.row}>
       <span className={styles.icon} aria-hidden="true">
@@ -100,6 +103,7 @@ function Dato({ icon, termino, children }) {
   );
 }
 
+
 export default function TutoriaDetallesModal({
   isOpen,
   onClose,
@@ -107,6 +111,16 @@ export default function TutoriaDetallesModal({
   onCancelled,
 }) {
   const styles = useStyles();
+  const { user } = useAuth();
+
+  const rolUsuario = user?.rol?.trim().toLowerCase();
+
+  const etiquetaRol =
+    rolUsuario === "estudiante"
+      ? "Tutor"
+      : rolUsuario === "tutor"
+        ? "Estudiante"
+        : "Participante";
   const [confirmandoCancelacion, setConfirmandoCancelacion] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [cancelando, setCancelando] = useState(false);
@@ -176,7 +190,7 @@ export default function TutoriaDetallesModal({
               <Dato icon={<BookOpen20Regular />} termino="Estado">
                 <EstadoBadge estado={tutoria.estado || "Aceptada"} />
               </Dato>
-              <Dato icon={<Person20Regular />} termino="Tutor o estudiante">
+              <Dato icon={<Person20Regular />} termino={etiquetaRol}>
                 <Text>{tutoria.rolOpuestoNombre}</Text>
               </Dato>
               <Dato icon={<CalendarLtr20Regular />} termino="Fecha">
